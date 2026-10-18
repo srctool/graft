@@ -1,0 +1,15 @@
+# Personal agent settings and notes (contain local paths)
+CLAUDE.local.md
+.claude/settings.local.json
+
+# Gradle / Kotlin
+.gradle/
+build/
+.kotlin/
+local.properties
+
+# IDEs and OS
+.idea/
+*.iml
+.vscode/
+.DS_Store
