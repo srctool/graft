@@ -36,3 +36,4 @@ Ruling: the bug form's `graft doctor` field is optional, with `git config --show
 Ruling: features outside the roadmap go to Discussions → Ideas; the issue chooser has no blank issues — Governance redirects features to Discussions unless already planned — cost if wrong: one config line.
 Note: `CODEOWNERS`, listed in the Open Source note's repository tree, isn't in the G0 plan and wasn't added.
 Task 3: approved by the user (2026-10-18).
+Task 4: drafted on branch `ci/g0-task4`: `.github/workflows/ci.yml` with `check` on macOS, Windows and Ubuntu, `git-min` (Git 2.38.0 built from source, checksum-verified, cached), `spaces-path` and `dco`; actions pinned to commit SHAs; `.gitattributes` for LF checkouts; `-Pgit` passed to tests as `graft.test.git`. `actionlint` clean; local `./gradlew check` passes.

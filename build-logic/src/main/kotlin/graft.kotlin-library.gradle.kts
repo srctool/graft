@@ -29,6 +29,10 @@ dependencies {
     testRuntimeOnly(libs.findLibrary("junit-platform-launcher").get())
 }
 
+// CI's git-min job runs the tests against Git 2.38 with -Pgit=/opt/git-2.38/bin/git; tests read it from here.
+val testGit = providers.gradleProperty("git")
+
 tasks.withType<Test>().configureEach {
     useJUnitPlatform()
+    testGit.orNull?.let { systemProperty("graft.test.git", it) }
 }
