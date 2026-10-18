@@ -1,0 +1,30 @@
+Graft
+Copyright (C) 2026 Graft contributors
+
+This program is free software: you can redistribute it and/or modify it
+under the terms of the GNU General Public License as published by the Free
+Software Foundation, either version 3 of the License, or (at your option)
+any later version.
+
+This program is distributed in the hope that it will be useful, but WITHOUT
+ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for
+more details.
+
+You should have received a copy of the GNU General Public License along
+with this program. If not, see <https://www.gnu.org/licenses/>.
+
+The name "Graft" and its logo are not licensed under the GPL. See
+TRADEMARKS.md.
+
+Git
+---
+Graft runs the git executable as a separate program and does not link to
+it. Git is licensed under GPL-2.0. When an installer bundles Git, it is
+shipped as a separate program next to Graft, with its license and a link to
+its source.
+
+Third-party components
+----------------------
+Third-party libraries and assets, and code adapted from other projects, are
+credited here and in the app's About > Licenses as they are added.

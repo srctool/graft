@@ -1,0 +1,34 @@
+name: Feature in the roadmap
+description: Suggest details for a feature that's already in the roadmap or the design docs.
+labels: ["feature"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        New ideas start in [Discussions → Ideas](https://github.com/srctool/graft/discussions/categories/ideas), since a new feature needs a design note before code.
+        Use this form only for something the [Roadmap](https://github.com/srctool/graft/blob/main/docs/design/03%20-%20Project/01%20-%20Roadmap.md) or the design docs already plan.
+  - type: input
+    id: note
+    attributes:
+      label: Design note or roadmap item
+      description: The note in docs/design, or the milestone, this belongs to.
+      placeholder: "02 - Features/06 - Shelves.md, G4"
+    validations:
+      required: true
+  - type: textarea
+    id: problem
+    attributes:
+      label: What you're trying to do
+      description: The task, not the solution.
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: What you'd like Graft to do
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: What you do today instead

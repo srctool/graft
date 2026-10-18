@@ -1,0 +1,11 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Question
+    url: https://github.com/srctool/graft/discussions/categories/q-a
+    about: Ask how something works in Discussions.
+  - name: New idea or ADR proposal
+    url: https://github.com/srctool/graft/discussions/categories/ideas
+    about: New features and changes to contracts start as a Discussion.
+  - name: Security vulnerability
+    url: https://github.com/srctool/graft/security/advisories/new
+    about: Report it privately, never in a public issue.

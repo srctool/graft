@@ -1,0 +1,78 @@
+name: Bug report
+description: Something in Graft doesn't work as it should.
+labels: ["bug", "needs-repro"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for reporting. For a security problem, don't use this form: see [SECURITY.md](https://github.com/srctool/graft/blob/main/SECURITY.md).
+        Remove tokens, passwords, private keys and private repository names from everything you paste.
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened
+      description: What you saw, including any error message and its code (for example `GIT-E-PUSH-REJ`).
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: What you expected
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      description: The smallest set of steps that shows the problem. A script that creates a repository is ideal.
+      placeholder: |
+        1. git init demo && cd demo
+        2. …
+    validations:
+      required: true
+  - type: dropdown
+    id: data-loss
+    attributes:
+      label: Did you lose work?
+      description: Lost commits, changes or files get fixed before anything else.
+      options:
+        - "No"
+        - "Yes, but I got it back"
+        - "Yes, and it's still lost"
+    validations:
+      required: true
+  - type: input
+    id: graft-version
+    attributes:
+      label: Graft version
+      description: Help → About, or `graft --version`. For a build from source, the commit hash.
+    validations:
+      required: true
+  - type: input
+    id: os
+    attributes:
+      label: OS and version
+      placeholder: macOS 26.1 (arm64), Windows 11 24H2, Ubuntu 24.04, …
+    validations:
+      required: true
+  - type: input
+    id: git-version
+    attributes:
+      label: Git version
+      description: Output of `git --version`.
+    validations:
+      required: true
+  - type: textarea
+    id: doctor
+    attributes:
+      label: graft doctor output
+      description: |
+        Run `graft doctor` in the repository where it happens and paste the output. It shows which identity, keys and account apply there, without secrets.
+        If your build has no `graft doctor` yet, paste `git config --show-origin --get user.email` instead.
+      render: text
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs or "Show output"
+      description: Git's output from **Show output**, or the relevant lines from Graft's log. Check it for secrets first.
+      render: text
