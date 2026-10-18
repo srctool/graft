@@ -1,0 +1,138 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+env:
+  GRADLE_OPTS: -Dorg.gradle.daemon=false
+
+jobs:
+  check:
+    name: check (${{ matrix.os }})
+    strategy:
+      fail-fast: false
+      matrix:
+        # macOS minutes are costly: draft PRs skip macOS until they're ready for review (CI note).
+        os: ${{ fromJSON(github.event.pull_request.draft && '["windows-latest","ubuntu-latest"]' || '["macos-latest","windows-latest","ubuntu-latest"]') }}
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-java@b843ebf9b913146b38da2eaa7aeddf76074ae1ad # v6.1.0
+        with:
+          distribution: temurin
+          java-version: "21"
+      - uses: gradle/actions/setup-gradle@3f5f9adaf7d9fecd50b5935e54106014257a94e6 # v6.4.0
+      - run: git --version
+      - run: ./gradlew check --continue
+        shell: bash
+      - if: failure()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: reports-${{ matrix.os }}
+          path: |
+            **/build/reports/
+            **/build/test-results/
+          if-no-files-found: ignore
+
+  git-min:
+    name: git-min (Git 2.38.0)
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    env:
+      GIT_MIN_VERSION: 2.38.0
+      # sha256sums.asc on mirrors.edge.kernel.org
+      GIT_MIN_SHA256: 923eade26b1814de78d06bda8e0a9f5da8b7c4b304b3f9050ffb464f0310320a
+      GIT_MIN_PREFIX: /opt/git-2.38
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-java@b843ebf9b913146b38da2eaa7aeddf76074ae1ad # v6.1.0
+        with:
+          distribution: temurin
+          java-version: "21"
+      - uses: gradle/actions/setup-gradle@3f5f9adaf7d9fecd50b5935e54106014257a94e6 # v6.4.0
+      # actions/cache restores as the runner user, so it must own the folder before the restore.
+      - run: sudo mkdir -p "$GIT_MIN_PREFIX" && sudo chown "$USER" "$GIT_MIN_PREFIX"
+      - id: git-cache
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: /opt/git-2.38
+          key: git-${{ env.GIT_MIN_VERSION }}-${{ runner.os }}-${{ runner.arch }}-v1
+      - if: steps.git-cache.outputs.cache-hit != 'true'
+        name: Build Git ${{ env.GIT_MIN_VERSION }} from source
+        run: |
+          sudo apt-get update -q
+          sudo apt-get install -yq --no-install-recommends libcurl4-gnutls-dev libexpat1-dev libssl-dev zlib1g-dev
+          curl -sSfLo git.tar.xz "https://mirrors.edge.kernel.org/pub/software/scm/git/git-${GIT_MIN_VERSION}.tar.xz"
+          echo "${GIT_MIN_SHA256}  git.tar.xz" | sha256sum -c -
+          tar -xJf git.tar.xz
+          cd "git-${GIT_MIN_VERSION}"
+          make -j"$(nproc)" prefix="$GIT_MIN_PREFIX" NO_TCLTK=1 NO_GETTEXT=1 NO_PERL=1 NO_PYTHON=1 all
+          make prefix="$GIT_MIN_PREFIX" NO_TCLTK=1 NO_GETTEXT=1 NO_PERL=1 NO_PYTHON=1 install
+      - name: Check the Git version
+        run: |
+          "$GIT_MIN_PREFIX/bin/git" --version
+          test "$("$GIT_MIN_PREFIX/bin/git" --version)" = "git version ${GIT_MIN_VERSION}"
+      - run: ./gradlew :core:git:test :core:repo:test -Pgit="$GIT_MIN_PREFIX/bin/git"
+      - if: failure()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: reports-git-min
+          path: |
+            **/build/reports/
+            **/build/test-results/
+          if-no-files-found: ignore
+
+  spaces-path:
+    name: spaces-path (Ubuntu)
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-java@b843ebf9b913146b38da2eaa7aeddf76074ae1ad # v6.1.0
+        with:
+          distribution: temurin
+          java-version: "21"
+      - uses: gradle/actions/setup-gradle@3f5f9adaf7d9fecd50b5935e54106014257a94e6 # v6.4.0
+      # Paths with spaces and non-ASCII letters (macOS iCloud, Windows user folders) must work everywhere.
+      - run: cp -a "$GITHUB_WORKSPACE" "/tmp/Graft Ünïcode"
+      - run: ./gradlew check
+        working-directory: /tmp/Graft Ünïcode
+
+  dco:
+    name: dco
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+      - name: Every commit is signed off by its author
+        env:
+          BASE: ${{ github.event_name == 'pull_request' && github.event.pull_request.base.sha || github.event.before }}
+          HEAD: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
+        run: |
+          if [ -z "$BASE" ] || [ "$BASE" = "0000000000000000000000000000000000000000" ]; then
+            range="$HEAD"
+          else
+            range="$BASE..$HEAD"
+          fi
+          bad=0
+          for c in $(git rev-list --no-merges "$range"); do
+            email=$(git log -1 --format='%ae' "$c")
+            if ! git log -1 --format='%(trailers:key=Signed-off-by,valueonly)' "$c" | grep -qiF "<$email>"; then
+              echo "::error::$(git log -1 --format='%h %s' "$c") has no 'Signed-off-by:' for its author <$email>. Sign off with 'git commit -s' (see CONTRIBUTING.md)."
+              bad=1
+            fi
+          done
+          exit "$bad"

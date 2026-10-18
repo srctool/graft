@@ -1,0 +1,9 @@
+# Line endings: LF in the repository and in every checkout, so formatting and tests behave the same on Windows.
+* text=auto eol=lf
+*.bat text eol=crlf
+*.cmd text eol=crlf
+
+*.jar binary
+*.png binary
+*.ico binary
+*.icns binary
