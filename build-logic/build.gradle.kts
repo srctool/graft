@@ -10,4 +10,13 @@ dependencies {
     implementation(libs.compose.compiler.gradle.plugin)
     implementation(libs.compose.gradle.plugin)
     implementation(libs.spotless.gradle.plugin)
+
+    testImplementation(kotlin("test"))
+    testImplementation(platform(libs.junit.bom))
+    testImplementation("org.junit.jupiter:junit-jupiter")
+    testRuntimeOnly(libs.junit.platform.launcher)
+}
+
+tasks.test {
+    useJUnitPlatform()
 }

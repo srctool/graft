@@ -2,7 +2,7 @@
 // Copyright (C) 2026 Graft contributors
 
 plugins {
-    id("graft.spotless")
+    id("graft.root")
 }
 
 group = "com.srctool.graft"

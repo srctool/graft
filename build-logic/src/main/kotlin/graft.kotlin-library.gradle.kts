@@ -6,6 +6,7 @@
 plugins {
     id("org.jetbrains.kotlin.jvm")
     id("graft.spotless")
+    id("graft.checks")
 }
 
 val libs = the<VersionCatalogsExtension>().named("libs")

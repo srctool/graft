@@ -1,0 +1,46 @@
+# Allowed project dependencies, one "from -> to" per line, copied from the module graph in
+# docs/design/01 - Foundations/02 - Architecture.md. checkModuleGraph fails on any edge not listed here.
+# A new edge needs an ADR first.
+
+:core:git -> :core:model
+:core:repo -> :core:git
+:core:provider -> :core:model
+:core:data -> :core:model
+
+:provider:github -> :core:provider
+:provider:github -> :core:network
+
+:feature:graph -> :core:repo
+:feature:graph -> :core:data
+:feature:graph -> :ui:kit
+:feature:workingcopy -> :core:repo
+:feature:workingcopy -> :core:data
+:feature:workingcopy -> :ui:kit
+:feature:shelves -> :core:repo
+:feature:shelves -> :core:data
+:feature:shelves -> :ui:kit
+:feature:worktrees -> :core:repo
+:feature:worktrees -> :core:data
+:feature:worktrees -> :ui:kit
+:feature:submodules -> :core:repo
+:feature:submodules -> :core:data
+:feature:submodules -> :ui:kit
+:feature:changerequests -> :core:provider
+:feature:changerequests -> :core:data
+:feature:changerequests -> :ui:kit
+:feature:issues -> :core:provider
+:feature:issues -> :core:data
+:feature:issues -> :ui:kit
+
+:app:desktop -> :feature:graph
+:app:desktop -> :feature:workingcopy
+:app:desktop -> :feature:shelves
+:app:desktop -> :feature:worktrees
+:app:desktop -> :feature:submodules
+:app:desktop -> :feature:changerequests
+:app:desktop -> :feature:issues
+:app:desktop -> :provider:github
+
+:app:cli -> :core:repo
+:app:cli -> :core:data
+:app:cli -> :provider:github
