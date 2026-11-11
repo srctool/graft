@@ -33,14 +33,16 @@ data class Violation(val file: String, val line: Int, val message: String) {
     override fun toString() = "$file:$line: $message"
 }
 
-/** Which Compose packages a module may use (Architecture, ADR-19, ADR-20, ADR-21). */
+/** Which UI packages a module may use (Architecture, ADR-19, ADR-22). */
 object ImportRules {
     private val material3 = Regex("""\bandroidx\.compose\.material3\b""")
     private val compose = Regex("""\bandroidx\.compose\b(?!\w)""")
+    private val camouflage = Regex("""\bcom\.srctool\.camouflage\b""")
 
     fun violations(projectPath: String, file: String, text: String): List<Violation> {
         val noCompose = projectPath.startsWith(":core:") || projectPath == ":app:cli"
-        val noMaterial = projectPath != ":ui:kit"
+        // Camouflage is the toolkit only ui-kit sees; Material 3 isn't a dependency at all.
+        val noCamouflage = projectPath != ":ui:kit"
         val result = mutableListOf<Violation>()
         var inBlockComment = false
         text.lines().forEachIndexed { index, raw ->
@@ -54,12 +56,20 @@ object ImportRules {
                             "$projectPath must not use androidx.compose (core-* and app-cli stay UI-free)",
                         )
 
-                noMaterial && material3.containsMatchIn(code) ->
+                material3.containsMatchIn(code) ->
                     result +=
                         Violation(
                             file,
                             index + 1,
-                            "$projectPath must not use androidx.compose.material3; use ui-kit components",
+                            "$projectPath must not use androidx.compose.material3; Graft's UI is Camouflage through ui-kit",
+                        )
+
+                noCamouflage && camouflage.containsMatchIn(code) ->
+                    result +=
+                        Violation(
+                            file,
+                            index + 1,
+                            "$projectPath must not use com.srctool.camouflage; use ui-kit components",
                         )
             }
         }

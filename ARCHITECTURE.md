@@ -30,7 +30,7 @@ Graft is a desktop Git client. It shows a repository's whole state (graph, branc
 | `core-network` | the HTTP client factory, auth, ETag cache, retry, redacting logs | |
 | `core-data` | SQLite cache, settings, profiles storage, `SecretStore`, atomic file writes, format versions | store secrets outside `SecretStore` |
 | `provider-github` | the GitHub implementation (GraphQL + REST) | leak GitHub types outside the module |
-| `ui-kit` | the Fluent-styled components on Material 3, the theme, `GraftViewModel` | contain feature logic |
+| `ui-kit` | Graft's components on Camouflage (Carbon skin, Atom One colors), the theme, `GraftViewModel` | contain feature logic |
 | `feature-*` | screens and view models, one area each | import another feature; import Material directly |
 | `app-desktop` | windows, menus, wiring, platform integration | |
 | `app-cli` | the `graft` command and `graft mcp` (GraalVM native image) | import Compose; change profiles or config; push |
@@ -47,7 +47,7 @@ These hold everywhere. Breaking one is a bug, even if tests pass.
 4. **Secrets only in `SecretStore`.** They never appear in files, logs, errors, fixtures or MCP results.
 5. **Graft edits shared config only inside its marked block** (`~/.gitconfig`), and only after the user has seen the change.
 6. **Every stored format has a version.** Unknown newer versions are read-only.
-7. **Screens use `ui-kit` only.** Only `ui-kit` imports Material.
+7. **Screens use `ui-kit` only.** Only `ui-kit` imports Camouflage; nothing imports Material 3.
 8. **The core is provider-neutral.** Only `provider-github` says GitHub.
 9. **Tests never touch the developer's real environment:** `HOME`, git config, SSH and the keychain are sandboxed.
 

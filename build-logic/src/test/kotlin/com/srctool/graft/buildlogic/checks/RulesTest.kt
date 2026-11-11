@@ -45,11 +45,20 @@ class ImportRulesTest {
     private fun violations(path: String, source: String) = ImportRules.violations(path, "X.kt", source).map { it.line }
 
     @Test
-    fun `material3 is allowed only in ui-kit`() {
+    fun `material3 is allowed nowhere, ui-kit included`() {
         val src = "package x\n\nimport androidx.compose.material3.Text\n"
+        assertEquals(listOf(3), violations(":ui:kit", src))
+        assertEquals(listOf(3), violations(":feature:graph", src))
+        assertEquals(listOf(3), violations(":app:desktop", src))
+    }
+
+    @Test
+    fun `camouflage is allowed only in ui-kit`() {
+        val src = "package x\n\nimport com.srctool.camouflage.core.CamoButton\n"
         assertEquals(emptyList(), violations(":ui:kit", src))
         assertEquals(listOf(3), violations(":feature:graph", src))
         assertEquals(listOf(3), violations(":app:desktop", src))
+        assertEquals(emptyList(), violations(":feature:graph", "import com.srctool.camouflagex.Foo\n"))
     }
 
     @Test

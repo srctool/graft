@@ -18,7 +18,7 @@ Agents and contributors shouldn't pick libraries ad hoc. This note fixes the cho
 |---|---|---|---|---|
 | Language, coroutines | Kotlin stdlib, `kotlinx-coroutines` | Apache-2.0 | yes | |
 | JSON | `kotlinx-serialization-json` | Apache-2.0 | yes | no reflection, so native-image friendly |
-| UI | Compose Multiplatform (desktop), Material 3 | Apache-2.0 | n/a | only through `ui-kit` |
+| UI | Compose Multiplatform (desktop) + Camouflage (`camouflage-bom`, `camouflage-core`, `camouflage-skin-carbon`) | Apache-2.0 | n/a | only through `ui-kit` ([ADR-22](../03%20-%20Project/02%20-%20Decisions.md)); version pinned; Graft's Compose and Kotlin at or above Camouflage's |
 | HTTP | Ktor client with the **Java** engine (JDK `HttpClient`) | Apache-2.0 | yes | HTTP/2, no extra native code; ETag cache in `core-network` |
 | GitHub GraphQL | hand-written query strings + `kotlinx-serialization` DTOs | n/a | yes | Apollo Kotlin considered and not chosen: code generation (Conventions: no codegen except SQLDelight) |
 | Database | SQLDelight + `sqlite-jdbc` (xerial) | Apache-2.0 | yes (ships native-image metadata) | cache and app state |
@@ -35,15 +35,16 @@ Agents and contributors shouldn't pick libraries ad hoc. This note fixes the cho
 | MCP server | the official Kotlin MCP SDK (`io.modelcontextprotocol:kotlin-sdk`) | permissive, **verify** | **verify** (Ktor/serialization based) | stdio transport only |
 | Updates | Sparkle (macOS), WinSparkle (Windows), or Conveyor's updater | MIT / MIT / Conveyor terms | n/a | decided in G8 ([Release and Updates](05%20-%20Release%20and%20Updates.md)) |
 
-**Not used:** JGit and libgit2 ([ADR-2](../03%20-%20Project/02%20-%20Decisions.md)); Jewel ([ADR-20](../03%20-%20Project/02%20-%20Decisions.md)); a DI framework (hand wiring, [Architecture](../01%20-%20Foundations/02%20-%20Architecture.md)); Sinew and Camouflage, until [ADR-9](../03%20-%20Project/02%20-%20Decisions.md)'s adoption point.
+**Not used:** JGit and libgit2 ([ADR-2](../03%20-%20Project/02%20-%20Decisions.md)); Jewel ([ADR-20](../03%20-%20Project/02%20-%20Decisions.md)); a DI framework (hand wiring, [Architecture](../01%20-%20Foundations/02%20-%20Architecture.md)); Material 3 ([ADR-22](../03%20-%20Project/02%20-%20Decisions.md)); Sinew, until [ADR-9](../03%20-%20Project/02%20-%20Decisions.md)'s adoption point.
 
 ## 3. Assets
 
 | Asset | Source | License |
 |---|---|---|
-| Inter (Linux UI font) | rsms/inter | OFL-1.1 |
+| IBM Plex Sans (UI font), IBM Plex Mono (optional code font) | IBM | OFL-1.1 |
 | JetBrains Mono | JetBrains | OFL-1.1 |
-| Fluent UI System Icons | Microsoft | MIT |
+| Carbon icons (`@carbon/icons`) | IBM | Apache-2.0 |
+| Atom One color values (One Light, One Dark, their syntax colors) | Atom (`one-dark-ui`, `one-light-ui`, `one-dark-syntax`, `one-light-syntax`), credited in `NOTICE` | MIT |
 | `.gitignore` templates | github/gitignore | CC0-1.0 |
 | Secret-detection rules | own; patterns may be adapted from gitleaks (MIT) with credit in `NOTICE` | MIT |
 

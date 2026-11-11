@@ -27,7 +27,7 @@ You need JDK 21 and Git 2.38 or newer (see the [README](README.md#build)). Then:
 ## Rules for code
 
 - **Git only through `GitRunner`** in `core-git`: the `git` executable, argv lists, never a shell, never JGit or libgit2. Machine-readable output only (`-z`, `--porcelain=v2`, `--format` with `%x00`).
-- **Module graph:** only the edges in [`config/module-graph.txt`](config/module-graph.txt). `core-*` and `app-cli` never import Compose; only `ui-kit` imports Material 3; features never import each other. `./gradlew check` enforces this.
+- **Module graph:** only the edges in [`config/module-graph.txt`](config/module-graph.txt). `core-*` and `app-cli` never import Compose; only `ui-kit` imports Camouflage, and nothing imports Material 3; features never import each other. `./gradlew check` enforces this.
 - **Secrets** only in the OS keychain: never in files, logs, exceptions or test output.
 - **Libraries** only from the [Libraries](docs/design/04%20-%20Development/07%20-%20Libraries.md) note, through `gradle/libs.versions.toml`, and only with GPL-3.0-compatible licenses (Apache-2.0, MIT, BSD, LGPL, MPL-2.0, EPL-2.0 with its GPL secondary license).
 - **Every source file** starts with:

@@ -26,5 +26,9 @@ its source.
 
 Third-party components
 ----------------------
+Graft's light and dark colors follow Atom's One Light and One Dark themes
+(one-light-ui, one-dark-ui, one-light-syntax, one-dark-syntax),
+Copyright (c) GitHub Inc., MIT License.
+
 Third-party libraries and assets, and code adapted from other projects, are
 credited here and in the app's About > Licenses as they are added.

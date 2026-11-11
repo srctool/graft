@@ -2,6 +2,7 @@
 kotlin = "2.4.21"
 compose = "1.12.2"
 spotless = "8.10.4"
+camouflage = "0.1.0"
 ktlint = "1.8.0"
 junit = "5.14.4"
 
@@ -9,6 +10,9 @@ junit = "5.14.4"
 compose-runtime = { module = "org.jetbrains.compose.runtime:runtime", version.ref = "compose" }
 compose-foundation = { module = "org.jetbrains.compose.foundation:foundation", version.ref = "compose" }
 compose-ui = { module = "org.jetbrains.compose.ui:ui", version.ref = "compose" }
+camouflage-bom = { module = "com.srctool.camouflage:camouflage-bom", version.ref = "camouflage" }
+camouflage-core = { module = "com.srctool.camouflage:camouflage-core" }
+camouflage-skin-carbon = { module = "com.srctool.camouflage:camouflage-skin-carbon" }
 junit-bom = { module = "org.junit:junit-bom", version.ref = "junit" }
 junit-platform-launcher = { module = "org.junit.platform:junit-platform-launcher" }
 

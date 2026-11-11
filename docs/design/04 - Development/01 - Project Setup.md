@@ -77,7 +77,7 @@ New feature modules from notes 11â€“32 (`feature-profiles`, `feature-history`, â
 | Task | Fails when |
 |---|---|
 | `checkModuleGraph` | a project dependency isn't listed in `config/module-graph.txt` |
-| `checkImports` | a file outside `ui-kit` imports `androidx.compose.material3`, or a file in `core-*` / `app-cli` imports `androidx.compose` |
+| `checkImports` | a file outside `ui-kit` imports `com.srctool.camouflage`, any file imports `androidx.compose.material3`, or a file in `core-*` / `app-cli` imports `androidx.compose` |
 | `checkLicenseHeaders` | a `.kt` / `.kts` file lacks the SPDX header ([Conventions](02%20-%20Conventions.md)) |
 | `checkDependencyLicenses` | a dependency's license isn't on the GPL-3.0-compatible list ([Open Source](../03%20-%20Project/03%20-%20Open%20Source.md)) |
 

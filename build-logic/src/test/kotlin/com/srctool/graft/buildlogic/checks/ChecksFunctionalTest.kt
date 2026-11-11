@@ -60,7 +60,16 @@ class ChecksFunctionalTest {
     }
 
     @Test
-    fun `material3 outside ui-kit fails`() {
+    fun `camouflage outside ui-kit fails`() {
+        fixture()
+        write("feature/b/src/main/kotlin/B.kt", header + "package b\n\nimport com.srctool.camouflage.core.CamoButton\n")
+        val out = fail("checkImports").output
+        assertContains(out, "B.kt:5")
+        assertContains(out, "com.srctool.camouflage")
+    }
+
+    @Test
+    fun `material3 anywhere fails`() {
         fixture()
         write("feature/b/src/main/kotlin/B.kt", header + "package b\n\nimport androidx.compose.material3.Text\n")
         val out = fail("checkImports").output

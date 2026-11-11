@@ -115,7 +115,7 @@ ADRs are never edited after acceptance; a later ADR supersedes. Status: **Propos
 - **Decision:** `app-cli` shares the `core-*` modules and is compiled with GraalVM native-image. It works without the app and notifies a running app over a local socket. `graft mcp` is a **stdio-only** MCP server: no network listener, no remote deployment. The CLI and MCP never change profiles or config, never reveal tokens, and never push, force or rewrite history ([CLI](../02%20-%20Features/31%20-%20CLI.md), [MCP Server](../02%20-%20Features/32%20-%20MCP%20Server.md)).
 - **Consequences:** two build outputs (app, CLI) from one codebase; native-image needs reflection config for the parsers and SQLDelight; MCP tools are thin wrappers over CLI commands, so both stay in sync.
 
-### ADR-20 GitKraken layout, JetBrains style, on compact Material 3 (visual style superseded by ADR-21)
+### ADR-20 GitKraken layout, JetBrains style, on compact Material 3 (visual style superseded by ADR-21; Material 3 base superseded by ADR-22)
 - **Context:** the author likes GitKraken's layout and JetBrains' look and behavior. Material 3's defaults are built for touch: big controls, pill buttons, ripples, tinted surfaces.
 - **Options:**
 
@@ -131,7 +131,7 @@ ADRs are never edited after acceptance; a later ADR supersedes. Status: **Propos
   - **Title bar:** in-title-bar toolbar on macOS only for 1.0.
 - **Consequences:** `ui-kit` owns the compact styling and the missing components. Moving to Camouflage later means its Material skin plus a compact Graft theme, with no screen changes.
 
-### ADR-21 Fluent 2 look, matching Camouflage's Fluent skin (supersedes ADR-20's visual style)
+### ADR-21 Fluent 2 look, matching Camouflage's Fluent skin (supersedes ADR-20's visual style; superseded by ADR-22)
 - **Context:** ADR-20 styled Material 3 to look like JetBrains' New UI, which has no matching Camouflage skin. Camouflage's Fluent Skin is already designed: Fluent 2, desktop-first, compact sizes.
 - **Decision:**
   - **Look:** Microsoft's Fluent 2. Fluent sizes (24 px small, 32 px medium), 4 px corners, neutral ramp plus brand ramp, Fluent shadows, subtle feedback, double-stroke focus, bottom-accent text fields, Fluent UI System Icons (MIT), and the platform font (Segoe UI Variable, SF Pro, Inter on Linux).
@@ -141,3 +141,23 @@ ADRs are never edited after acceptance; a later ADR supersedes. Status: **Propos
   - Switching to Camouflage later means using its `fluentSkin()` with no visual change.
   - Graft's needs feed back into the Fluent skin, which is "Later" in Camouflage's roadmap, so Graft may be what brings it forward.
   - Acrylic and Mica wait until after 1.0.
+
+### ADR-22 Carbon look with Atom One colors, through Camouflage; `ui-kit` wraps Camouflage now (Accepted 2026-11-11; supersedes ADR-21 and ADR-20's Material 3 base; adopts ADR-9's `ui-kit` seam early)
+- **Context:**
+  - ADR-21 chose Fluent 2 drawn on Material 3, so a later switch to Camouflage's Fluent skin would change nothing visible. ADR-9 deferred Camouflage until it shipped a desktop skin.
+  - Camouflage 0.1.0 is on Maven Central (Apache-2.0) with JVM builds of the core and all five skins, Carbon included, built on Compose 1.12.1 and Kotlin 2.4.20 (Graft: 1.12.2 and 2.4.21).
+  - IBM Carbon suits a git client better than Fluent: it's made for dense, data-heavy desktop tools, with a strong grid, flat layered surfaces, square corners and an inset focus border that doesn't move the layout (Carbon Skin).
+  - The author wants Atom's One color scheme: One Light and One Dark, familiar from editors.
+  - `ui-kit` has no code yet (G0 Task 5), so switching now costs nothing; after G1 it would mean rewriting every component.
+- **Decision:**
+  - **Structure:** Carbon through Camouflage's `carbonSkin()`: square corners (pills only for tags and toggles), layered surfaces with no shadows except overlays, Carbon's 2 px inset focus border, Carbon's components and productive type sets in **IBM Plex Sans** (bundled, OFL-1.1).
+  - **Colors:** **Atom One** (MIT). Graft Light uses One Light, Graft Dark uses One Dark, set through the theme's color roles instead of Carbon's families. One's blue is the accent. Values are used as published wherever they pass WCAG 2.2 AA; where they carry text and don't, a darker (light) or lighter (dark) step of the same hue is used. Camouflage's theme validator pins the result. The same palette gives the graph's lane colors and the diff syntax highlighting. Carbon's dark header becomes One's panel color.
+  - **Density:** Graft's desktop sizes stay: 24 px (toolbars, panels, inline) and 32 px (dialogs, forms) controls, 24 px rows. Camouflage's Carbon skin builds only 48 px sizes, so Graft asks for a Carbon density option upstream ([camouflage#70](https://github.com/srctool/camouflage/issues/70)); until it ships, `ui-kit` sets the sizes through Camouflage's component themes.
+  - **Icons:** Carbon's icon set (Apache-2.0); git icons it lacks (shelf, worktree, stack, stash) are drawn on its 16/20/32 grid. **Code font:** JetBrains Mono stays, with IBM Plex Mono as an option.
+  - **Implementation:** `ui-kit` wraps Camouflage components behind Graft's own `Graft*` names and sets up the Camouflage provider with the Carbon skin and Graft's theme. Material 3 is no longer a dependency. Components Graft needs that Camouflage lacks (split pane, dock layout, speed search, document tabs, command palette, menu submenus, desktop scrollbars, table column resizing) are proposed to Camouflage ([camouflage#71–#78](https://github.com/srctool/camouflage/issues)) and built in `ui-kit` on Camouflage tokens until they ship. Git widgets stay Graft's.
+  - **Unchanged:** ADR-20's GitKraken layout and JetBrains behaviors.
+  - **Timing:** ADR-9 says to adopt between milestones; this is an accepted exception, since G0 has no UI code and the G0 spike doesn't use `ui-kit`. Sinew's seams are decided in a separate ADR before G0 Task 5 resumes.
+- **Consequences:**
+  - The import rule changes: only `ui-kit` imports `com.srctool.camouflage`, and nothing imports `androidx.compose.material3`.
+  - Graft depends on a 0.x library whose API can change; the version is pinned, and Graft's needs feed back into Camouflage as its first real desktop app.
+  - The light theme isn't exactly One Light where text needs AA. Fluent-only items are dropped: Mica, Acrylic, the double-stroke focus, Fluent shadows and the platform-font rule.

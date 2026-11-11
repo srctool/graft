@@ -32,8 +32,8 @@ Rules:
 | Module graph: `core-*` → `provider-*` / `feature-*` → `app-desktop` / `app-cli`, exactly as drawn. A new dependency edge needs an ADR | Architecture |
 | `core-*` and `app-cli` never import Compose | Architecture, ADR-19 |
 | Features never import each other; shared UI lives in `ui-kit` | Architecture |
-| Screens use only `ui-kit` components; nothing outside `ui-kit` imports `androidx.compose.material3` | ADR-9, ADR-20, ADR-21 |
-| Look: Fluent 2 at desktop density on Material 3 (24/32 px controls, 4 px corners, no ripple, no tonal elevation) | UI Design, ADR-21 |
+| Screens use only `ui-kit` components; only `ui-kit` imports Camouflage (`com.srctool.camouflage`), and nothing imports `androidx.compose.material3` | ADR-9, ADR-22 |
+| Look: IBM Carbon through Camouflage's Carbon skin, in Atom One colors, at desktop density (24/32 px controls, square corners, layered surfaces, inset focus) | UI Design, ADR-22 |
 | **Git is only reached through `GitRunner`** in `core-git`, running the `git` executable. No JGit, no libgit2, no shell (`sh -c`): argv only | Git Engine, ADR-2 |
 | Machine-readable git output only (`-z`, `--porcelain=v2`, `--format` with `%x00`); `LC_ALL=C`, `GIT_TERMINAL_PROMPT=0`, the askpass/editor helpers | Git Engine |
 | One mutating git operation at a time per repository (write queue); reads may run in parallel with `GIT_OPTIONAL_LOCKS=0` | ADR-3 |
@@ -41,7 +41,7 @@ Rules:
 | Tokens and passphrases only in the OS keychain; never in files, logs, exceptions or test output | ADR-7 |
 | Errors are `GraftError` with a `MODULE-LAYER-FUNCTION-TYPE` code (Sinew's format); keep git's stderr and exit code | Architecture, ADR-9 |
 | Nothing outside `provider-github` says "GitHub"; use the neutral types (`ChangeRequest`, `Review`, `Check`, `Issue`, `Pipeline`) | Provider Model, ADR-4 |
-| Sinew and Camouflage are **not** dependencies yet; keep the seams (`ui-kit`, `GraftViewModel`, `GraftError`, `core-network`) | ADR-9 |
+| Camouflage is the `ui-kit` toolkit; Sinew is **not** a dependency yet, so keep its seams (`GraftViewModel`, `GraftError`, `core-network`) | ADR-9, ADR-22 |
 
 ## 3. How work is executed
 
@@ -108,7 +108,7 @@ Before reporting a task done: `./gradlew check` passes. Say so with the output; 
 |---|---|
 | Milestone | **G0 Setup + spike**: plan in `plans/G0.md` |
 | Next | G0 Task 2 (build checks) |
-| Open decisions | final name checks (Naming), G0 spike confirming ADR-1 |
+| Open decisions | final name checks (Naming), G0 spike confirming ADR-1, the Sinew seams ADR (before Task 5 resumes) |
 
 <!-- gitnexus:start -->
 # GitNexus — Code Intelligence

@@ -21,7 +21,7 @@ Many people and agents will write Graft's code. One set of rules keeps it readin
 | Errors | `Result<T>` + `GraftError` with `MODULE-LAYER-FUNCTION-TYPE` codes; no exceptions across module boundaries; view models never `try`/`catch` ([Architecture](../01%20-%20Foundations/02%20-%20Architecture.md)) |
 | Coroutines | structured concurrency only; `Dispatchers.IO` for processes; no `GlobalScope`; every long operation cancellable |
 | Git | only through `GitRunner`, with argv lists; never a shell string ([Git Engine](../01%20-%20Foundations/03%20-%20Git%20Engine.md)) |
-| UI | screens use only `ui-kit` components; Fluent tokens from the theme, never hard-coded colors or sizes ([UI Design](../01%20-%20Foundations/06%20-%20UI%20Design.md)) |
+| UI | screens use only `ui-kit` components; Camouflage theme tokens, never hard-coded colors or sizes ([UI Design](../01%20-%20Foundations/06%20-%20UI%20Design.md)) |
 | Strings | every user-facing string in resources (English and Indonesian from G8); no string concatenation for sentences |
 | Comments | explain *why*; public `core-*` APIs get KDoc |
 

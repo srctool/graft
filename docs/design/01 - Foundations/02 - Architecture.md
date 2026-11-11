@@ -11,7 +11,7 @@ status: seedling
 | Concern | Choice |
 |---|---|
 | Language | Kotlin (JVM 21) |
-| UI | Compose Multiplatform Desktop + Material 3 styled as Fluent 2 (same tokens as Camouflage's Fluent skin), always used through Graft's own `ui-kit` module ([UI Design](06%20-%20UI%20Design.md); later maybe Camouflage) |
+| UI | Compose Multiplatform Desktop + Camouflage with the Carbon skin in Atom One colors, always used through Graft's own `ui-kit` module ([UI Design](06%20-%20UI%20Design.md), [ADR-22](../03%20-%20Project/02%20-%20Decisions.md)) |
 | Presentation | AndroidX `lifecycle-viewmodel` (multiplatform) with a small `GraftViewModel<State, Event, Effect>` base (later: Sinew presentation) |
 | Errors | Graft's own `Result` + `GraftError` with codes (later: Sinew `SinewException`) |
 | Network | Ktor client in `core-network`: auth header, ETag cache, retry, redacting logs (later: `sinew-network`) |
@@ -61,7 +61,7 @@ flowchart BT
 Rules:
 - `core-*` never imports Compose.
 - Features never import each other. Shared UI lives in `ui-kit`.
-- Features never import `androidx.compose.material3` directly; only `ui-kit` does (lint rule). This is the seam where the toolkit can change later ([ADR-9](../03%20-%20Project/02%20-%20Decisions.md), [ADR-20](../03%20-%20Project/02%20-%20Decisions.md)).
+- Only `ui-kit` imports Camouflage (`com.srctool.camouflage`), and nothing imports `androidx.compose.material3` (lint rule). This is the seam where the toolkit can change later ([ADR-9](../03%20-%20Project/02%20-%20Decisions.md), [ADR-22](../03%20-%20Project/02%20-%20Decisions.md)).
 - Only `app-desktop` and `app-cli` know concrete providers. `app-cli` never imports Compose; it talks to a running app over a local socket ([CLI](../02%20-%20Features/31%20-%20CLI.md)). CI fails an edge that isn't in this graph.
 
 ## Layers
