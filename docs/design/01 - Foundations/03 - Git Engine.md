@@ -6,7 +6,7 @@ status: seedling
 
 # 03 - Git Engine
 
-Graft drives the user's installed `git` ([ADR-2](../03%20-%20Project/02%20-%20Decisions.md)). The engine is a typed wrapper: each command is a class that builds arguments and parses output into `core-model` types.
+Graft drives the user's installed `git` ([ADR-2](../03%20-%20Project/02%20-%20Decisions.md)). The engine is a typed wrapper: each command is a class that builds arguments and parses output into `:core:models` types. Failures are Graft's `SinewException` subclasses with Sinew's `Result` ([ADR-23](../03%20-%20Project/02%20-%20Decisions.md)).
 
 ## Why the CLI
 

@@ -27,20 +27,22 @@ graft/
 ├─ gradle/
 │  ├─ libs.versions.toml        every dependency and plugin version
 │  └─ wrapper/
-├─ core-model/  core-git/  core-repo/  core-provider/  core-network/  core-data/
-├─ provider-github/
-├─ ui-kit/
-├─ feature-graph/  feature-workingcopy/  feature-shelves/  feature-worktrees/
-├─ feature-submodules/  feature-changerequests/  feature-issues/
-├─ app-desktop/                 Compose Desktop app
-├─ app-cli/                     graft CLI + graft mcp (GraalVM native image)
+├─ app/desktop/  app/cli/      the Compose Desktop app; the graft CLI + graft mcp (GraalVM native image)
+├─ navigation/                 center-pane routes and tabs
+├─ feature/graph/  feature/workingcopy/  feature/shelves/  feature/worktrees/
+├─ feature/submodules/  feature/changerequests/  feature/issues/
+├─ presentation/               app-level state
+├─ domain/                     shared use cases (created when first needed)
+├─ data/git/  data/app/  data/hosting/  data/hosting-github/
+├─ core/ui/  core/git/  core/network/  core/database/  core/security/
+├─ core/preference/  core/models/  core/exception/  core/notification/  core/configuration/
 ├─ fixtures/                    recorded repos and API responses (see Testing Strategy)
 ├─ plans/                       milestone plans and the progress ledger (agent workflow)
 ├─ AGENTS.md  CLAUDE.md         agent instructions
 └─ settings.gradle.kts  build.gradle.kts  gradle.properties
 ```
 
-New feature modules from notes 11–32 (`feature-profiles`, `feature-history`, …) are added in the milestone that builds them, each with its edges added to `module-graph.txt` first.
+Module folders mirror Gradle paths (`core/git` is `:core:git`), per [ADR-24](../03%20-%20Project/02%20-%20Decisions.md). New feature modules from notes 11–32 (`:feature:profiles`, `:feature:history`, …) are added in the milestone that builds them, each with its edges added to `module-graph.txt` first.
 
 ## 3. API
 
@@ -49,7 +51,7 @@ New feature modules from notes 11–32 (`feature-profiles`, `feature-history`, �
 | Tool | Version | Why |
 |---|---|---|
 | JDK | **21** (Temurin recommended) to run Gradle; the Kotlin toolchain is pinned to 21 | Compose Desktop and jpackage need a full JDK |
-| GraalVM | 21 (Community), only for `app-cli` native builds | [ADR-19](../03%20-%20Project/02%20-%20Decisions.md) |
+| GraalVM | 21 (Community), only for `:app:cli` native builds | [ADR-19](../03%20-%20Project/02%20-%20Decisions.md) |
 | Gradle | via the wrapper only (latest stable 9.x) | never a system Gradle |
 | Kotlin, Compose Multiplatform | latest stable pair, pinned in `libs.versions.toml` | |
 | Git | ≥ 2.38 for development and tests | [Git Engine](../01%20-%20Foundations/03%20-%20Git%20Engine.md) |
@@ -67,17 +69,17 @@ New feature modules from notes 11–32 (`feature-profiles`, `feature-history`, �
 
 | Plugin | Applies | Used by |
 |---|---|---|
-| `graft.kotlin-library` | Kotlin JVM, toolchain 21, `explicitApi()` for `core-*`, JUnit 5, Spotless + ktlint, license header check | `core-*`, `provider-*` |
-| `graft.compose-library` | the above + Compose Multiplatform (desktop) + compose compiler | `ui-kit`, `feature-*` |
-| `graft.compose-app` | the above + `compose.desktop.application` (main class, package formats, app icon, version) | `app-desktop` |
-| `graft.native-cli` | `graft.kotlin-library` + `application` + GraalVM native-image plugin (reflection config for parsers and SQLDelight) | `app-cli` |
+| `graft.kotlin-library` | Kotlin JVM, toolchain 21, `explicitApi()` for `:core:*` and `:data:*`, JUnit 5, Spotless + ktlint, the module-graph and import checks | `:core:*` (except `:core:ui`), `:data:*`, `:domain`, `:presentation` |
+| `graft.compose-library` | the above + Compose Multiplatform (desktop) + compose compiler | `:core:ui`, `:feature:*`, `:navigation` |
+| `graft.compose-app` | the above + `compose.desktop.application` (main class, package formats, app icon, version) | `:app:desktop` |
+| `graft.native-cli` | `graft.kotlin-library` + `application` + GraalVM native-image plugin (reflection config for parsers and SQLDelight) | `:app:cli` |
 
 ### 3.4 Build checks (wired into `check`)
 
 | Task | Fails when |
 |---|---|
 | `checkModuleGraph` | a project dependency isn't listed in `config/module-graph.txt` |
-| `checkImports` | a file outside `ui-kit` imports `com.srctool.camouflage`, any file imports `androidx.compose.material3`, or a file in `core-*` / `app-cli` imports `androidx.compose` |
+| `checkImports` | a module without Compose (anything but `:core:ui`, `:feature:*`, `:navigation`, `:app:desktop`) imports `androidx.compose` or `com.srctool.camouflage`, or any file imports `androidx.compose.material3` |
 | `checkLicenseHeaders` | a `.kt` / `.kts` file lacks the SPDX header ([Conventions](02%20-%20Conventions.md)) |
 | `checkDependencyLicenses` | a dependency's license isn't on the GPL-3.0-compatible list ([Open Source](../03%20-%20Project/03%20-%20Open%20Source.md)) |
 
@@ -87,19 +89,19 @@ New feature modules from notes 11–32 (`feature-profiles`, `feature-history`, �
 |---|---|
 | Build | `./gradlew build` |
 | All checks | `./gradlew check` |
-| One module | `./gradlew :core-git:test` |
-| Run the app | `./gradlew :app-desktop:run` |
-| Run the CLI (JVM) | `./gradlew :app-cli:run --args="whoami"` |
-| Native CLI | `./gradlew :app-cli:nativeCompile` |
+| One module | `./gradlew :core:git:test` |
+| Run the app | `./gradlew :app:desktop:run` |
+| Run the CLI (JVM) | `./gradlew :app:cli:run --args="whoami"` |
+| Native CLI | `./gradlew :app:cli:nativeCompile` |
 | Format | `./gradlew spotlessApply` |
-| Packages for this OS | `./gradlew :app-desktop:packageDistributionForCurrentOS` |
+| Packages for this OS | `./gradlew :app:desktop:packageDistributionForCurrentOS` |
 
 ## 4. Build steps
 
 1. Wrapper, `settings.gradle.kts`, the version catalog, and `build-logic` with the four plugins.
 2. All modules from the Architecture graph, empty except a placeholder, wired exactly as drawn. `module-graph.txt` is copied from the diagram.
 3. The four checks, each with a failing and a passing fixture.
-4. `app-desktop` opens an empty "Graft" window; `app-cli` prints its version.
+4. `:app:desktop` opens an empty "Graft" window; `:app:cli` prints its version.
 
 ### Contributor setup
 

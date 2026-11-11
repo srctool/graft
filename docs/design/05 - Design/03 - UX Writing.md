@@ -30,7 +30,7 @@ How Graft talks. Terms come from the [Glossary](../01%20-%20Foundations/09%20-%2
 Pattern: **what happened**, then **why** if known, then **what to do**, then the **code**.
 
 > Push was rejected because `origin/main` has commits you don't have.
-> Pull first, then push again. · `GIT-E-PUSH-REJ`
+> Pull first, then push again. · `GIT-R-PUSH-REJ`
 > **Pull and push** · **Show output**
 
 - Git's own output is one click away (**Show output**), never the main message.

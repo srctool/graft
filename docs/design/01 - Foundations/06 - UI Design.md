@@ -13,7 +13,7 @@ status: seedling
 
 ## Toolkit: Camouflage with the Carbon skin
 
-Graft's `ui-kit` is built on Camouflage with its Carbon skin ([ADR-22](../03%20-%20Project/02%20-%20Decisions.md)). Camouflage draws on Compose foundation; Material 3 isn't a dependency. Every `Graft*` component wraps a Camouflage component, and `ui-kit` sets up the Camouflage provider with the skin and Graft's theme.
+Graft's UI is built on Camouflage with its Carbon skin ([ADR-22](../03%20-%20Project/02%20-%20Decisions.md)). Camouflage draws on Compose foundation; Material 3 isn't a dependency. Screens use Camouflage components directly. `:core:ui` holds Graft's theme and the components only Graft needs, and `:app:desktop` sets up the Camouflage provider ([ADR-24](../03%20-%20Project/02%20-%20Decisions.md)).
 
 **Why Carbon.**
 - It's made for enterprise, data-heavy desktop tools, which is what a git client is: tables, trees, diffs and the graph.
@@ -28,7 +28,7 @@ JetBrains' Jewel library was considered and not chosen. Its API still changes be
 
 | Camouflage Carbon default | Graft |
 |---|---|
-| Controls 48 px tall | **24 px** (toolbars, panels, inline) and **32 px** (dialogs, forms), Carbon's own `xs` and `sm` sizes. Camouflage builds only 48 px today, so `ui-kit` sets the sizes through component themes until the Carbon density option ships ([camouflage#70](https://github.com/srctool/camouflage/issues/70)) |
+| Controls 48 px tall | **24 px** (toolbars, panels, inline) and **32 px** (dialogs, forms), Carbon's own `xs` and `sm` sizes. Camouflage builds only 48 px today, so `:core:ui` sets the sizes through component themes until the Carbon density option ships ([camouflage#70](https://github.com/srctool/camouflage/issues/70)) |
 | Button styles | Carbon's: primary (accent fill), secondary, tertiary (outline), ghost, danger |
 | Text fields 40 px | 24 / 32 px on the field fill with a **bottom border only**; the 2 px inset border on focus and in error; label above |
 | Tree and list rows 32–48 px | **24 px** rows in panels, trees and lists (28 px in comfortable density); 32 px menu items |
@@ -60,7 +60,7 @@ The same palette gives the graph's lane colors (see Graph style) and the diff's 
 
 ### What Graft builds on top of Camouflage
 
-Camouflage covers trees (`CamoTree`), tables (`CamoDataTable`), menus, popovers, side panels and the rest of its inventory. Graft adds: split panes with draggable dividers, tool windows with edge stripes, speed search in lists, trees and popups, compact closable editor tabs, the command palette (Search Everywhere, Find Action), menu submenus, resizable and hideable table columns, desktop scrollbars, and the git widgets (graph, diff, merge). All but the git widgets are proposed to Camouflage ([camouflage#71–#78](https://github.com/srctool/camouflage/issues)); until one ships, Graft builds it in `ui-kit` on Camouflage tokens, shaped like the proposal.
+Camouflage covers trees (`CamoTree`), tables (`CamoDataTable`), menus, popovers, side panels and the rest of its inventory. Graft adds: split panes with draggable dividers, tool windows with edge stripes, speed search in lists, trees and popups, compact closable editor tabs, the command palette (Search Everywhere, Find Action), menu submenus, resizable and hideable table columns, desktop scrollbars, and the git widgets (graph, diff, merge). All but the git widgets are proposed to Camouflage ([camouflage#71–#78](https://github.com/srctool/camouflage/issues)); until one ships, Graft builds it in `:core:ui` on Camouflage tokens, shaped like the proposal.
 
 ### Title bar
 
@@ -147,15 +147,12 @@ Camouflage covers trees (`CamoTree`), tables (`CamoDataTable`), menus, popovers,
 - **Ref labels** like JetBrains' log tags: Carbon tags (pills, the one rounded element) with a branch, tag or remote icon, plus the PR and CI status chips.
 - **Rows:** 26 px tall, 22 px in compact mode.
 
-## `ui-kit` components
+## `:core:ui` components
 
-Every screen is built only from these (lint-enforced). Most wrap a Camouflage component drawn by the Carbon skin; split panes, tool windows, speed search and the git widgets are Graft's own until Camouflage has them. The toolkit underneath can change later ([ADR-9](../03%20-%20Project/02%20-%20Decisions.md), [ADR-22](../03%20-%20Project/02%20-%20Decisions.md)):
+Screens use Camouflage's components directly (`CamoButton`, `CamoTree`, `CamoDataTable`, `CamoTabs`, `CamoDialog`, …), drawn by the Carbon skin with Graft's theme ([ADR-24](../03%20-%20Project/02%20-%20Decisions.md)). `:core:ui` holds only what Graft adds:
 
 | Group | Components |
 |---|---|
-| Actions | `GraftButton` (default, primary, outlined), `GraftIconButton`, `GraftSplitButton` (Pull ▾), `GraftToolbar` |
-| Inputs | `GraftTextField`, `GraftTextArea` (commit message), `GraftCheckbox`, `GraftDropdown`, `GraftSearchField` |
-| Lists | `GraftList`, `GraftTree` (both with speed search and virtualization), `GraftTable` (resizable columns) |
-| Containers | `GraftToolWindow`, `GraftTabs`, `GraftSplitPane`, `GraftPopup`, `GraftDialog`, `GraftBanner` |
-| Feedback | `GraftNotification`, `GraftProgress`, `GraftTooltip`, `GraftBadge` / `GraftChip` |
+| Until Camouflage has them ([camouflage#71–#78](https://github.com/srctool/camouflage/issues)) | `SplitPane`, `ToolWindow` with edge stripes, speed search for lists, trees and popups, document tabs, the command palette (Search Everywhere, Find Action), menu submenus, desktop scrollbars, resizable table columns |
 | Git-specific | `GraphCanvas`, `DiffViewer`, `MergeViewer`, `RefChip`, `AvatarStack`, `StatusDot` |
+| Setup | the Graft theme (light, dark, high contrast), the density, fonts and icons, the `Localizer` |

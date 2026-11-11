@@ -67,7 +67,7 @@ No open-source client combines a full graph, hosting integration (PRs, issues), 
 
 ```mermaid
 flowchart TB
-    UI["Compose Desktop UI (Camouflage with the Carbon skin, behind ui-kit)"] --> VM["view models (Event → Action → State + Effect)"]
+    UI["Compose Desktop UI (Camouflage with the Carbon skin, themed in core:ui)"] --> VM["view models (Event → Action → State + Effect)"]
     VM --> REPO["repository services: graph, refs, status, shelves, worktrees"]
     VM --> HOST["hosting services: PRs, issues, checks"]
     REPO --> ENG["Git engine: runs the git CLI, parses -z output"]
@@ -81,7 +81,7 @@ flowchart TB
 
 - **The `git` executable is the engine.** Graft never reimplements Git. It runs `git` with machine-readable output, so hooks, signing, credential helpers, LFS, worktrees and submodules behave exactly as on the command line ([Git Engine](01%20-%20Foundations/03%20-%20Git%20Engine.md)).
 - **Providers are plugins behind one contract.** GitHub is the first. A pull request and a merge request are both a `ChangeRequest` ([Provider Model](01%20-%20Foundations/04%20-%20Provider%20Model.md)).
-- **Kotlin + Compose Multiplatform Desktop** ([ADR-1](03%20-%20Project/02%20-%20Decisions.md)), built on Camouflage with its Carbon skin in Atom One colors, Ktor and AndroidX ViewModel first, with GitKraken's layout and JetBrains' behavior ([UI Design](01%20-%20Foundations/06%20-%20UI%20Design.md)). Camouflage is adopted for `ui-kit` from the start ([ADR-22](03%20-%20Project/02%20-%20Decisions.md)); Sinew is adopted later through seams that exist from day one ([ADR-9](03%20-%20Project/02%20-%20Decisions.md)).
+- **Kotlin + Compose Multiplatform Desktop** ([ADR-1](03%20-%20Project/02%20-%20Decisions.md)), built on Camouflage with its Carbon skin in Atom One colors, Sinew for errors, view models and the network client, with GitKraken's layout and JetBrains' behavior ([UI Design](01%20-%20Foundations/06%20-%20UI%20Design.md)). Camouflage is adopted for `ui-kit` from the start ([ADR-22](03%20-%20Project/02%20-%20Decisions.md)); Sinew is adopted later through seams that exist from day one ([ADR-9](03%20-%20Project/02%20-%20Decisions.md)).
 
 ## Doc map
 
@@ -91,7 +91,7 @@ flowchart TB
 - [Git Engine](01%20-%20Foundations/03%20-%20Git%20Engine.md): how Graft runs and parses `git`.
 - [Provider Model](01%20-%20Foundations/04%20-%20Provider%20Model.md): the hosting abstraction, auth, rate limits.
 - [Accessibility](01%20-%20Foundations/05%20-%20Accessibility.md): screen readers on the graph, keyboard, contrast.
-- [UI Design](01%20-%20Foundations/06%20-%20UI%20Design.md): GitKraken layout, JetBrains behavior, Carbon look in Atom One colors on Camouflage, the `ui-kit` components.
+- [UI Design](01%20-%20Foundations/06%20-%20UI%20Design.md): GitKraken layout, JetBrains behavior, Carbon look in Atom One colors on Camouflage, the shared components.
 - [Threat Model](01%20-%20Foundations/07%20-%20Threat%20Model.md): assets, trust boundaries, STRIDE threats and mitigations.
 - [Settings Reference](01%20-%20Foundations/08%20-%20Settings%20Reference.md): every setting, its default and scope.
 - [Glossary](01%20-%20Foundations/09%20-%20Glossary.md): one meaning per term, in code, UI and docs.
@@ -167,7 +167,8 @@ flowchart TB
 
 - [x] Name: Graft (2026-10-18). Availability checks pending ([Naming](03%20-%20Project/04%20-%20Naming.md)).
 - [x] Stack: Kotlin + Compose Desktop (2026-10-18), without Sinew and Camouflage for now ([ADR-1, ADR-9](03%20-%20Project/02%20-%20Decisions.md)).
-- [x] Look: Camouflage's Carbon skin in Atom One colors, adopted for `ui-kit` now (2026-11-11, [ADR-22](03%20-%20Project/02%20-%20Decisions.md)).
-- [ ] Sinew's seams (`GraftError`, `GraftViewModel`, `core-network`): a separate ADR, before G0 Task 5 resumes.
+- [x] Look: Camouflage's Carbon skin in Atom One colors, adopted now (2026-11-11, [ADR-22](03%20-%20Project/02%20-%20Decisions.md)).
+- [x] Sinew for errors, view models and the network client (2026-11-11, [ADR-23](03%20-%20Project/02%20-%20Decisions.md)).
+- [x] Modules from the author's architecture board, each milestone built bottom to top (2026-11-11, [ADR-24](03%20-%20Project/02%20-%20Decisions.md)).
 - [x] License: GPL-3.0-or-later (2026-10-18, [Open Source](03%20-%20Project/03%20-%20Open%20Source.md), [ADR-10](03%20-%20Project/02%20-%20Decisions.md)).
 - [ ] G0 graph spike meets the performance target (the one remaining check on ADR-1).

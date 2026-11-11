@@ -8,6 +8,8 @@ status: seedling
 
 Order: read-only first (safe to dogfood daily), then local writes, then the network, then hosting. Each milestone is usable on its own.
 
+Inside each milestone, tasks are built bottom to top: `:core` → `:data` → use cases → `:presentation` → feature UI → `:navigation` / `:app`. The author reviews the data layer before its UI is built ([ADR-24](02%20-%20Decisions.md)).
+
 | Milestone | Content | Notes | Done when |
 |---|---|---|---|
 | **G0 Setup + spike** | repo, Gradle modules, CI on 3 OSes, `GitRunner`, a throwaway graph spike on a 500k-commit repo | [Architecture](../01%20-%20Foundations/02%20-%20Architecture.md), [Git Engine](../01%20-%20Foundations/03%20-%20Git%20Engine.md), [Project Setup](../04%20-%20Development/01%20-%20Project%20Setup.md), [CI](../04%20-%20Development/04%20-%20CI.md) | spike meets the graph performance target, confirming ADR-1 |

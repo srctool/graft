@@ -50,7 +50,7 @@ ADRs are never edited after acceptance; a later ADR supersedes. Status: **Propos
 - **Context:** an open-source app can't keep a client secret.
 - **Decision:** device flow (client id only) by default; PAT and `gh auth token` as alternatives.
 
-### ADR-9 Build without Sinew and Camouflage first; adopt them later behind seams
+### ADR-9 Build without Sinew and Camouflage first; adopt them later behind seams (seams adopted by ADR-22 and ADR-23)
 - **Context:** Sinew and Camouflage are still being designed. Making Graft wait for them, or build on moving APIs, would block Graft and push Graft's needs into their design too early.
 - **Decision:** Graft 1.0 uses plain libraries: Compose Material 3, AndroidX ViewModel, Ktor, its own `Result`/`GraftError`. Four seams make the later switch mechanical:
 
@@ -161,3 +161,51 @@ ADRs are never edited after acceptance; a later ADR supersedes. Status: **Propos
   - The import rule changes: only `ui-kit` imports `com.srctool.camouflage`, and nothing imports `androidx.compose.material3`.
   - Graft depends on a 0.x library whose API can change; the version is pinned, and Graft's needs feed back into Camouflage as its first real desktop app.
   - The light theme isn't exactly One Light where text needs AA. Fluent-only items are dropped: Mica, Acrylic, the double-stroke focus, Fluent shadows and the platform-font rule.
+
+### ADR-23 Sinew for errors, view models and the network client (Accepted 2026-11-11; completes ADR-9's seams)
+- **Context:**
+  - ADR-9 kept seams so Graft could switch to Sinew later; ADR-22 switched the UI to Camouflage. Sinew 1.0 is published (Apache-2.0) with JVM builds on Graft's Kotlin, coroutines and Compose versions.
+  - G0 Task 5 was writing Graft's own `GraftError` and `Result`; switching before that code is committed costs nothing.
+- **Decision:**
+  - **Errors:** every failure is a `SinewException` subclass and every fallible call returns Sinew's `Result` (`Success` / `Failure`). `GraftError` and Graft's own `Result` are dropped. Graft's exceptions live in `:core:exception` on `sinew-exception` (pure Kotlin, no Compose, native-image friendly).
+  - **Layers in codes:** sources and repositories `R`, use cases `UC`, view models `VM`, Sinew's retry and polling helpers `UT`, app services `SV` once Sinew's libraries have it ([sinew-kotlin#96](https://github.com/srctool/sinew-kotlin/issues/96), [sinew-dart#91](https://github.com/srctool/sinew-dart/issues/91)); until then app-service errors use `UC`. Example: `GIT-R-PUSH-REJ`.
+  - **Function codes** are 2–4 letters, as in Sinew (`PUSH`, `CLON`, `SHLV`). Module codes stay (`GIT`, `REPO`, `PRV`, `NET`, `DATA`, `UI`, `CLI`, `SSH`, `PRF`).
+  - **Types:** HTTP failures use Sinew's built-in types through `processApiCall` (`NIC`, `RTO`, `UNA`, `FOR`, `NTF`, `CFL`, `RTL`, `SRV`, …). Git failures are Graft's own subclasses that keep argv, exit code and redacted stderr, with Graft's types: `REJ`, `AUTH`, `CONF`, `LOCK`, `NF`, `NET`, `TO`, `VER`, `EXIT`. Unreadable git output is Sinew's `ParseException` (`DF`), anything unmatched `UnexpectedException` (`GEN`); both go to the `CrashReporter`. Cancellation is rethrown, never a failure (`CANC` is dropped).
+  - **Registry:** `:core:exception` keeps the registry of Graft's modules, functions and types, with the duplicate test.
+  - **Messages:** every Graft exception carries an `ErrorMessage.Local` key with an English fallback. The UI renders it with a `Localizer`; `sinew-l10n` supplies English and Indonesian for Sinew's built-in keys from G1, used only from `:core:ui`.
+  - **Crash reports:** G7's opt-in reporter implements Sinew's `CrashReporter` (no-op until then), previewed and redacted ([Privacy](07%20-%20Privacy.md)).
+  - **View models:** Sinew's ViewModel base from `sinew-viewmodel` (on AndroidX ViewModel); Event → Action → State + Effect.
+  - **Network:** `:core:network` configures `sinew-network`: `SinewHttp.client` with the **Ktor Java engine** passed explicitly (OkHttp excluded), Sinew's auth layer with a token source on the keychain, its redacting log, retry and `processApiCall`. Graft adds the ETag cache and the rate-limit status.
+  - **Paging:** `sinew-paging` and `sinew-camouflage` for G6's PR, issue and notification lists, added when those tasks need them.
+  - **Not used:** `sinew-storage` and `sinew-security` (secrets only in the OS keychain, ADR-7), `sinew-devtools` (a Material-based mobile overlay).
+  - **Timing:** errors now (G0 Task 5, before its commit), view models in G1, the network client in G6, each in its own commit.
+- **Consequences:**
+  - The error invariant reads: every failure is a `SinewException` with a `MODULE-LAYER-FUNCTION-TYPE` code; git failures keep stderr and exit code.
+  - A Sinew API change touches Graft; the version is pinned, and Graft's needs feed back into Sinew as its first desktop app.
+
+### ADR-24 Module structure from the author's architecture board; build each milestone bottom to top (Accepted 2026-11-11; replaces the module graph in [Architecture](../01%20-%20Foundations/02%20-%20Architecture.md), amends ADR-4's and ADR-19's module names)
+- **Context:**
+  - The first module graph (`core-*`, `provider-github`, `ui-kit`, `feature-*`) mixed layers: `core-repo` held repositories, services and the session; `core-model` held errors that Sinew now provides; `ui-kit` wrapped a toolkit that Camouflage now is.
+  - The author's architecture board (the source of Sinew's App Architecture) defines the shape Graft follows: *Modular App with Navigation*, with `:core` split into small configured-instance modules.
+- **Decision:**
+  - **Modules:**
+
+    | Module | Holds | Compose |
+    |---|---|---|
+    | `:app:desktop` | startup, hand-wired DI, the root Camouflage provider, the window shell, and the **app services** (session and watcher, background fetch, auto-snapshot, inbox poller) | yes |
+    | `:app:cli` | the `graft` CLI and `graft mcp` (native image) | no |
+    | `:navigation` | routes for the center pane and tabs; features never import each other's screens | yes |
+    | `:feature:*` | one area each: screens, their view models, and the area's own use cases | yes |
+    | `:presentation` | **app-level state**, split by case (`WindowState`, `OperationsState`, `InboxState`, `ProviderState`) | no |
+    | `:domain` | use cases shared by two or more features; created only when the first one is shared | no |
+    | `:data:git`, `:data:app`, `:data:hosting`, `:data:hosting-github` | repositories with their sources: git-backed; app data (profiles, settings, workspaces); provider-neutral interfaces and models with the contract test kit; the GitHub implementation, the only module that says "GitHub" | no |
+    | `:core:ui` | the theme (Carbon skin, Atom One colors, IBM Plex Sans, 24/32 px density), Graft-only shared components, stopgap components until Camouflage ships them, the `Localizer` | yes |
+    | `:core:git`, `:core:network`, `:core:database`, `:core:security`, `:core:preference`, `:core:models`, `:core:exception`, `:core:notification`, `:core:configuration` | configured instances: the git runner, the HTTP client, the SQLite cache, the keychain, settings files, shared domain models, Graft's exceptions, desktop notifications, app folders | no |
+  - **Dependencies point down only:** `app` → `navigation` → `feature` → `domain` / `presentation` / `data` → `core`. Features never import each other; `:data:*` never imports `:feature:*`, `:presentation` or `:core:ui`. The allowed edges are listed in `config/module-graph.txt`.
+  - **Compose** only in `:core:ui`, `:feature:*`, `:navigation` and `:app:desktop`; `:app:cli` never depends on them (ADR-19's "shares the `core-*` modules" now reads: `:app:cli` shares `:data:*` and the Compose-free `:core:*`).
+  - **Providers:** ADR-4's `provider-github` is `:data:hosting-github`; `core-provider` is `:data:hosting`.
+  - **Not created** from the board's `:core` list: `:analytics` (Graft collects nothing, [Privacy](07%20-%20Privacy.md)); `:static`, `:extension`, `:utils` until something needs them.
+  - **Build order:** within each milestone, tasks run bottom to top: `:core` → `:data` → use cases → `:presentation` → `:feature` UI → `:navigation` / `:app`. The author reviews each layer before the next is built on it, and the practices found in review go into the notes first. Every milestone still ends usable.
+- **Consequences:**
+  - G0's skeleton (Task 1) and the module-graph check are reworked to these modules before Task 5 resumes.
+  - Plans list tasks per layer; a milestone plan shows the review point after the data layer.

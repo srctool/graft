@@ -18,8 +18,9 @@ Agents and contributors shouldn't pick libraries ad hoc. This note fixes the cho
 |---|---|---|---|---|
 | Language, coroutines | Kotlin stdlib, `kotlinx-coroutines` | Apache-2.0 | yes | |
 | JSON | `kotlinx-serialization-json` | Apache-2.0 | yes | no reflection, so native-image friendly |
-| UI | Compose Multiplatform (desktop) + Camouflage (`camouflage-bom`, `camouflage-core`, `camouflage-skin-carbon`) | Apache-2.0 | n/a | only through `ui-kit` ([ADR-22](../03%20-%20Project/02%20-%20Decisions.md)); version pinned; Graft's Compose and Kotlin at or above Camouflage's |
-| HTTP | Ktor client with the **Java** engine (JDK `HttpClient`) | Apache-2.0 | yes | HTTP/2, no extra native code; ETag cache in `core-network` |
+| UI | Compose Multiplatform (desktop) + Camouflage (`camouflage-bom`, `camouflage-core`, `camouflage-skin-carbon`) | Apache-2.0 | n/a | only in the Compose modules ([ADR-22](../03%20-%20Project/02%20-%20Decisions.md)); version pinned; Graft's Compose and Kotlin at or above Camouflage's |
+| HTTP | Ktor client with the **Java** engine (JDK `HttpClient`), through `sinew-network`; OkHttp excluded | Apache-2.0 | yes | HTTP/2, no extra native code; ETag cache in `:core:network` ([ADR-23](../03%20-%20Project/02%20-%20Decisions.md)) |
+| Errors, view models, network client, paging | Sinew 1.0: `sinew-models`, `sinew-exception` (`:core:*`, `:data:*`), `sinew-network` (`:core:network`), `sinew-presentation` + `sinew-viewmodel` and `sinew-l10n` (Compose modules), `sinew-paging` + `sinew-camouflage` (G6) | Apache-2.0 | yes for models, exception, network, paging | [ADR-23](../03%20-%20Project/02%20-%20Decisions.md); version pinned |
 | GitHub GraphQL | hand-written query strings + `kotlinx-serialization` DTOs | n/a | yes | Apollo Kotlin considered and not chosen: code generation (Conventions: no codegen except SQLDelight) |
 | Database | SQLDelight + `sqlite-jdbc` (xerial) | Apache-2.0 | yes (ships native-image metadata) | cache and app state |
 | OS keychain | `java-keyring` (macOS Keychain, Windows Credential Manager, Linux Secret Service) | BSD-3-Clause; Linux backend via `secret-service` + `dbus-java` (MIT), **verify** | needs JNA reachability config | fallback: own JNA bindings behind `SecretStore` if it falls short |
@@ -35,7 +36,7 @@ Agents and contributors shouldn't pick libraries ad hoc. This note fixes the cho
 | MCP server | the official Kotlin MCP SDK (`io.modelcontextprotocol:kotlin-sdk`) | permissive, **verify** | **verify** (Ktor/serialization based) | stdio transport only |
 | Updates | Sparkle (macOS), WinSparkle (Windows), or Conveyor's updater | MIT / MIT / Conveyor terms | n/a | decided in G8 ([Release and Updates](05%20-%20Release%20and%20Updates.md)) |
 
-**Not used:** JGit and libgit2 ([ADR-2](../03%20-%20Project/02%20-%20Decisions.md)); Jewel ([ADR-20](../03%20-%20Project/02%20-%20Decisions.md)); a DI framework (hand wiring, [Architecture](../01%20-%20Foundations/02%20-%20Architecture.md)); Material 3 ([ADR-22](../03%20-%20Project/02%20-%20Decisions.md)); Sinew, until [ADR-9](../03%20-%20Project/02%20-%20Decisions.md)'s adoption point.
+**Not used:** JGit and libgit2 ([ADR-2](../03%20-%20Project/02%20-%20Decisions.md)); Jewel ([ADR-20](../03%20-%20Project/02%20-%20Decisions.md)); a DI framework (hand wiring, [Architecture](../01%20-%20Foundations/02%20-%20Architecture.md)); Material 3 ([ADR-22](../03%20-%20Project/02%20-%20Decisions.md)); `sinew-storage`, `sinew-security` (secrets only in the OS keychain) and `sinew-devtools` ([ADR-23](../03%20-%20Project/02%20-%20Decisions.md)).
 
 ## 3. Assets
 
