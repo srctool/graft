@@ -9,6 +9,8 @@ sinew = "1.1.0"
 ktlint = "1.8.0"
 junit = "5.14.4"
 coroutines = "1.11.0"
+# Sinew 1.1 already brings kotlinx-serialization 1.11.0; one version on the classpath.
+serialization = "1.11.0"
 
 [libraries]
 compose-runtime = { module = "org.jetbrains.compose.runtime:runtime", version.ref = "compose" }
@@ -25,6 +27,7 @@ sinew-exception = { module = "com.srctool.sinew:sinew-exception" }
 sinew-viewmodel = { module = "com.srctool.sinew:sinew-viewmodel" }
 kotlinx-coroutines-core = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-core", version.ref = "coroutines" }
 kotlinx-coroutines-swing = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-swing", version.ref = "coroutines" }
+kotlinx-serialization-json = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json", version.ref = "serialization" }
 kotlinx-coroutines-test = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-test", version.ref = "coroutines" }
 junit-jupiter-api = { module = "org.junit.jupiter:junit-jupiter-api" }
 junit-bom = { module = "org.junit:junit-bom", version.ref = "junit" }
@@ -32,6 +35,7 @@ junit-platform-launcher = { module = "org.junit.platform:junit-platform-launcher
 
 # Gradle plugins, as libraries for the build-logic convention plugins
 kotlin-gradle-plugin = { module = "org.jetbrains.kotlin:kotlin-gradle-plugin", version.ref = "kotlin" }
+kotlin-serialization-gradle-plugin = { module = "org.jetbrains.kotlin:kotlin-serialization", version.ref = "kotlin" }
 compose-compiler-gradle-plugin = { module = "org.jetbrains.kotlin:compose-compiler-gradle-plugin", version.ref = "kotlin" }
 compose-gradle-plugin = { module = "org.jetbrains.compose:compose-gradle-plugin", version.ref = "compose" }
 spotless-gradle-plugin = { module = "com.diffplug.spotless:spotless-plugin-gradle", version.ref = "spotless" }

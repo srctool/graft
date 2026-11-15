@@ -3,4 +3,14 @@
 
 plugins {
     id("graft.kotlin-library")
+    id("org.jetbrains.kotlin.plugin.serialization")
+}
+
+dependencies {
+    api(platform(libs.sinew.bom))
+    api(libs.sinew.models)
+    api(libs.kotlinx.coroutines.core)
+    api(libs.kotlinx.serialization.json)
+    implementation(projects.module.core.exception)
+    testImplementation(libs.kotlinx.coroutines.test)
 }
