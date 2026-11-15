@@ -24,4 +24,10 @@ public interface GitRunner {
      * stops early. A failure is thrown as the same exceptions [run] returns.
      */
     public fun <T> stream(cmd: StreamingGitCommand<T>, cwd: Path): Flow<T>
+
+    /**
+     * A long-lived object reader for the repository at [cwd] (`git cat-file --batch`), started on its first read.
+     * The caller closes it.
+     */
+    public fun objectReader(cwd: Path): GitObjectReader
 }

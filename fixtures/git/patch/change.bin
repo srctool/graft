@@ -1,0 +1,89 @@
+diff --git a/a.txt b/a.txt
+index c4352f8..40321ff 100644
+--- a/a.txt
++++ b/a.txt
+@@ -1,5 +1,5 @@
+ line 1
+-line 2
++LINE 2
+ line 3
+ line 4
+ line 5
+@@ -15,6 +15,6 @@ line 14
+ line 15
+ line 16
+ line 17
+-line 18
++LINE 18
+ line 19
+ line 20
+diff --git a/added.txt b/added.txt
+new file mode 100644
+index 0000000..07f33c4
+--- /dev/null
++++ b/added.txt
+@@ -0,0 +1,2 @@
++new
++file
+diff --git a/big.txt b/big.txt
+index 8d82187..ff87072 100644
+--- a/big.txt
++++ b/big.txt
+@@ -4997,7 +4997,7 @@ row 4996
+ row 4997
+ row 4998
+ row 4999
+-row 5000
++ROW 5000
+ row 5001
+ row 5002
+ row 5003
+@@ -8997,7 +8997,7 @@ row 8996
+ row 8997
+ row 8998
+ row 8999
+-row 9000
++ROW 9000
+ row 9001
+ row 9002
+ row 9003
+diff --git a/gone.txt b/gone.txt
+deleted file mode 100644
+index b023018..0000000
+--- a/gone.txt
++++ /dev/null
+@@ -1 +0,0 @@
+-bye
+diff --git a/lib/Old.kt b/lib/New.kt
+similarity index 95%
+rename from lib/Old.kt
+rename to lib/New.kt
+index 3f122d3..e71cebe 100644
+--- a/lib/Old.kt
++++ b/lib/New.kt
+@@ -18,3 +18,4 @@ val x = 17
+ val x = 18
+ val x = 19
+ val x = 20
++val y = 1
+diff --git a/noeol.txt b/noeol.txt
+index a6a9baf..e32b0df 100644
+--- a/noeol.txt
++++ b/noeol.txt
+@@ -1 +1 @@
+-end
++end
+\ No newline at end of file
+diff --git a/pic.bin b/pic.bin
+index 579d478..7ec407c 100644
+Binary files a/pic.bin and b/pic.bin differ
+diff --git a/run.sh b/run.sh
+old mode 100644
+new mode 100755
+diff --git a/sub b/sub
+index 1111111..2222222 160000
+--- a/sub
++++ b/sub
+@@ -1 +1 @@
+-Subproject commit 1111111111111111111111111111111111111111
++Subproject commit 2222222222222222222222222222222222222222
