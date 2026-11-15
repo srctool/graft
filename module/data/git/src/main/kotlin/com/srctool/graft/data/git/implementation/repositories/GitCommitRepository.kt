@@ -8,24 +8,26 @@ import com.srctool.graft.data.git.api.models.CommitDetails
 import com.srctool.graft.data.git.api.models.CommitLog
 import com.srctool.graft.data.git.api.models.DiffTarget
 import com.srctool.graft.data.git.api.models.LogQuery
+import com.srctool.graft.data.git.api.models.LogScope
 import com.srctool.graft.data.git.api.models.ObjectId
 import com.srctool.graft.data.git.api.repositories.CommitRepository
 import com.srctool.graft.data.git.implementation.source.local.ChangedFilesCommand
 import com.srctool.graft.data.git.implementation.source.local.DetailsCommand
 import com.srctool.graft.data.git.implementation.source.local.LogCommand
 import com.srctool.graft.data.git.implementation.source.local.logRevisions
+import com.srctool.graft.data.git.implementation.source.local.revisions
 import com.srctool.sinew.models.Result
 import com.srctool.sinew.models.map
 import java.nio.file.Path
 
 internal class GitCommitRepository(private val runner: GitRunner) : CommitRepository {
-    override fun log(repository: Path): CommitLog {
-        val command = LogCommand()
+    override fun log(repository: Path, scope: LogScope): CommitLog {
+        val command = LogCommand(scope.revisions())
         return CommitLog(rows = runner.stream(command, repository), people = command.people)
     }
 
-    override fun search(repository: Path, query: LogQuery): CommitLog {
-        val command = LogCommand(query.logRevisions())
+    override fun search(repository: Path, query: LogQuery, scope: LogScope): CommitLog {
+        val command = LogCommand(query.logRevisions(scope))
         return CommitLog(rows = runner.stream(command, repository), people = command.people)
     }
 

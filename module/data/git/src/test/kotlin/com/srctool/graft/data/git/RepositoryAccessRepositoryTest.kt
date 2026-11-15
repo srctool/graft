@@ -119,6 +119,8 @@ class RepositoryAccessRepositoryTest {
             val error = assertIs<GitUnsafeOwnerException>(access.locate(repo).errorOrNull)
             assertEquals("GIT-R-OPEN-OWN", error.code)
             assertTrue(error.repositoryPath.isNotEmpty(), error.stderr)
+            assertEquals(error.repositoryPath, access.untrustedFolder(error))
+            assertEquals(null, access.untrustedFolder(IllegalStateException("not git")))
 
             access.trust(error.repositoryPath).getOrThrow()
             assertEquals(repo.real(), access.locate(repo).getOrThrow().workTree)

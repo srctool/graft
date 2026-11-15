@@ -7,6 +7,7 @@ import com.srctool.graft.core.git.GitCommand
 import com.srctool.graft.core.git.GitParseException
 import com.srctool.graft.data.git.api.models.AheadBehind
 import com.srctool.graft.data.git.api.models.LogQuery
+import com.srctool.graft.data.git.api.models.LogScope
 import com.srctool.graft.data.git.api.models.MergePreview
 import com.srctool.graft.data.git.api.models.ObjectId
 
@@ -14,7 +15,7 @@ import com.srctool.graft.data.git.api.models.ObjectId
  * The search options before the graph's revisions, and the path after `--`. Text is matched literally (`-F`) and the
  * path as a literal pathspec, so characters like `*` or `[` in what the user typed are never patterns.
  */
-internal fun LogQuery.logRevisions(): List<String> = buildList {
+internal fun LogQuery.logRevisions(scope: LogScope = LogScope.All()): List<String> = buildList {
     message?.let { add("--grep=$it") }
     author?.let { add("--author=$it") }
     if (message != null || author != null) {
@@ -25,7 +26,7 @@ internal fun LogQuery.logRevisions(): List<String> = buildList {
     if (ignoreCase) add("--regexp-ignore-case")
     content?.let { add(if (contentIsRegex) "-G$it" else "-S$it") }
     if (firstParent) add("--first-parent")
-    addAll(LogCommand.DEFAULT_REVISIONS)
+    addAll(scope.revisions())
     add("--")
     path?.let { add(":(literal)$it") }
 }

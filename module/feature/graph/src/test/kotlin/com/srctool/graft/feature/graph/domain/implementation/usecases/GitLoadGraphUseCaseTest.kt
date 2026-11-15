@@ -7,6 +7,7 @@ import com.srctool.graft.data.git.api.models.CommitDetails
 import com.srctool.graft.data.git.api.models.CommitLog
 import com.srctool.graft.data.git.api.models.CommitRow
 import com.srctool.graft.data.git.api.models.LogQuery
+import com.srctool.graft.data.git.api.models.LogScope
 import com.srctool.graft.data.git.api.models.ObjectId
 import com.srctool.graft.data.git.api.models.People
 import com.srctool.graft.data.git.api.repositories.CommitRepository
@@ -97,10 +98,11 @@ class GitLoadGraphUseCaseTest {
 
 /** A repository whose log is [rows], for any path. */
 internal class FakeCommits(private val rows: Flow<CommitRow>) : CommitRepository {
-    override fun log(repository: Path): CommitLog = CommitLog(rows, People())
+    override fun log(repository: Path, scope: LogScope): CommitLog = CommitLog(rows, People())
 
     override suspend fun details(repository: Path, id: ObjectId): Result<CommitDetails> =
         error("not used by these tests")
 
-    override fun search(repository: Path, query: LogQuery): CommitLog = error("not used by these tests")
+    override fun search(repository: Path, query: LogQuery, scope: LogScope): CommitLog =
+        error("not used by these tests")
 }

@@ -7,6 +7,7 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.ViewModelStore
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
+import com.srctool.graft.feature.graph.domain.api.models.GraphFilter
 import com.srctool.graft.feature.graph.domain.api.models.GraphLoad
 import com.srctool.graft.feature.graph.domain.api.models.GraphRow
 import com.srctool.graft.feature.graph.domain.api.models.LaidOutGraph
@@ -116,7 +117,7 @@ class GraphSpikeViewModelTest {
 internal class FakeLoad(private val steps: List<GraphLoad>) : LoadGraphUseCase {
     val calls = ArrayList<Pair<Path, Int>>()
 
-    override fun load(repository: Path, limit: Int): Flow<GraphLoad> {
+    override fun load(repository: Path, filter: GraphFilter, limit: Int): Flow<GraphLoad> {
         calls += repository to limit
         return flowOf(*steps.toTypedArray())
     }

@@ -38,4 +38,11 @@ public interface RepositoryAccessRepository {
      * Writes `~/.gitconfig`: callers show the change first (Threat Model, config writing).
      */
     public suspend fun trust(folder: String): Result<Unit>
+
+    /**
+     * The folder to pass to [trust] when [error] is git refusing a repository another user owns (`GIT-R-…-OWN`):
+     * exactly as git named it, since `safe.directory` must match git's spelling. Null for any other error, or when git
+     * didn't name it.
+     */
+    public fun untrustedFolder(error: Throwable): String?
 }
