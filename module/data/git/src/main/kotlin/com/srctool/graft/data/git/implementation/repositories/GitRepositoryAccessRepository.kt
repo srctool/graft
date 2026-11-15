@@ -9,7 +9,7 @@ import com.srctool.graft.data.git.api.models.CloneProgress
 import com.srctool.graft.data.git.api.models.CloneRequest
 import com.srctool.graft.data.git.api.models.RepositoryLocation
 import com.srctool.graft.data.git.api.models.RepositorySummary
-import com.srctool.graft.data.git.api.repositories.RepositoryRepository
+import com.srctool.graft.data.git.api.repositories.RepositoryAccessRepository
 import com.srctool.graft.data.git.implementation.source.local.CloneCommand
 import com.srctool.graft.data.git.implementation.source.local.InitCommand
 import com.srctool.graft.data.git.implementation.source.local.LocateCommand
@@ -29,7 +29,7 @@ import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.Paths
 
-internal class GitRepositoryRepository(private val runner: GitRunner) : RepositoryRepository {
+internal class GitRepositoryAccessRepository(private val runner: GitRunner) : RepositoryAccessRepository {
     override suspend fun locate(folder: Path): Result<RepositoryLocation> {
         val dir = folder.toAbsolutePath().normalize()
         if (!withContext(Dispatchers.IO) { Files.isDirectory(dir) }) return missing(dir)

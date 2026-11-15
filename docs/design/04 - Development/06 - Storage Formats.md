@@ -24,6 +24,7 @@ Graft keeps its own data inside users' repositories (shelves, snapshots, changel
 | Profiles | app data `profiles/<id>/profile.json`, `profile.gitconfig`, `workspace.json`, `settings.json` | JSON, git config | `"version": 1`; a `# graft-profile-version: 1` comment |
 | Managed `~/.gitconfig` block | between `# >>> graft managed` markers | git config | marker line carries `v1` |
 | App settings | app data `settings.json` | JSON | `"version": 1` |
+| App state (recent and pinned repositories, window places) | app data `app-state.json` | JSON | `"version": 1` |
 | Cache | OS cache dir, SQLite | SQLDelight schema | SQLDelight migrations; **safe to delete** |
 
 ## 3. API
