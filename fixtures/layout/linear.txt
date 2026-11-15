@@ -1,0 +1,3 @@
+*  C                lane 0 c0 | BOTTOM 0>0 c0
+*  B                lane 0 c0 | TOP 0>0 c0, BOTTOM 0>0 c0
+*  A                lane 0 c0 | TOP 0>0 c0

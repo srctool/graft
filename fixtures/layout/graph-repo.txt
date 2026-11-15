@@ -1,0 +1,12 @@
+*        crafted          lane 0 c0 | BOTTOM 0>0 c0
+*        empty            lane 0 c0 | TOP 0>0 c0, BOTTOM 0>0 c0
+* \ \ \  octopus          lane 0 c0 | TOP 0>0 c0, BOTTOM 0>0 c0, BOTTOM 0>1 c1, BOTTOM 0>2 c2, BOTTOM 0>3 c3
+| | | *  work-c           lane 3 c3 | THROUGH 0>0 c0, THROUGH 1>1 c1, THROUGH 2>2 c2, TOP 3>3 c3, BOTTOM 3>3 c3
+| | * |  work-b           lane 2 c2 | THROUGH 0>0 c0, THROUGH 1>1 c1, TOP 2>2 c2, THROUGH 3>3 c3, BOTTOM 2>2 c2
+| * | |  work-a           lane 1 c1 | THROUGH 0>0 c0, TOP 1>1 c1, THROUGH 2>2 c2, THROUGH 3>3 c3, BOTTOM 1>1 c1
+* \ / /  merge-docs       lane 0 c0 | TOP 0>0 c0, TOP 1>0 c1, TOP 2>0 c2, TOP 3>0 c3, BOTTOM 0>0 c0, BOTTOM 0>1 c4
+| *      docs-root        lane 1 c4 | THROUGH 0>0 c0, TOP 1>1 c4
+* \      merge-feature    lane 0 c0 | TOP 0>0 c0, BOTTOM 0>0 c0, BOTTOM 0>1 c5
+| *      feature-work     lane 1 c5 | THROUGH 0>0 c0, TOP 1>1 c5, BOTTOM 1>1 c5
+* |      main-2           lane 0 c0 | TOP 0>0 c0, THROUGH 1>1 c5, BOTTOM 0>0 c0
+* /      init             lane 0 c0 | TOP 0>0 c0, TOP 1>0 c5

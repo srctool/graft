@@ -1,0 +1,5 @@
+* \  T                lane 0 c0 | BOTTOM 0>0 c0, BOTTOM 0>1 c1
+| *  B                lane 1 c1 | THROUGH 0>0 c0, TOP 1>1 c1, BOTTOM 1>1 c1
+* /  A                lane 0 c0 | TOP 0>0 c0, TOP 1>0 c1
+*    Z                lane 0 c2 | BOTTOM 0>0 c2
+*    Y                lane 0 c2 | TOP 0>0 c2

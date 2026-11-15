@@ -1,0 +1,5 @@
+* \  M                lane 0 c0 | BOTTOM 0>0 c0, BOTTOM 0>1 c1
+| *  F                lane 1 c1 | THROUGH 0>0 c0, TOP 1>1 c1, BOTTOM 1>1 c1
+* |  C                lane 0 c0 | TOP 0>0 c0, THROUGH 1>1 c1, BOTTOM 0>0 c0
+* /  B                lane 0 c0 | TOP 0>0 c0, TOP 1>0 c1, BOTTOM 0>0 c0
+*    A                lane 0 c0 | TOP 0>0 c0

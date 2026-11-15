@@ -1,0 +1,7 @@
+* \      X1               lane 0 c0 | BOTTOM 0>0 c0, BOTTOM 0>1 c1
+\ | *    Y1               lane 2 c2 | THROUGH 0>0 c0, THROUGH 1>1 c1, BOTTOM 2>2 c2, BOTTOM 2>0 c0
+* | | \  A2               lane 0 c0 | TOP 0>0 c0, THROUGH 1>1 c1, THROUGH 2>2 c2, BOTTOM 0>0 c0, BOTTOM 0>3 c3
+\ * / |  B2               lane 1 c1 | THROUGH 0>0 c0, TOP 1>1 c1, TOP 2>1 c2, THROUGH 3>3 c3, BOTTOM 1>1 c1, BOTTOM 1>0 c0
+* |   |  A1               lane 0 c0 | TOP 0>0 c0, THROUGH 1>1 c1, THROUGH 3>3 c3, BOTTOM 0>0 c0
+| *   /  B1               lane 1 c1 | THROUGH 0>0 c0, TOP 1>1 c1, TOP 3>1 c3, BOTTOM 1>1 c1
+* /      R                lane 0 c0 | TOP 0>0 c0, TOP 1>0 c1
