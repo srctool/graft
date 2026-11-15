@@ -58,7 +58,7 @@ Run everything before you push:
 - **Sign off every commit** with the [Developer Certificate of Origin](https://developercertificate.org/): `git commit -s`. It adds `Signed-off-by: Your Name <you@example.com>`, which says you have the right to submit the change under the project's license. There's no CLA, and you keep your copyright. CI rejects commits without a sign-off.
 - **AI-assisted work is welcome.** Keep the tool's `Co-Authored-By` trailer. You're responsible for every line, the same as for code you typed.
 - **Pull requests** are small, ideally one plan task each, with CI green and one approving maintainer review. Large PRs without an issue or Discussion first may be asked to split.
-- **Merging** is a squash merge; the PR title becomes the commit subject, so write it as a Conventional Commit.
+- **Merging** uses a merge commit, so every commit on your branch lands on `main` as written: keep each one a clean, signed-off Conventional Commit.
 
 ## License
 
