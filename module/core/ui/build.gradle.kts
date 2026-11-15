@@ -30,5 +30,6 @@ tasks.withType<Test>().configureEach {
         update -> systemProperty("roborazzi.test.record", "true")
         linux -> systemProperty("roborazzi.test.verify", "true")
     }
-    inputs.dir("src/test/snapshots").optional()
+    // A file tree, not a directory input: the folder doesn't exist until the first goldens are committed.
+    inputs.files(fileTree("src/test/snapshots")).withPropertyName("goldens")
 }
