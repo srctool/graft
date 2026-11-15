@@ -6,5 +6,8 @@ plugins {
 }
 
 dependencies {
-    implementation(projects.module.core.exception)
+    api(libs.kotlinx.coroutines.core)
+    implementation(libs.directory.watcher)
+    testImplementation(libs.kotlinx.coroutines.test)
+    testImplementation(libs.turbine)
 }

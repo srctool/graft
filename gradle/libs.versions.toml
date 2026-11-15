@@ -11,6 +11,8 @@ junit = "5.14.4"
 coroutines = "1.11.0"
 # Sinew 1.1 already brings kotlinx-serialization 1.11.0; one version on the classpath.
 serialization = "1.11.0"
+directory-watcher = "0.19.1"
+turbine = "1.2.1"
 
 [libraries]
 compose-runtime = { module = "org.jetbrains.compose.runtime:runtime", version.ref = "compose" }
@@ -28,6 +30,8 @@ sinew-viewmodel = { module = "com.srctool.sinew:sinew-viewmodel" }
 kotlinx-coroutines-core = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-core", version.ref = "coroutines" }
 kotlinx-coroutines-swing = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-swing", version.ref = "coroutines" }
 kotlinx-serialization-json = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json", version.ref = "serialization" }
+directory-watcher = { module = "io.methvin:directory-watcher", version.ref = "directory-watcher" }
+turbine = { module = "app.cash.turbine:turbine", version.ref = "turbine" }
 kotlinx-coroutines-test = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-test", version.ref = "coroutines" }
 junit-jupiter-api = { module = "org.junit.jupiter:junit-jupiter-api" }
 junit-bom = { module = "org.junit:junit-bom", version.ref = "junit" }
