@@ -6,7 +6,13 @@ plugins {
 }
 
 dependencies {
+    // The api returns Sinew's Result and streams with Flow; the git runner is this module's source, wired in through di.
+    api(platform(libs.sinew.bom))
+    api(libs.sinew.models)
+    api(libs.kotlinx.coroutines.core)
     implementation(projects.module.core.git)
-    implementation(projects.module.core.models)
     implementation(projects.module.core.exception)
+
+    testImplementation(testFixtures(projects.module.core.git))
+    testImplementation(libs.kotlinx.coroutines.test)
 }

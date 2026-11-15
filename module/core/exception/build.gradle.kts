@@ -8,5 +8,4 @@ plugins {
 dependencies {
     api(platform(libs.sinew.bom))
     api(libs.sinew.exception)
-    implementation(projects.module.core.models)
 }

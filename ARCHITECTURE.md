@@ -21,7 +21,7 @@ module/          ▼                                                 │
                  │            │                                    │
   core           └──► :module:core:ui (theme)                      ▼
                       :module:core:git (GitRunner) · network · database · security · preference
-                      models · exception (Sinew) · notification · configuration
+                      exception (Sinew) · notification · configuration
                                   │
                                   ▼
                             git executable
@@ -39,7 +39,7 @@ The shape comes from the author's architecture board and matches Sinew's App Arc
 | `:module:feature:*` | one area each: screens, view models, the area's own use cases | import another feature |
 | `:module:presentation` | app-level state split by case (`WindowState`, `OperationsState`, `InboxState`, `ProviderState`) | import Compose |
 | `:module:domain` | use cases shared by two or more features (created when first needed) | import Compose |
-| `:module:data:git` | git-backed repositories: commits, refs, working copy, stash, shelves, local history, changelists, worktrees, submodules, sync; `GitSandbox` test fixtures | call git other than through `GitRunner` |
+| `:module:data:git` | `api`: git-backed repositories and their models (`CommitRow`, `Ref`, `ObjectId`, …); `implementation/source/local`: the git commands and parsers they read through `GitRunner`; `GitSandbox` test fixtures come from `:module:core:git` | call git other than through `GitRunner` |
 | `:module:data:app` | profiles, settings, repositories and workspaces | store secrets outside `SecretStore` |
 | `:module:data:hosting` | provider-neutral repository interfaces and models (`ChangeRequest`, `Issue`, `Pipeline`, …), the contract test kit | mention any concrete provider |
 | `:module:data:hosting-github` | the GitHub implementation (GraphQL + REST) | leak GitHub types outside the module |
@@ -47,10 +47,10 @@ The shape comes from the author's architecture board and matches Sinew's App Arc
 | `:module:core:git` | `GitRunner`: process control, environment, write queue; the `GitException` family | call git through a shell |
 | `:module:core:network` | the configured `sinew-network` client, token source, ETag cache | log secrets |
 | `:module:core:database`, `:module:core:security`, `:module:core:preference` | the SQLite cache, `SecretStore` on the OS keychain, versioned settings files | |
-| `:module:core:models`, `:module:core:exception` | shared domain models; the error-code registry and text redaction | depend on a business module |
+| `:module:core:exception` | the error-code registry and text redaction | depend on a business module |
 | `:module:core:notification`, `:module:core:configuration` | desktop notifications; app folders and platform paths | |
 
-The allowed edges are listed in `config/module-graph.txt`, and `./gradlew check` fails on any other.
+Models live in the data or domain module that needs them, never in `:module:core`. Every data module has the same packages: public `api` (`models`, `repositories`) and `di`; internal `implementation` (`repositories`, `source/local/entity`, `source/remote/{response,request,api}`). `checkImports` fails on a `public` declaration outside `api` and `di`. The allowed edges are listed in `config/module-graph.txt`, and `./gradlew check` fails on any other.
 
 ## Invariants
 

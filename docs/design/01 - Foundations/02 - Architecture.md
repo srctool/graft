@@ -36,7 +36,7 @@ flowchart TB
     feat --> data["data: git, app, hosting, hosting-github"]
     dom --> data
     pres --> data
-    data --> core["core: git, network, database, security, preference, models, exception, notification, configuration"]
+    data --> core["core: git, network, database, security, preference, exception, notification, configuration"]
     feat --> ui["core:ui (theme, shared components)"]
 ```
 
@@ -48,7 +48,7 @@ flowchart TB
 | `:module:feature:graph`, `:module:feature:workingcopy`, `:module:feature:shelves`, `:module:feature:worktrees`, `:module:feature:submodules`, `:module:feature:changerequests`, `:module:feature:issues` | one area each: screens, their view models (`.presentation` package), the area's own use cases | yes |
 | `:module:presentation` | app-level state, split by case: `WindowState` (tabs, active repository, its profile), `OperationsState` (background work for the status bar), `InboxState`, `ProviderState` (sign-in, rate limit) | no |
 | `:module:domain` | use cases shared by two or more features; created when the first one is shared | no |
-| `:module:data:git` | git-backed repositories: commits, refs, working copy, stash, shelves, local history, changelists, worktrees, submodules, sync | no |
+| `:module:data:git` | git-backed repositories (commits, refs, working copy, stash, shelves, local history, changelists, worktrees, submodules, sync), their models (`CommitRow`, `Ref`, `ObjectId`, …), and the git commands and parsers they read through `GitRunner` (internal) | no |
 | `:module:data:app` | profiles, settings, repositories and workspaces | no |
 | `:module:data:hosting` | provider-neutral repository interfaces and models (`ChangeRequest`, `Issue`, `Pipeline`, `Account`, `Notification`) and the contract test kit ([Provider Model](04%20-%20Provider%20Model.md)) | no |
 | `:module:data:hosting-github` | the GitHub implementation and its API source | no |
@@ -58,7 +58,6 @@ flowchart TB
 | `:module:core:database` | the SQLDelight cache | no |
 | `:module:core:security` | `SecretStore` on the OS keychain | no |
 | `:module:core:preference` | versioned settings files, atomic writes | no |
-| `:module:core:models` | domain models shared by the data modules: commit, ref, status, shelf, profile, … | no |
 | `:module:core:exception` | the error-code registry and text redaction, shared by every module; each module's own `SinewException` subclasses live with the code that raises them (git's in `:module:core:git`) | no |
 | `:module:core:notification` | desktop notifications | no |
 | `:module:core:configuration` | app folders and platform paths | no |
@@ -69,6 +68,24 @@ Rules:
 - Compose only in `:module:core:ui`, `:module:feature:*`, `:module:navigation` and `:app:desktop`. `:app:cli` never depends on them; it talks to a running app over a local socket.
 - Camouflage (`com.srctool.camouflage`) is used only where Compose is; nothing imports `androidx.compose.material3` ([ADR-22](../03%20-%20Project/02%20-%20Decisions.md)).
 - Only `:module:data:hosting-github` says "GitHub" ([ADR-4](../03%20-%20Project/02%20-%20Decisions.md)).
+- **Models live in the data or domain module that needs them**, never in `:module:core`. A model two data modules need moves to `:module:domain`, or each keeps its own and maps.
+- **Every data module has the same packages** (`com.srctool.graft.data.<name>.…`). Only `api` and `di` are public; other modules reach a data module through its `di` wiring and use only its `api`. `checkImports` fails on a `public` declaration anywhere else.
+
+  ```
+  api
+    models          the Domain models
+    repositories    the repository interfaces
+  di                wiring: builds the implementations behind the api interfaces
+  implementation    internal
+    repositories    the repository implementations
+    source
+      local         local sources (the git commands and parsers, the database)
+        entity      stored rows
+      remote        remote sources
+        response    response DTOs
+        request     request DTOs
+        api         the API client calls
+  ```
 - The allowed edges are listed in `config/module-graph.txt`; CI fails any other.
 
 ## Layers

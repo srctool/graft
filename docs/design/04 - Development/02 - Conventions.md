@@ -16,7 +16,7 @@ Many people and agents will write Graft's code. One set of rules keeps it readin
 |---|---|
 | Packages | `com.srctool.graft.<area>` mirroring the module path: `core.git`, `data.git`, `data.hosting.github`, `feature.graph`, `core.ui`, `app.desktop`, `app.cli` |
 | Style | Kotlin official style; Spotless + ktlint; 120 columns |
-| Visibility | `:module:core:*` and `:module:data:*` use `explicitApi()`; a data module's public API is its repository interfaces and models, sources and DTOs stay `internal`; everything is `internal` unless another module needs it |
+| Visibility | `:module:core:*` and `:module:data:*` use `explicitApi()`; in a data module only the `api` (models, repository interfaces) and `di` packages are public, and `implementation` (repositories, sources, entities, requests, responses) stays `internal` ([Architecture](../01%20-%20Foundations/02%20-%20Architecture.md)); everything is `internal` unless another module needs it |
 | Types | hand-written sealed types for states and results; no code generation except SQLDelight |
 | Errors | Sinew's `Result<T>` + `SinewException` subclasses with `MODULE-LAYER-FUNCTION-TYPE` codes; no exceptions across module boundaries; cancellation is rethrown; view models never `try`/`catch` ([Architecture](../01%20-%20Foundations/02%20-%20Architecture.md), [ADR-23](../03%20-%20Project/02%20-%20Decisions.md)) |
 | Coroutines | structured concurrency only; `Dispatchers.IO` for processes; no `GlobalScope`; every long operation cancellable |

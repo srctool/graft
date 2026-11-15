@@ -34,6 +34,11 @@ dependencies {
 // CI's git-min job runs the tests against Git 2.38 with -Pgit=/opt/git-2.38/bin/git; tests read it from here.
 val testGit = providers.gradleProperty("git")
 
+// Recorded git output and API responses live in the repository's fixtures/ folder (Testing Strategy §3.3).
+// -PrecordFixtures re-records them from generated repositories instead of only reading them.
+val fixturesDir = rootProject.layout.projectDirectory.dir("fixtures")
+val recordFixtures = providers.gradleProperty("recordFixtures")
+
 tasks.withType<Test>().configureEach {
     useJUnitPlatform()
     // CI logs then show why a test failed, not only which one. Assertion messages never contain the environment.
@@ -41,5 +46,10 @@ tasks.withType<Test>().configureEach {
         events(org.gradle.api.tasks.testing.logging.TestLogEvent.FAILED)
         exceptionFormat = org.gradle.api.tasks.testing.logging.TestExceptionFormat.FULL
     }
+    // A hung git process fails its test after two minutes instead of holding CI until the job times out.
+    systemProperty("junit.jupiter.execution.timeout.default", "2m")
     testGit.orNull?.let { systemProperty("graft.test.git", it) }
+    systemProperty("graft.fixtures", fixturesDir.asFile.absolutePath)
+    if (recordFixtures.isPresent) systemProperty("graft.recordFixtures", "true")
+    inputs.dir(fixturesDir).withPathSensitivity(PathSensitivity.RELATIVE).optional()
 }

@@ -4,44 +4,35 @@
 # checkModuleGraph fails on any edge not listed here. A new edge needs an ADR first.
 
 # core
-:module:core:exception -> :module:core:models
-:module:core:git -> :module:core:models
 :module:core:git -> :module:core:exception
 :module:core:network -> :module:core:security
 :module:core:network -> :module:core:exception
-:module:core:ui -> :module:core:models
 :module:core:ui -> :module:core:exception
 
 # data
 :module:data:git -> :module:core:git
-:module:data:git -> :module:core:models
 :module:data:git -> :module:core:exception
 :module:data:app -> :module:core:database
 :module:data:app -> :module:core:preference
 :module:data:app -> :module:core:security
 :module:data:app -> :module:core:configuration
-:module:data:app -> :module:core:models
 :module:data:app -> :module:core:exception
-:module:data:hosting -> :module:core:models
 :module:data:hosting -> :module:core:exception
 :module:data:hosting-github -> :module:data:hosting
 :module:data:hosting-github -> :module:core:network
 :module:data:hosting-github -> :module:core:database
-:module:data:hosting-github -> :module:core:models
 :module:data:hosting-github -> :module:core:exception
 
 # domain (created when the first shared use case needs it)
 :module:domain -> :module:data:git
 :module:domain -> :module:data:app
 :module:domain -> :module:data:hosting
-:module:domain -> :module:core:models
 :module:domain -> :module:core:exception
 
 # presentation
 :module:presentation -> :module:data:git
 :module:presentation -> :module:data:app
 :module:presentation -> :module:data:hosting
-:module:presentation -> :module:core:models
 :module:presentation -> :module:core:exception
 
 # features
@@ -50,7 +41,6 @@
 :module:feature:graph -> :module:data:app
 :module:feature:graph -> :module:data:hosting
 :module:feature:graph -> :module:core:ui
-:module:feature:graph -> :module:core:models
 :module:feature:graph -> :module:core:exception
 :module:feature:graph -> :module:domain
 :module:feature:workingcopy -> :module:presentation
@@ -58,7 +48,6 @@
 :module:feature:workingcopy -> :module:data:app
 :module:feature:workingcopy -> :module:data:hosting
 :module:feature:workingcopy -> :module:core:ui
-:module:feature:workingcopy -> :module:core:models
 :module:feature:workingcopy -> :module:core:exception
 :module:feature:workingcopy -> :module:domain
 :module:feature:shelves -> :module:presentation
@@ -66,7 +55,6 @@
 :module:feature:shelves -> :module:data:app
 :module:feature:shelves -> :module:data:hosting
 :module:feature:shelves -> :module:core:ui
-:module:feature:shelves -> :module:core:models
 :module:feature:shelves -> :module:core:exception
 :module:feature:shelves -> :module:domain
 :module:feature:worktrees -> :module:presentation
@@ -74,7 +62,6 @@
 :module:feature:worktrees -> :module:data:app
 :module:feature:worktrees -> :module:data:hosting
 :module:feature:worktrees -> :module:core:ui
-:module:feature:worktrees -> :module:core:models
 :module:feature:worktrees -> :module:core:exception
 :module:feature:worktrees -> :module:domain
 :module:feature:submodules -> :module:presentation
@@ -82,7 +69,6 @@
 :module:feature:submodules -> :module:data:app
 :module:feature:submodules -> :module:data:hosting
 :module:feature:submodules -> :module:core:ui
-:module:feature:submodules -> :module:core:models
 :module:feature:submodules -> :module:core:exception
 :module:feature:submodules -> :module:domain
 :module:feature:changerequests -> :module:presentation
@@ -90,7 +76,6 @@
 :module:feature:changerequests -> :module:data:app
 :module:feature:changerequests -> :module:data:hosting
 :module:feature:changerequests -> :module:core:ui
-:module:feature:changerequests -> :module:core:models
 :module:feature:changerequests -> :module:core:exception
 :module:feature:changerequests -> :module:domain
 :module:feature:issues -> :module:presentation
@@ -98,7 +83,6 @@
 :module:feature:issues -> :module:data:app
 :module:feature:issues -> :module:data:hosting
 :module:feature:issues -> :module:core:ui
-:module:feature:issues -> :module:core:models
 :module:feature:issues -> :module:core:exception
 :module:feature:issues -> :module:domain
 
@@ -126,7 +110,6 @@
 :app:desktop -> :module:core:database
 :app:desktop -> :module:core:security
 :app:desktop -> :module:core:preference
-:app:desktop -> :module:core:models
 :app:desktop -> :module:core:exception
 :app:desktop -> :module:core:notification
 :app:desktop -> :module:core:configuration
@@ -139,6 +122,5 @@
 :app:cli -> :module:core:database
 :app:cli -> :module:core:security
 :app:cli -> :module:core:preference
-:app:cli -> :module:core:models
 :app:cli -> :module:core:exception
 :app:cli -> :module:core:configuration
