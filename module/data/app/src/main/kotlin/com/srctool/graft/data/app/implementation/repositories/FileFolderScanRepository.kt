@@ -54,7 +54,7 @@ internal class FileFolderScanRepository : FolderScanRepository {
                             if (file == root) throw exc else FileVisitResult.CONTINUE
                     },
                 )
-                found.sorted()
+                found.sortedWith(folderOrder)
             }
         }
     }
@@ -62,6 +62,16 @@ internal class FileFolderScanRepository : FolderScanRepository {
     private companion object {
         const val MODULE = "DATA"
         const val FUNCTION = "SCAN"
+
+        // Folder by folder, by name: `Path.compareTo` compares whole paths with each OS's own rules (on Windows,
+        // `app` came before `a\b`), and the list should read like the folder tree everywhere.
+        val folderOrder =
+            Comparator<Path> { a, b ->
+                val common = minOf(a.nameCount, b.nameCount)
+                (0 until common).firstNotNullOfOrNull { i ->
+                    a.getName(i).toString().compareTo(b.getName(i).toString()).takeIf { it != 0 }
+                } ?: a.nameCount.compareTo(b.nameCount)
+            }
         val handlers =
             listOf(
                 ExceptionHandler({ it is IOException }) {

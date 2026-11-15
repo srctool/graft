@@ -29,8 +29,9 @@ public interface WorkspaceRepository {
 public interface FolderScanRepository {
     /**
      * Every folder under [folder] that holds a repository (a `.git` folder or file, or a bare repository), up to
-     * [maxDepth] levels down, sorted. A repository's own subfolders aren't searched (its submodules belong to it), nor
-     * are hidden folders; symlinks aren't followed and unreadable folders are skipped.
+     * [maxDepth] levels down, in folder-tree order (by name, folder by folder). A repository's own subfolders aren't
+     * searched (its submodules belong to it), nor are hidden folders; symlinks aren't followed and unreadable folders
+     * are skipped.
      */
     public suspend fun scan(folder: Path, maxDepth: Int = 4): Result<List<Path>>
 }
