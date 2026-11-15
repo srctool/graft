@@ -24,6 +24,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.io.IOException
 import java.io.InputStream
+import java.io.OutputStream
 import java.nio.file.Path
 import java.util.concurrent.ConcurrentHashMap
 
@@ -50,10 +51,25 @@ public class ProcessGitRunner(
         val process = start(cmd, argv, cwd)
         coroutineScope {
             val killer = killOnCancel(process)
-            val stderr = async { process.errorStream.readCapped(config.stderrLimit) }
+            val parsesStderr = cmd.output == GitOutput.STDERR
+            // The stream the command doesn't parse is still read to the end, or git could block on a full pipe.
+            val other =
+                async {
+                    if (parsesStderr) {
+                        process.inputStream.use { it.copyTo(OutputStream.nullOutputStream()) }
+                        ""
+                    } else {
+                        process.errorStream.readCapped(config.stderrLimit)
+                    }
+                }
             process.outputStream.close()
+            val kept = if (parsesStderr) KeepingInputStream(process.errorStream, config.stderrLimit) else null
             try {
-                process.inputStream.use { stdout -> cmd.parse(stdout).forEach { emit(it) } }
+                (kept ?: process.inputStream).use { input ->
+                    cmd.parse(input).forEach { emit(it) }
+                    // Whatever the parser left unread is still drained (and, for stderr, kept for the error).
+                    if (kept != null) input.copyTo(OutputStream.nullOutputStream())
+                }
             } catch (e: GitParseException) {
                 throw ParseException(MODULE, ExceptionLayer.Repository, cmd.function, e).also(::report)
             } catch (e: IOException) {
@@ -61,7 +77,8 @@ public class ProcessGitRunner(
                 throw e
             }
             val exitCode = process.onExit().await().exitValue()
-            val errText = stderr.await()
+            val errText = kept?.text() ?: other.await()
+            other.await()
             killer.cancel()
             if (exitCode != 0) throw gitFailure(cmd, argv, exitCode, errText)
         }
@@ -189,4 +206,19 @@ private fun InputStream.readCapped(limit: Int): String = use { stream ->
         if (room > 0) buffer.write(chunk, 0, minOf(n, room))
     }
     buffer.toString(Charsets.UTF_8)
+}
+
+/** Passes [input] through while keeping its first [limit] bytes, so a stream parsed for progress still has its error. */
+private class KeepingInputStream(private val input: InputStream, private val limit: Int) : InputStream() {
+    private val buffer = java.io.ByteArrayOutputStream()
+
+    override fun read(): Int = input.read().also { if (it >= 0 && buffer.size() < limit) buffer.write(it) }
+
+    override fun read(b: ByteArray, off: Int, len: Int): Int = input.read(b, off, len).also { n ->
+        if (n > 0) buffer.write(b, off, minOf(n, limit - buffer.size()).coerceAtLeast(0))
+    }
+
+    override fun close() = input.close()
+
+    fun text(): String = buffer.toString(Charsets.UTF_8)
 }

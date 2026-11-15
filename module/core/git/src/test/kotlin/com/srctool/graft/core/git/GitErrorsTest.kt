@@ -72,6 +72,25 @@ class GitErrorsTest {
         assertEquals(1, e.exitCode)
     }
 
+    @Test
+    fun `dubious ownership is its own failure, in both of git's wordings`() {
+        val now =
+            "fatal: detected dubious ownership in repository at '/srv/a b/app'\n" +
+                "To add an exception for this directory, call:\n\n\tgit config --global --add safe.directory '/srv/a b/app'\n"
+        val old =
+            "fatal: unsafe repository ('/srv/app' is owned by someone else)\n" +
+                "To add an exception for this directory, call:"
+        assertEquals(Kind.DUBIOUS_OWNERSHIP, classify(now))
+        assertEquals(Kind.DUBIOUS_OWNERSHIP, classify(old))
+        val e = gitFailure(command("OPEN"), emptyList(), 128, now)
+        assertEquals("GIT-R-OPEN-OWN", e.code)
+        assertEquals("/srv/a b/app", (e as GitUnsafeOwnerException).repositoryPath)
+        assertEquals(
+            "/srv/app",
+            (gitFailure(command("OPEN"), emptyList(), 128, old) as GitUnsafeOwnerException).repositoryPath,
+        )
+    }
+
     private fun command(function: String, mutates: Boolean = false): GitInvocation = object : GitInvocation {
         override val function = function
         override val args = listOf("x")

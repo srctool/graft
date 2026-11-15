@@ -7,6 +7,7 @@ import com.srctool.graft.core.git.testing.GitSandbox
 import com.srctool.graft.core.git.testing.GitSandboxExtension
 import com.srctool.graft.data.git.implementation.source.local.LogCommand
 import com.srctool.graft.data.git.implementation.source.local.RefsCommand
+import com.srctool.graft.data.git.implementation.source.local.StatusSummaryCommand
 import com.srctool.sinew.models.getOrThrow
 import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.Assumptions.assumeTrue
@@ -23,5 +24,14 @@ class RecordFixturesTest {
         val runner = sandbox.runner()
         Fixtures.write("log", "graph", runner.run(RawBytesCommand(LogCommand().args), repo).getOrThrow())
         Fixtures.write("refs", "graph", runner.run(RawBytesCommand(RefsCommand().args), repo).getOrThrow())
+    }
+
+    @Test
+    fun `record status summaries`(sandbox: GitSandbox) = runBlocking {
+        assumeTrue(Fixtures.recording, "set -PrecordFixtures to re-record")
+        val runner = sandbox.runner()
+        StatusRepos.build(sandbox).forEach { (case, repo) ->
+            Fixtures.write("status", case, runner.run(RawBytesCommand(StatusSummaryCommand().args), repo).getOrThrow())
+        }
     }
 }
