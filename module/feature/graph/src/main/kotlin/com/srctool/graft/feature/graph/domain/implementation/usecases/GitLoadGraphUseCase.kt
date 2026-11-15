@@ -5,6 +5,7 @@ package com.srctool.graft.feature.graph.domain.implementation.usecases
 
 import com.srctool.graft.data.git.api.models.CommitRow
 import com.srctool.graft.data.git.api.repositories.CommitRepository
+import com.srctool.graft.feature.graph.domain.api.models.GraphFilter
 import com.srctool.graft.feature.graph.domain.api.models.GraphLoad
 import com.srctool.graft.feature.graph.domain.api.models.GraphRow
 import com.srctool.graft.feature.graph.domain.api.models.LaidOutGraph
@@ -29,11 +30,11 @@ internal class GitLoadGraphUseCase(
     private val newLayout: () -> GraphLayout,
     private val background: CoroutineDispatcher = Dispatchers.Default,
 ) : LoadGraphUseCase {
-    override fun load(repository: Path, limit: Int): Flow<GraphLoad> = flow {
+    override fun load(repository: Path, filter: GraphFilter, limit: Int): Flow<GraphLoad> = flow {
         val graph = GrowingGraph(newLayout())
         var failed = false
         commits
-            .log(repository)
+            .log(repository, filter.scope)
             .rows
             .take(limit)
             .batched()

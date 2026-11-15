@@ -5,6 +5,7 @@ package com.srctool.graft.data.git.implementation.repositories
 
 import com.srctool.graft.core.git.GitNotFoundException
 import com.srctool.graft.core.git.GitRunner
+import com.srctool.graft.core.git.GitUnsafeOwnerException
 import com.srctool.graft.data.git.api.models.CloneProgress
 import com.srctool.graft.data.git.api.models.CloneRequest
 import com.srctool.graft.data.git.api.models.RepositoryLocation
@@ -74,6 +75,9 @@ internal class GitRepositoryAccessRepository(private val runner: GitRunner) : Re
         emitAll(runner.stream(CloneCommand(request.copy(directory = target)), parent).distinctUntilChanged())
         emit(CloneProgress.Finished(locate(target).getOrThrow()))
     }
+
+    override fun untrustedFolder(error: Throwable): String? =
+        (error as? GitUnsafeOwnerException)?.repositoryPath?.takeIf { it.isNotEmpty() }
 
     override suspend fun trust(folder: String): Result<Unit> {
         val cwd = Paths.get(folder).toAbsolutePath().normalize()

@@ -29,7 +29,7 @@ internal class GraphSpikeViewModel(private val route: GraphSpikeRoute, private v
 
     private suspend fun load() {
         setState { copy(phase = Phase.Loading) }
-        loadGraph.load(Paths.get(route.repository), route.limit).collect { step ->
+        loadGraph.load(Paths.get(route.repository), limit = route.limit).collect { step ->
             setState {
                 when (step) {
                     is GraphLoad.Progress -> copy(graph = step.graph, rowCount = step.rowCount, widest = step.widest)

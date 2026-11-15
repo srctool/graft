@@ -109,7 +109,7 @@ Before reporting a task done: `./gradlew check` passes. Say so with the output; 
 | | |
 |---|---|
 | Milestone | **G1 Read-only browser**: plan in `plans/G1.md` (G0 done, ADR-1 confirmed 2026-11-15) |
-| Next | G1 Task 8 (use cases); the data layer (Tasks 3–7) was reviewed on 2026-11-15 |
+| Next | G1 Task 9 (app state and the repository session), after Task 8 is reviewed |
 | Open decisions | final name checks (Naming); from the G0 spike: writing a commit-graph file on open, and the first-screen and frame-time gaps (`plans/progress.md`) |
 
 <!-- gitnexus:start -->

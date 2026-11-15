@@ -7,6 +7,7 @@ import com.srctool.graft.core.git.testing.GitSandbox
 import com.srctool.graft.core.git.testing.GitSandboxExtension
 import com.srctool.graft.data.git.api.models.AheadBehind
 import com.srctool.graft.data.git.api.models.LogQuery
+import com.srctool.graft.data.git.api.models.LogScope
 import com.srctool.graft.data.git.api.models.ObjectId
 import com.srctool.graft.data.git.di.GitDataModule
 import com.srctool.sinew.models.getOrThrow
@@ -18,6 +19,7 @@ import java.nio.file.Files
 import java.nio.file.Path
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
@@ -154,5 +156,37 @@ class SearchCompareTest {
 
         assertEquals(head, sandbox.git(repo, "rev-parse", "HEAD"))
         assertEquals(status, sandbox.git(repo, "status", "--porcelain=v2", "--branch"))
+    }
+
+    private suspend fun GitSandbox.logged(path: Path, scope: LogScope): List<String> =
+        GitDataModule(runner()).commits.log(path, scope).rows.map { it.subject }.toList()
+
+    @Test
+    fun `a hidden ref's own commits leave the graph`(sandbox: GitSandbox) = runBlocking<Unit> {
+        val repo = sandbox.build().path
+        val all = sandbox.logged(repo, LogScope.All())
+        val hidden = sandbox.logged(repo, LogScope.All(hidden = setOf("refs/heads/feature", "refs/heads/orphan")))
+        assertTrue("Add retry" in all && "Orphan root" in all)
+        assertEquals(all - setOf("Add retry", "conflicting edit", "Orphan root"), hidden)
+    }
+
+    @Test
+    fun `solo shows only the chosen refs' history`(sandbox: GitSandbox) = runBlocking<Unit> {
+        val repo = sandbox.build().path
+        assertEquals(
+            listOf("conflicting edit", "Add retry", "Fix login timeout", "init"),
+            sandbox.logged(repo, LogScope.Only(setOf("refs/heads/feature"))),
+        )
+        val search = GitDataModule(sandbox.runner()).commits
+        val inMain = search.search(repo, LogQuery(message = "retry"), LogScope.Only(setOf("refs/heads/main")))
+        assertEquals(emptyList(), inMain.rows.toList())
+    }
+
+    @Test
+    fun `only full ref names reach git`() {
+        assertFailsWith<IllegalArgumentException> { LogScope.Only(setOf("main")) }
+        assertFailsWith<IllegalArgumentException> { LogScope.Only(setOf("--output=/tmp/x")) }
+        assertFailsWith<IllegalArgumentException> { LogScope.All(hidden = setOf("-n1")) }
+        assertFailsWith<IllegalArgumentException> { LogScope.Only(emptySet()) }
     }
 }

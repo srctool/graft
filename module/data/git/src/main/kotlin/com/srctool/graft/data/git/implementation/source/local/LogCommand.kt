@@ -7,6 +7,7 @@ import com.srctool.graft.core.git.GitParseException
 import com.srctool.graft.core.git.StreamingGitCommand
 import com.srctool.graft.data.git.api.models.AuthorType
 import com.srctool.graft.data.git.api.models.CommitRow
+import com.srctool.graft.data.git.api.models.LogScope
 import com.srctool.graft.data.git.api.models.ObjectId
 import com.srctool.graft.data.git.api.models.People
 import com.srctool.graft.data.git.api.models.Person
@@ -38,6 +39,16 @@ internal class LogCommand(revisions: List<String> = DEFAULT_REVISIONS, public va
                 "%(trailers:key=Co-authored-by,valueonly=true,separator=%x1f)%x00"
         val DEFAULT_REVISIONS: List<String> = listOf("--exclude=refs/stash", "--exclude=refs/graft/*", "--all")
     }
+}
+
+/**
+ * [LogCommand]'s revisions for [this] scope. Hidden refs are `--exclude`d before `--all` (git applies an exclude to
+ * the next `--all` only); solo refs follow `--end-of-options`, so even a name git would read as an option stays a
+ * revision.
+ */
+internal fun LogScope.revisions(): List<String> = when (this) {
+    is LogScope.All -> hidden.sorted().map { "--exclude=$it" } + LogCommand.DEFAULT_REVISIONS
+    is LogScope.Only -> listOf("--end-of-options") + refs.sorted()
 }
 
 /**

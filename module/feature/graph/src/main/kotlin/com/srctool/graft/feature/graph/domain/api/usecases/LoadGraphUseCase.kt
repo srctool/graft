@@ -3,6 +3,7 @@
 
 package com.srctool.graft.feature.graph.domain.api.usecases
 
+import com.srctool.graft.feature.graph.domain.api.models.GraphFilter
 import com.srctool.graft.feature.graph.domain.api.models.GraphLoad
 import kotlinx.coroutines.flow.Flow
 import java.nio.file.Path
@@ -16,9 +17,10 @@ internal interface LoadGraphUseCase {
      * Starts `git log` when collected and stops it when collection stops. Emits [GraphLoad.Progress] per batch, then
      * [GraphLoad.Loaded], or [GraphLoad.Failed] instead of throwing. At most [limit] commits. Rows are laid out on the
      * collector's thread (git's output is parsed in the background), so the collector may read the graph between
-     * steps.
+     * steps. [filter] hides refs or solos them (git walks only what's shown); its refs must exist, see
+     * [GraphFilter.prunedTo].
      */
-    fun load(repository: Path, limit: Int = Int.MAX_VALUE): Flow<GraphLoad>
+    fun load(repository: Path, filter: GraphFilter = GraphFilter(), limit: Int = Int.MAX_VALUE): Flow<GraphLoad>
 
     companion object {
         /** Commits in the first batch: about one screen, so it shows before the rest arrives. */
