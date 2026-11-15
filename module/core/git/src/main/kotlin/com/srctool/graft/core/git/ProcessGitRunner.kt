@@ -15,6 +15,7 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitCancellation
 import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
@@ -47,6 +48,24 @@ public class ProcessGitRunner(
         }
 
     override fun <T> stream(cmd: StreamingGitCommand<T>, cwd: Path): Flow<T> = flow {
+        var attempt = 1
+        while (true) {
+            var emitted = false
+            try {
+                streamOnce(cmd, cwd) {
+                    emitted = true
+                    emit(it)
+                }
+                return@flow
+            } catch (e: GitExitException) {
+                // Safe to start again only while nothing reached the collector: git never ran.
+                if (emitted || !e.neverStarted() || attempt >= START_ATTEMPTS) throw e
+                delay(START_RETRY_DELAY_MS * attempt++)
+            }
+        }
+    }.flowOn(Dispatchers.IO)
+
+    private suspend fun <T> streamOnce(cmd: StreamingGitCommand<T>, cwd: Path, emit: suspend (T) -> Unit) {
         val argv = argv(cmd)
         val process = start(cmd, argv, cwd)
         coroutineScope {
@@ -82,36 +101,52 @@ public class ProcessGitRunner(
             killer.cancel()
             if (exitCode != 0) throw gitFailure(cmd, argv, exitCode, errText)
         }
-    }.flowOn(Dispatchers.IO)
+    }
 
     override fun objectReader(cwd: Path): GitObjectReader {
         val argv = argv(CatFileInvocation)
         return ProcessGitObjectReader(argv, { start(CatFileInvocation, argv, cwd) }, config.stderrLimit)
     }
 
-    /** Runs [cmd] and returns its parsed output; throws [GitException] when git fails. */
-    private suspend fun <T> exec(cmd: GitCommand<T>, cwd: Path, input: ByteArray?): T = withContext(Dispatchers.IO) {
-        val argv = argv(cmd)
-        val process = start(cmd, argv, cwd)
-        coroutineScope {
-            val killer = killOnCancel(process)
-            val stdout = async { process.inputStream.use(InputStream::readBytes) }
-            val stderr = async { process.errorStream.readCapped(config.stderrLimit) }
-            launch {
-                // A process may exit without reading its input; that's its answer, not a runner failure.
-                try {
-                    process.outputStream.use { stdin -> input?.let(stdin::write) }
-                } catch (_: IOException) {
-                }
+    /**
+     * Runs [cmd] and returns its parsed output; throws [GitException] when git fails. A process that failed to start
+     * on Windows ([neverStarted]) ran none of git's code, so it's started again, even for a write.
+     */
+    private suspend fun <T> exec(cmd: GitCommand<T>, cwd: Path, input: ByteArray?): T {
+        var attempt = 1
+        while (true) {
+            try {
+                return execOnce(cmd, cwd, input)
+            } catch (e: GitExitException) {
+                if (!e.neverStarted() || attempt >= START_ATTEMPTS) throw e
+                delay(START_RETRY_DELAY_MS * attempt++)
             }
-            val exitCode = process.onExit().await().exitValue()
-            val out = stdout.await()
-            val err = stderr.await()
-            killer.cancel()
-            if (exitCode !in cmd.successExitCodes) throw gitFailure(cmd, argv, exitCode, err)
-            cmd.parse(out)
         }
     }
+
+    private suspend fun <T> execOnce(cmd: GitCommand<T>, cwd: Path, input: ByteArray?): T =
+        withContext(Dispatchers.IO) {
+            val argv = argv(cmd)
+            val process = start(cmd, argv, cwd)
+            coroutineScope {
+                val killer = killOnCancel(process)
+                val stdout = async { process.inputStream.use(InputStream::readBytes) }
+                val stderr = async { process.errorStream.readCapped(config.stderrLimit) }
+                launch {
+                    // A process may exit without reading its input; that's its answer, not a runner failure.
+                    try {
+                        process.outputStream.use { stdin -> input?.let(stdin::write) }
+                    } catch (_: IOException) {
+                    }
+                }
+                val exitCode = process.onExit().await().exitValue()
+                val out = stdout.await()
+                val err = stderr.await()
+                killer.cancel()
+                if (exitCode !in cmd.successExitCodes) throw gitFailure(cmd, argv, exitCode, err)
+                cmd.parse(out)
+            }
+        }
 
     private fun start(cmd: GitInvocation, argv: List<String>, cwd: Path): Process = try {
         config.launcher.start(argv, cwd, environment(cmd.mutates))
@@ -164,6 +199,16 @@ public class ProcessGitRunner(
 
     private companion object {
         const val MODULE = "GIT"
+
+        /**
+         * Windows' STATUS_DLL_INIT_FAILED (0xC0000142) as an exit code: the process died while loading, before any of
+         * git's code ran. CI runners hit it in bursts when many processes start at once (G0 and G1 CI logs).
+         */
+        const val DLL_INIT_FAILED = -1073741502
+        const val START_ATTEMPTS = 3
+        const val START_RETRY_DELAY_MS = 100L
+
+        fun GitExitException.neverStarted(): Boolean = exitCode == DLL_INIT_FAILED
 
         // Stable, unescaped, colorless output, and never a pager.
         val GLOBAL_OPTIONS = listOf("--no-pager", "-c", "core.quotepath=false", "-c", "color.ui=never")
