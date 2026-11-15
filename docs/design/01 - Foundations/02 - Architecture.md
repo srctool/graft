@@ -68,7 +68,24 @@ Rules:
 - Compose only in `:module:core:ui`, `:module:feature:*`, `:module:navigation` and `:app:desktop`. `:app:cli` never depends on them; it talks to a running app over a local socket.
 - Camouflage (`com.srctool.camouflage`) is used only where Compose is; nothing imports `androidx.compose.material3` ([ADR-22](../03%20-%20Project/02%20-%20Decisions.md)).
 - Only `:module:data:hosting-github` says "GitHub" ([ADR-4](../03%20-%20Project/02%20-%20Decisions.md)).
-- **Models live in the data or domain module that needs them**, never in `:module:core`: a data module's public API is its repositories and models; its sources (git commands and parsers, API clients, DTOs) stay `internal`. A model two data modules need moves to `:module:domain`, or each keeps its own and maps.
+- **Models live in the data or domain module that needs them**, never in `:module:core`. A model two data modules need moves to `:module:domain`, or each keeps its own and maps.
+- **Every data module has the same packages** (`com.srctool.graft.data.<name>.…`). Only `api` and `di` are public; other modules reach a data module through its `di` wiring and use only its `api`. `checkImports` fails on a `public` declaration anywhere else.
+
+  ```
+  api
+    models          the Domain models
+    repositories    the repository interfaces
+  di                wiring: builds the implementations behind the api interfaces
+  implementation    internal
+    repositories    the repository implementations
+    source
+      local         local sources (the git commands and parsers, the database)
+        entity      stored rows
+      remote        remote sources
+        response    response DTOs
+        request     request DTOs
+        api         the API client calls
+  ```
 - The allowed edges are listed in `config/module-graph.txt`; CI fails any other.
 
 ## Layers

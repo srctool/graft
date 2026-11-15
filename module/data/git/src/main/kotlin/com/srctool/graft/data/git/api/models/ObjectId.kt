@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Copyright (C) 2026 Graft contributors
 
-package com.srctool.graft.data.git
+package com.srctool.graft.data.git.api.models
 
 /** A git object name: 40 hex digits (SHA-1) or 64 (SHA-256), lower case. */
 @JvmInline

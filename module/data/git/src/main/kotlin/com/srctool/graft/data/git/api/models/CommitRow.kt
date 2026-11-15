@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Copyright (C) 2026 Graft contributors
 
-package com.srctool.graft.data.git
+package com.srctool.graft.data.git.api.models
 
 /**
  * One commit as the graph needs it (Commit Graph note): the hash, parents, who and when, and the subject. Names and

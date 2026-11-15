@@ -5,6 +5,8 @@ package com.srctool.graft.data.git
 
 import com.srctool.graft.core.git.testing.GitSandbox
 import com.srctool.graft.core.git.testing.GitSandboxExtension
+import com.srctool.graft.data.git.implementation.source.local.LogCommand
+import com.srctool.graft.data.git.implementation.source.local.RefsCommand
 import com.srctool.sinew.models.getOrThrow
 import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.Assumptions.assumeTrue

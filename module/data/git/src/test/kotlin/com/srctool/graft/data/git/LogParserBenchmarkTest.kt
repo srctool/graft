@@ -3,6 +3,8 @@
 
 package com.srctool.graft.data.git
 
+import com.srctool.graft.data.git.api.models.People
+import com.srctool.graft.data.git.implementation.source.local.LogParser
 import java.io.ByteArrayOutputStream
 import kotlin.test.Test
 import kotlin.test.assertEquals

@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Copyright (C) 2026 Graft contributors
 
-package com.srctool.graft.data.git
+package com.srctool.graft.data.git.implementation.source.local
 
 import java.nio.ByteBuffer
 import java.nio.charset.CharacterCodingException

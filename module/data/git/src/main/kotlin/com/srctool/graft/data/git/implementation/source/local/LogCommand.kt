@@ -1,10 +1,14 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Copyright (C) 2026 Graft contributors
 
-package com.srctool.graft.data.git
+package com.srctool.graft.data.git.implementation.source.local
 
 import com.srctool.graft.core.git.GitParseException
 import com.srctool.graft.core.git.StreamingGitCommand
+import com.srctool.graft.data.git.api.models.CommitRow
+import com.srctool.graft.data.git.api.models.ObjectId
+import com.srctool.graft.data.git.api.models.People
+import com.srctool.graft.data.git.api.models.Person
 import java.io.BufferedInputStream
 import java.io.InputStream
 

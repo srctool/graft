@@ -5,6 +5,11 @@ package com.srctool.graft.data.git
 
 import com.srctool.graft.core.git.testing.GitSandbox
 import com.srctool.graft.core.git.testing.GitSandboxExtension
+import com.srctool.graft.data.git.api.models.People
+import com.srctool.graft.data.git.implementation.source.local.LogCommand
+import com.srctool.graft.data.git.implementation.source.local.LogParser
+import com.srctool.graft.data.git.implementation.source.local.RefsCommand
+import com.srctool.graft.data.git.implementation.source.local.RefsParser
 import com.srctool.sinew.models.getOrThrow
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.runBlocking

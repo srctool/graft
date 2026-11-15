@@ -79,17 +79,17 @@ abstract class CheckImportsTask : DefaultTask() {
         val base = projectDir.get().asFile
         val violations =
             sources.files.sorted().flatMap { file ->
-                ImportRules.violations(
-                    projectPath.get(),
-                    file.relativeTo(base).invariantSeparatorsPath,
-                    file.readText(),
-                )
+                val path = file.relativeTo(base).invariantSeparatorsPath
+                val text = file.readText()
+                ImportRules.violations(projectPath.get(), path, text) +
+                    DataModuleSurface.violations(projectPath.get(), path, text)
             }
         if (violations.isNotEmpty()) {
             throw GradleException(
-                "Import rule violations (Architecture, ADR-22, ADR-24):\n" + violations.joinToString("\n") {
-                    "  $it"
-                },
+                "Import and API-surface rule violations (Architecture, ADR-22, ADR-24):\n" +
+                    violations.joinToString("\n") {
+                        "  $it"
+                    },
             )
         }
         report.get().asFile.writeText("ok\n")

@@ -1,10 +1,12 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Copyright (C) 2026 Graft contributors
 
-package com.srctool.graft.data.git
+package com.srctool.graft.data.git.implementation.source.local
 
 import com.srctool.graft.core.git.GitCommand
 import com.srctool.graft.core.git.GitParseException
+import com.srctool.graft.data.git.api.models.ObjectId
+import com.srctool.graft.data.git.api.models.Ref
 
 /**
  * `git for-each-ref` over branches, remote branches, tags, the stash and Graft's refs (Git Engine note), in one call.

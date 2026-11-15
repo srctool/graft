@@ -108,6 +108,33 @@ object ImportRules {
     }
 }
 
+/**
+ * A data module's public surface is its `api` (models and repository interfaces) and its `di` wiring; everything in
+ * `implementation` (repositories, sources, entities, requests, responses) stays internal (Architecture, ADR-24).
+ */
+object DataModuleSurface {
+    private val packageLine = Regex("""^package\s+([\w.]+)""", RegexOption.MULTILINE)
+    private val publicDeclaration = Regex("""^\s*public\s""")
+
+    fun violations(projectPath: String, file: String, text: String): List<Violation> {
+        if (!projectPath.startsWith(":module:data:")) return emptyList()
+        val pkg = packageLine.find(text)?.groupValues?.get(1) ?: return emptyList()
+        val segments = pkg.split('.')
+        if ("api" in segments || "di" in segments) return emptyList()
+        return text.lines().mapIndexedNotNull { index, line ->
+            if (publicDeclaration.containsMatchIn(line)) {
+                Violation(
+                    file,
+                    index + 1,
+                    "$projectPath exposes a public declaration outside its api and di packages ($pkg)",
+                )
+            } else {
+                null
+            }
+        }
+    }
+}
+
 /** The two-line SPDX header every `.kt` / `.kts` file starts with (Conventions §5). */
 object LicenseHeader {
     const val SPDX = "// SPDX-License-Identifier: GPL-3.0-or-later"

@@ -79,7 +79,7 @@ Module folders mirror Gradle paths (`module/core/git` is `:module:core:git`; the
 | Task | Fails when |
 |---|---|
 | `checkModuleGraph` | a project dependency isn't listed in `config/module-graph.txt` |
-| `checkImports` | a module without Compose (anything but `:module:core:ui`, `:module:feature:*`, `:module:navigation`, `:app:desktop`) imports `androidx.compose` or `com.srctool.camouflage`, or any file imports `androidx.compose.material3` |
+| `checkImports` | a module without Compose (anything but `:module:core:ui`, `:module:feature:*`, `:module:navigation`, `:app:desktop`) imports `androidx.compose` or `com.srctool.camouflage`, any file imports `androidx.compose.material3`, or a `:module:data:*` module declares something `public` outside its `api` and `di` packages |
 | `checkLicenseHeaders` | a `.kt` / `.kts` file lacks the SPDX header ([Conventions](02%20-%20Conventions.md)) |
 | `checkDependencyLicenses` | a dependency's license isn't on the GPL-3.0-compatible list ([Open Source](../03%20-%20Project/03%20-%20Open%20Source.md)) |
 

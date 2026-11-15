@@ -4,6 +4,8 @@
 package com.srctool.graft.data.git
 
 import com.srctool.graft.core.git.GitParseException
+import com.srctool.graft.data.git.api.models.People
+import com.srctool.graft.data.git.implementation.source.local.LogParser
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith

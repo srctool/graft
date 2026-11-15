@@ -93,6 +93,32 @@ class ImportRulesTest {
     }
 }
 
+class DataModuleSurfaceTest {
+    private fun lines(path: String, source: String) = DataModuleSurface.violations(path, "X.kt", source).map { it.line }
+
+    @Test
+    fun `public is allowed in api and di packages`() {
+        val models = "package com.srctool.graft.data.git.api.models\npublic class A\n"
+        assertEquals(emptyList(), lines(":module:data:git", models))
+        val di = "package com.srctool.graft.data.git.di\npublic object Wiring\n"
+        assertEquals(emptyList(), lines(":module:data:git", di))
+    }
+
+    @Test
+    fun `public in implementation fails`() {
+        val src =
+            "package com.srctool.graft.data.git.implementation.source.local\n\n" +
+                "public class LogCommand\ninternal class Ok\n"
+        assertEquals(listOf(3), lines(":module:data:git", src))
+    }
+
+    @Test
+    fun `other layers are not checked`() {
+        val core = "package com.srctool.graft.core.git\npublic class GitRunner\n"
+        assertEquals(emptyList(), lines(":module:core:git", core))
+    }
+}
+
 class LicenseHeaderTest {
     @Test
     fun `accepts the header with a year or a year range`() {
