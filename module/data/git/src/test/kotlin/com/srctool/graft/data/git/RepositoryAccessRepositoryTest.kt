@@ -12,7 +12,7 @@ import com.srctool.graft.core.git.testing.GitSandboxExtension
 import com.srctool.graft.data.git.api.models.CloneProgress
 import com.srctool.graft.data.git.api.models.CloneRequest
 import com.srctool.graft.data.git.api.models.Head
-import com.srctool.graft.data.git.api.repositories.RepositoryRepository
+import com.srctool.graft.data.git.api.repositories.RepositoryAccessRepository
 import com.srctool.graft.data.git.di.GitDataModule
 import com.srctool.sinew.models.errorOrNull
 import com.srctool.sinew.models.getOrThrow
@@ -31,8 +31,8 @@ import kotlin.test.assertTrue
 
 /** Opening, summarizing, initializing and cloning real repositories in the sandbox, on the latest Git and on 2.38. */
 @ExtendWith(GitSandboxExtension::class)
-class RepositoryRepositoryTest {
-    private fun GitSandbox.repositories(): RepositoryRepository = GitDataModule(runner()).repositories
+class RepositoryAccessRepositoryTest {
+    private fun GitSandbox.access(): RepositoryAccessRepository = GitDataModule(runner()).access
 
     private fun GitSandbox.simple(name: String = "app"): Path = repo(name) {
         commit("one") { file("src/a.txt", "1") }
@@ -44,7 +44,7 @@ class RepositoryRepositoryTest {
     @Test
     fun `a subfolder opens its repository's root`(sandbox: GitSandbox) = runBlocking {
         val repo = sandbox.simple()
-        val location = sandbox.repositories().locate(repo.resolve("src")).getOrThrow()
+        val location = sandbox.access().locate(repo.resolve("src")).getOrThrow()
         assertEquals(repo.real(), location.workTree)
         assertEquals(repo.resolve(".git").real(), location.gitDir)
         assertEquals(location.gitDir, location.commonDir)
@@ -54,7 +54,7 @@ class RepositoryRepositoryTest {
     @Test
     fun `the git folder itself opens its repository`(sandbox: GitSandbox) = runBlocking {
         val repo = sandbox.simple()
-        assertEquals(repo.real(), sandbox.repositories().locate(repo.resolve(".git")).getOrThrow().workTree)
+        assertEquals(repo.real(), sandbox.access().locate(repo.resolve(".git")).getOrThrow().workTree)
     }
 
     @Test
@@ -62,19 +62,19 @@ class RepositoryRepositoryTest {
         assumeFalse(System.getProperty("os.name").startsWith("Windows"), "symlinks need a privilege on Windows")
         val repo = sandbox.simple()
         val link = Files.createSymbolicLink(sandbox.root.resolve("link"), repo)
-        val repositories = sandbox.repositories()
-        assertEquals(repositories.locate(repo).getOrThrow(), repositories.locate(link).getOrThrow())
+        val access = sandbox.access()
+        assertEquals(access.locate(repo).getOrThrow(), access.locate(link).getOrThrow())
     }
 
     @Test
     fun `a folder outside any repository is not found`(sandbox: GitSandbox) = runBlocking {
-        val error = sandbox.repositories().locate(sandbox.dir("plain")).errorOrNull
+        val error = sandbox.access().locate(sandbox.dir("plain")).errorOrNull
         assertEquals("GIT-R-OPEN-NF", error?.code)
     }
 
     @Test
     fun `a folder that doesn't exist is not found, without starting git there`(sandbox: GitSandbox) = runBlocking {
-        val error = sandbox.repositories().locate(sandbox.root.resolve("gone")).errorOrNull
+        val error = sandbox.access().locate(sandbox.root.resolve("gone")).errorOrNull
         assertEquals("GIT-R-OPEN-NF", error?.code)
         assertTrue(sandbox.violations.isEmpty())
     }
@@ -83,7 +83,7 @@ class RepositoryRepositoryTest {
     fun `a bare repository has no working tree`(sandbox: GitSandbox) = runBlocking {
         val bare = sandbox.root.resolve("srv.git")
         sandbox.git(sandbox.root, "init", "--quiet", "--bare", bare.toString())
-        val location = sandbox.repositories().locate(bare).getOrThrow()
+        val location = sandbox.access().locate(bare).getOrThrow()
         assertNull(location.workTree)
         assertTrue(location.isBare)
         assertEquals(bare.real(), location.gitDir)
@@ -94,13 +94,13 @@ class RepositoryRepositoryTest {
         val repo = sandbox.simple()
         val worktree = sandbox.root.resolve("app-feature")
         sandbox.git(repo, "worktree", "add", "--quiet", "-b", "feature", worktree.toString())
-        val repositories = sandbox.repositories()
-        val location = repositories.locate(worktree).getOrThrow()
+        val access = sandbox.access()
+        val location = access.locate(worktree).getOrThrow()
         assertEquals(worktree.real(), location.workTree)
         assertEquals(repo.resolve(".git").real(), location.commonDir)
         assertEquals(repo.resolve(".git/worktrees").real(), location.gitDir.parent)
         // From inside the worktree's git dir, the gitdir file leads back to the worktree.
-        assertEquals(worktree.real(), repositories.locate(location.gitDir).getOrThrow().workTree)
+        assertEquals(worktree.real(), access.locate(location.gitDir).getOrThrow().workTree)
     }
 
     @Test
@@ -115,13 +115,13 @@ class RepositoryRepositoryTest {
                         launcher = sandbox.launcher,
                     ),
                 )
-            val repositories = GitDataModule(runner).repositories
-            val error = assertIs<GitUnsafeOwnerException>(repositories.locate(repo).errorOrNull)
+            val access = GitDataModule(runner).access
+            val error = assertIs<GitUnsafeOwnerException>(access.locate(repo).errorOrNull)
             assertEquals("GIT-R-OPEN-OWN", error.code)
             assertTrue(error.repositoryPath.isNotEmpty(), error.stderr)
 
-            repositories.trust(error.repositoryPath).getOrThrow()
-            assertEquals(repo.real(), repositories.locate(repo).getOrThrow().workTree)
+            access.trust(error.repositoryPath).getOrThrow()
+            assertEquals(repo.real(), access.locate(repo).getOrThrow().workTree)
             val global = Files.readString(sandbox.globalConfig)
             // `git config` writes it as a [safe] section, in the sandbox's global file only.
             assertTrue("[safe]" in global && "directory = ${error.repositoryPath}" in global, global)
@@ -129,9 +129,9 @@ class RepositoryRepositoryTest {
 
     @Test
     fun `the summary reads a new repository's unborn branch`(sandbox: GitSandbox) = runBlocking {
-        val repositories = sandbox.repositories()
-        val location = repositories.init(sandbox.root.resolve("new/app"), defaultBranch = "trunk").getOrThrow()
-        val summary = repositories.summary(location.workTree!!).getOrThrow()
+        val access = sandbox.access()
+        val location = access.init(sandbox.root.resolve("new/app"), defaultBranch = "trunk").getOrThrow()
+        val summary = access.summary(location.workTree!!).getOrThrow()
         assertEquals(Head.Branch("trunk", null), summary.head)
         assertEquals(false, summary.dirty)
     }
@@ -141,7 +141,7 @@ class RepositoryRepositoryTest {
         val source = sandbox.simple("source")
         val target = sandbox.root.resolve("clones/copy")
         val steps =
-            sandbox.repositories().clone(CloneRequest(url = source.toUri().toString(), directory = target)).toList()
+            sandbox.access().clone(CloneRequest(url = source.toUri().toString(), directory = target)).toList()
         assertTrue(steps.dropLast(1).all { it is CloneProgress.Phase }, steps.toString())
         assertTrue(steps.any { it is CloneProgress.Phase && it.name == "Receiving objects" }, steps.toString())
         val finished = assertIs<CloneProgress.Finished>(steps.last())
@@ -153,7 +153,7 @@ class RepositoryRepositoryTest {
     fun `a shallow single-branch clone`(sandbox: GitSandbox) = runBlocking {
         val source = sandbox.simple("source")
         val target = sandbox.root.resolve("shallow")
-        sandbox.repositories()
+        sandbox.access()
             .clone(CloneRequest(source.toUri().toString(), target, depth = 1, singleBranch = true))
             .toList()
         assertEquals("true", sandbox.git(target, "rev-parse", "--is-shallow-repository").trim())
@@ -167,7 +167,7 @@ class RepositoryRepositoryTest {
         Files.writeString(target.resolve("file.txt"), "x")
         val error =
             assertFailsWith<GitException> {
-                runBlocking { sandbox.repositories().clone(CloneRequest(source.toUri().toString(), target)).toList() }
+                runBlocking { sandbox.access().clone(CloneRequest(source.toUri().toString(), target)).toList() }
             }
         assertEquals("CLON", error.function)
         assertTrue("already exists" in error.stderr, error.stderr)

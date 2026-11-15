@@ -12,7 +12,7 @@ import kotlinx.coroutines.flow.Flow
 import java.nio.file.Path
 
 /** Getting repositories into Graft: finding them, summarizing them, creating and cloning them. */
-public interface RepositoryRepository {
+public interface RepositoryAccessRepository {
     /**
      * The repository [folder] belongs to (any folder inside it, its `.git`, a symlink to it). Fails with
      * `GIT-R-OPEN-NF` when it isn't in one or doesn't exist, and `GIT-R-OPEN-OWN` (Graft's `GitUnsafeOwnerException`)

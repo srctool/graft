@@ -11,7 +11,7 @@ import com.srctool.graft.data.git.api.repositories.IdentityRepository
 import com.srctool.graft.data.git.api.repositories.RefRepository
 import com.srctool.graft.data.git.api.repositories.ReflogRepository
 import com.srctool.graft.data.git.api.repositories.RemoteRepository
-import com.srctool.graft.data.git.api.repositories.RepositoryRepository
+import com.srctool.graft.data.git.api.repositories.RepositoryAccessRepository
 import com.srctool.graft.data.git.api.repositories.StashRepository
 import com.srctool.graft.data.git.implementation.repositories.GitCommitRepository
 import com.srctool.graft.data.git.implementation.repositories.GitCompareRepository
@@ -20,7 +20,7 @@ import com.srctool.graft.data.git.implementation.repositories.GitIdentityReposit
 import com.srctool.graft.data.git.implementation.repositories.GitRefRepository
 import com.srctool.graft.data.git.implementation.repositories.GitReflogRepository
 import com.srctool.graft.data.git.implementation.repositories.GitRemoteRepository
-import com.srctool.graft.data.git.implementation.repositories.GitRepositoryRepository
+import com.srctool.graft.data.git.implementation.repositories.GitRepositoryAccessRepository
 import com.srctool.graft.data.git.implementation.repositories.GitStashRepository
 import java.nio.file.Path
 import java.nio.file.Paths
@@ -33,7 +33,7 @@ import java.nio.file.Paths
 public class GitDataModule(runner: GitRunner, neutralFolder: Path = Paths.get(System.getProperty("java.io.tmpdir"))) {
     public val commits: CommitRepository = GitCommitRepository(runner)
     public val refs: RefRepository = GitRefRepository(runner)
-    public val repositories: RepositoryRepository = GitRepositoryRepository(runner)
+    public val access: RepositoryAccessRepository = GitRepositoryAccessRepository(runner)
     public val diffs: DiffRepository = GitDiffRepository(runner)
     public val compare: CompareRepository = GitCompareRepository(runner)
     public val reflogs: ReflogRepository = GitReflogRepository(runner)

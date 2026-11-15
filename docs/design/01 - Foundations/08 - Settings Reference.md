@@ -29,6 +29,7 @@ Every user setting in one place. **Scope** says where it can be set; the most sp
 |---|---|---|---|
 | Changes view | Staging area | app, profile, repo | [Changelists](../02%20-%20Features/15%20-%20Changelists.md) |
 | Inline diff size limit | 2 MB | app | [Working Copy](../02%20-%20Features/04%20-%20Working%20Copy%20and%20Commit.md) |
+| Diff style | unified; side by side | app | |
 | Ignore whitespace in diffs | off | app | |
 | Auto-shelve on checkout with a dirty tree | off (ask) | profile, repo | [Shelves](../02%20-%20Features/06%20-%20Shelves.md) |
 | Shelf recycle bin retention | 30 days | app | |
