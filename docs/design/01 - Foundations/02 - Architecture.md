@@ -86,6 +86,14 @@ Rules:
         request     request DTOs
         api         the API client calls
   ```
+- **Every feature module has the same packages** (`com.srctool.graft.feature.<name>.…`). `domain` is pure Kotlin with no Compose, so it's tested without a UI; logic a second feature needs moves to `:module:domain`.
+
+  ```
+  presentation
+    <screen>        one screen: its page, its state management (view model), its navigation definition
+    components      components only this feature uses
+  domain            the feature's use cases and pure logic (the graph's lane layout)
+  ```
 - The allowed edges are listed in `config/module-graph.txt`; CI fails any other.
 
 ## Layers
