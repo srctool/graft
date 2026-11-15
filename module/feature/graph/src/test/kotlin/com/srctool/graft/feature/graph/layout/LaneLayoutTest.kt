@@ -6,9 +6,6 @@ package com.srctool.graft.feature.graph.layout
 import com.srctool.graft.data.git.api.models.CommitRow
 import com.srctool.graft.data.git.api.models.ObjectId
 import com.srctool.graft.feature.graph.layout.GraphEdge.Kind
-import kotlinx.coroutines.flow.asFlow
-import kotlinx.coroutines.flow.toList
-import kotlinx.coroutines.runBlocking
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
@@ -95,15 +92,6 @@ class LaneLayoutTest {
     }
 
     @Test
-    fun `laidOut lays out a stream, starting fresh on each collection`() = runBlocking {
-        val commits = history("M: C F", "F: B", "C: B", "B: A", "A:").asFlow().laidOut()
-        val first = commits.toList()
-        val second = commits.toList()
-        assertEquals(render(layout(history("M: C F", "F: B", "C: B", "B: A", "A:"))), render(first))
-        assertEquals(render(first), render(second))
-    }
-
-    @Test
     fun `the synthetic benchmark history keeps the invariants`() {
         layout(LaneLayoutBenchmarkTest.synthetic(20_000))
     }
@@ -129,69 +117,99 @@ class LaneLayoutTest {
             }
         }
 
-        /** Lays out [commits] and checks every row against the layout's invariants. */
-        internal fun layout(commits: List<CommitRow>): List<GraphRow> {
+        /** Rows with the layout that produced them, which answers the pass-through queries. */
+        internal class Laid(val rows: List<GraphRow>, val lanes: LaneLayout) : List<GraphRow> by rows
+
+        /** One segment as the renderer and the invariants see it: a stored edge or a pass-through lane. */
+        private data class Segment(val kind: String, val from: Int, val to: Int, val color: Int) {
+            override fun toString() = "$kind $from>$to c$color"
+        }
+
+        /** A row's segments in drawing order: per lane its TOP edge or pass-through, then the BOTTOM edges. */
+        private fun segments(row: GraphRow, lanes: LaneLayout): List<Segment> {
+            val edges = row.edges()
+            val tops = edges.filter { it.kind == Kind.TOP }.associateBy { it.from }
+            return buildList {
+                for (lane in 0 until row.width) {
+                    val top = tops[lane]
+                    val through = lanes.through(row.index, lane)
+                    if (top != null) {
+                        assertEquals(-1, through, "${row.commit.subject}: lane $lane ends at the node, not through it")
+                        add(Segment("TOP", top.from, top.to, top.color))
+                    } else if (through >= 0) {
+                        add(Segment("THROUGH", lane, lane, through))
+                    }
+                }
+                edges.filter { it.kind == Kind.BOTTOM }.forEach { add(Segment("BOTTOM", it.from, it.to, it.color)) }
+            }
+        }
+
+        /**
+         * Lays out [commits] and checks every row against the layout's invariants, both while streaming (right after
+         * each row) and once the whole history is laid out.
+         */
+        internal fun layout(commits: List<CommitRow>): Laid {
             val lanes = LaneLayout()
-            val rows = commits.map(lanes::next)
+            val streaming = ArrayList<List<Segment>>()
+            val rows = commits.map { commit -> lanes.next(commit).also { streaming += segments(it, lanes) } }
             var above = emptyMap<Int, Int>() // lane -> color at the bottom of the previous row
-            rows.forEach { row ->
-                val edges = row.edges()
+            rows.forEachIndexed { i, row ->
                 val name = row.commit.subject
-                val top = edges.filter { it.kind != Kind.BOTTOM }.associate { it.from to it.color }
-                val bottom = edges.filter { it.kind != Kind.TOP }.associate { it.to to it.color }
+                val segs = segments(row, lanes)
+                assertEquals(streaming[i], segs, "$name: the same lanes while streaming and afterwards")
+                assertEquals(i, row.index)
+                val top = segs.filter { it.kind != "BOTTOM" }.associate { it.from to it.color }
+                val bottom = segs.filter { it.kind != "TOP" }.associate { it.to to it.color }
                 assertEquals(above, top, "lanes entering $name are the lanes leaving the row above")
+                assertTrue(segs.filter { it.kind == "TOP" }.all { it.to == row.lane }, "$name: TOP ends at the node")
                 assertTrue(
-                    edges.filter {
-                        it.kind == Kind.TOP
-                    }.all { it.to == row.lane },
-                    "$name: TOP ends at the node",
-                )
-                assertTrue(
-                    edges.filter { it.kind == Kind.BOTTOM }.all { it.from == row.lane },
+                    segs.filter {
+                        it.kind == "BOTTOM"
+                    }.all { it.from == row.lane },
                     "$name: BOTTOM starts at the node",
                 )
-                assertTrue(edges.filter { it.kind == Kind.THROUGH }.all { it.from == it.to && it.from != row.lane })
-                assertTrue(edges.all { it.from < row.width && it.to < row.width }, "$name fits its width")
-                assertEquals(
-                    row.commit.parents.size,
-                    edges.count {
-                        it.kind == Kind.BOTTOM
-                    },
-                    "$name: one line per parent",
+                assertTrue(
+                    segs.filter {
+                        it.kind == "THROUGH"
+                    }.none { it.from == row.lane },
+                    "$name: no line through the node",
                 )
+                assertTrue(segs.all { it.from < row.width && it.to < row.width }, "$name fits its width")
+                assertEquals(row.commit.parents.size, segs.count { it.kind == "BOTTOM" }, "$name: one line per parent")
                 if (row.commit.parents.isNotEmpty()) {
-                    val firstParent = edges.first { it.kind == Kind.BOTTOM }
+                    val firstParent = segs.first { it.kind == "BOTTOM" }
                     assertEquals(row.lane, firstParent.to, "$name: the first parent keeps the lane")
                     assertEquals(row.color, firstParent.color, "$name: the first parent keeps the color")
                 }
                 above = bottom
             }
             assertEquals(emptyMap(), above, "every line ends at a commit")
-            return rows
+            return Laid(rows, lanes)
         }
 
         /**
-         * One line per row: the lanes (`*` the node, `|` a line in the lane), the subject, then the edges. Colors are
-         * the layout's numbers.
+         * One line per row: the lanes (`*` the node, `|` a line in the lane), the subject, then the segments. Colors
+         * are the layout's numbers.
          */
-        internal fun render(rows: List<GraphRow>): String = buildString {
-            val laneWidth = rows.maxOfOrNull { it.width } ?: 0
-            rows.forEach { row ->
+        internal fun render(laid: Laid): String = buildString {
+            val laneWidth = laid.maxOfOrNull { it.width } ?: 0
+            laid.forEach { row ->
+                val segs = segments(row, laid.lanes)
                 val lanes = CharArray(laneWidth * 2) { ' ' }
-                row.edges().forEach { e ->
-                    if (e.kind == Kind.THROUGH) lanes[e.from * 2] = '|'
-                    if (e.kind == Kind.TOP && e.from != row.lane) lanes[e.from * 2] = '/'
-                    if (e.kind == Kind.BOTTOM && e.to != row.lane) lanes[e.to * 2] = '\\'
+                segs.forEach { e ->
+                    if (e.kind == "THROUGH") lanes[e.from * 2] = '|'
+                    if (e.kind == "TOP" && e.from != row.lane) lanes[e.from * 2] = '/'
+                    if (e.kind == "BOTTOM" && e.to != row.lane) lanes[e.to * 2] = '\\'
                 }
                 lanes[row.lane * 2] = '*'
                 append(String(lanes)).append(' ')
                 append(row.commit.subject.ifEmpty { "(empty)" }.padEnd(16))
                 append(" lane ").append(row.lane).append(" c").append(row.color)
-                append(" | ").append(row.edges().joinToString(", "))
+                append(" | ").append(segs.joinToString(", "))
                 append('\n')
             }
         }
 
-        private fun golden(case: String, rows: List<GraphRow>) = Golden.check("layout", case, render(rows))
+        private fun golden(case: String, laid: Laid) = Golden.check("layout", case, render(laid))
     }
 }

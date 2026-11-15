@@ -113,6 +113,9 @@
 :app:desktop -> :module:core:exception
 :app:desktop -> :module:core:notification
 :app:desktop -> :module:core:configuration
+# G0 Task 8 spike only (the author's ruling, 2026-11-15): the app opens the graph spike directly. Removed in G1,
+# when the app-to-feature wiring is decided.
+:app:desktop -> :module:feature:graph
 :app:cli -> :module:data:git
 :app:cli -> :module:data:app
 :app:cli -> :module:data:hosting
