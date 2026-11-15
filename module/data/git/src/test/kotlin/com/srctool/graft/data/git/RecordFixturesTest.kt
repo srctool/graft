@@ -11,7 +11,10 @@ import com.srctool.graft.data.git.implementation.source.local.ChangedFilesComman
 import com.srctool.graft.data.git.implementation.source.local.DetailsCommand
 import com.srctool.graft.data.git.implementation.source.local.LogCommand
 import com.srctool.graft.data.git.implementation.source.local.PatchCommand
+import com.srctool.graft.data.git.implementation.source.local.ReflogCommand
 import com.srctool.graft.data.git.implementation.source.local.RefsCommand
+import com.srctool.graft.data.git.implementation.source.local.RemotesCommand
+import com.srctool.graft.data.git.implementation.source.local.StashListCommand
 import com.srctool.graft.data.git.implementation.source.local.StatusSummaryCommand
 import com.srctool.sinew.models.getOrThrow
 import kotlinx.coroutines.runBlocking
@@ -55,5 +58,25 @@ class RecordFixturesTest {
             record("files", case, ChangedFilesCommand(target).args)
             record("patch", case, PatchCommand(target).args)
         }
+    }
+
+    @Test
+    fun `record reflogs, stashes and remotes`(sandbox: GitSandbox) = runBlocking {
+        assumeTrue(Fixtures.recording, "set -PrecordFixtures to re-record")
+        val runner = sandbox.runner()
+        val history = ReflogRepos.history(sandbox)
+        Fixtures.write(
+            "reflog",
+            "history",
+            runner.run(RawBytesCommand(ReflogCommand("HEAD", 0, 100).args), history).getOrThrow(),
+        )
+        val stashes = ReflogRepos.stashes(sandbox)
+        Fixtures.write("stash", "list", runner.run(RawBytesCommand(StashListCommand().args), stashes).getOrThrow())
+        val remotes = ReflogRepos.remotes(sandbox)
+        Fixtures.write(
+            "remote",
+            "credentials",
+            runner.run(RawBytesCommand(RemotesCommand().args), remotes).getOrThrow(),
+        )
     }
 }
