@@ -4,3 +4,8 @@
 plugins {
     id("graft.kotlin-library")
 }
+
+dependencies {
+    implementation(projects.core.security)
+    implementation(projects.core.exception)
+}

@@ -6,14 +6,22 @@ plugins {
 }
 
 dependencies {
-    implementation(projects.feature.graph)
-    implementation(projects.feature.workingcopy)
-    implementation(projects.feature.shelves)
-    implementation(projects.feature.worktrees)
-    implementation(projects.feature.submodules)
-    implementation(projects.feature.changerequests)
-    implementation(projects.feature.issues)
-    implementation(projects.provider.github)
+    implementation(projects.navigation)
+    implementation(projects.presentation)
+    implementation(projects.data.git)
+    implementation(projects.data.app)
+    implementation(projects.data.hosting)
+    implementation(projects.data.hostingGithub)
+    implementation(projects.core.ui)
+    implementation(projects.core.git)
+    implementation(projects.core.network)
+    implementation(projects.core.database)
+    implementation(projects.core.security)
+    implementation(projects.core.preference)
+    implementation(projects.core.models)
+    implementation(projects.core.exception)
+    implementation(projects.core.notification)
+    implementation(projects.core.configuration)
 }
 
 compose.desktop {

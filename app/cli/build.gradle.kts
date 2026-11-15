@@ -6,7 +6,16 @@ plugins {
 }
 
 dependencies {
-    implementation(projects.core.repo)
-    implementation(projects.core.data)
-    implementation(projects.provider.github)
+    implementation(projects.data.git)
+    implementation(projects.data.app)
+    implementation(projects.data.hosting)
+    implementation(projects.data.hostingGithub)
+    implementation(projects.core.git)
+    implementation(projects.core.network)
+    implementation(projects.core.database)
+    implementation(projects.core.security)
+    implementation(projects.core.preference)
+    implementation(projects.core.models)
+    implementation(projects.core.exception)
+    implementation(projects.core.configuration)
 }

@@ -33,43 +33,46 @@ data class Violation(val file: String, val line: Int, val message: String) {
     override fun toString() = "$file:$line: $message"
 }
 
-/** Which UI packages a module may use (Architecture, ADR-19, ADR-22). */
+/** Which UI packages a module may use (Architecture, ADR-19, ADR-22, ADR-24). */
 object ImportRules {
     private val material3 = Regex("""\bandroidx\.compose\.material3\b""")
     private val compose = Regex("""\bandroidx\.compose\b(?!\w)""")
     private val camouflage = Regex("""\bcom\.srctool\.camouflage\b""")
 
+    /** The modules allowed to use Compose and Camouflage; everything else, `:app:cli` included, stays UI-free. */
+    fun isUiModule(projectPath: String): Boolean =
+        projectPath in setOf(":core:ui", ":navigation", ":app:desktop") || projectPath.startsWith(":feature:")
+
     fun violations(projectPath: String, file: String, text: String): List<Violation> {
-        val noCompose = projectPath.startsWith(":core:") || projectPath == ":app:cli"
-        // Camouflage is the toolkit only ui-kit sees; Material 3 isn't a dependency at all.
-        val noCamouflage = projectPath != ":ui:kit"
+        val ui = isUiModule(projectPath)
         val result = mutableListOf<Violation>()
         var inBlockComment = false
         text.lines().forEachIndexed { index, raw ->
             val code = stripComments(raw, inBlockComment).also { inBlockComment = it.second }.first
             when {
-                noCompose && compose.containsMatchIn(code) ->
-                    result +=
-                        Violation(
-                            file,
-                            index + 1,
-                            "$projectPath must not use androidx.compose (core-* and app-cli stay UI-free)",
-                        )
-
+                // Material 3 isn't a dependency at all: Camouflage draws on Compose foundation (ADR-22).
                 material3.containsMatchIn(code) ->
                     result +=
                         Violation(
                             file,
                             index + 1,
-                            "$projectPath must not use androidx.compose.material3; Graft's UI is Camouflage through ui-kit",
+                            "$projectPath must not use androidx.compose.material3; use Camouflage",
                         )
 
-                noCamouflage && camouflage.containsMatchIn(code) ->
+                !ui && compose.containsMatchIn(code) ->
                     result +=
                         Violation(
                             file,
                             index + 1,
-                            "$projectPath must not use com.srctool.camouflage; use ui-kit components",
+                            "$projectPath must not use androidx.compose (only the UI modules use Compose)",
+                        )
+
+                !ui && camouflage.containsMatchIn(code) ->
+                    result +=
+                        Violation(
+                            file,
+                            index + 1,
+                            "$projectPath must not use com.srctool.camouflage (only the UI modules use Camouflage)",
                         )
             }
         }

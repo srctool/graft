@@ -60,12 +60,19 @@ class ChecksFunctionalTest {
     }
 
     @Test
-    fun `camouflage outside ui-kit fails`() {
+    fun `camouflage outside the UI modules fails`() {
+        fixture()
+        write("core/a/src/main/kotlin/A.kt", header + "package a\n\nimport com.srctool.camouflage.core.CamoButton\n")
+        val out = fail("checkImports").output
+        assertContains(out, "A.kt:5")
+        assertContains(out, "com.srctool.camouflage")
+    }
+
+    @Test
+    fun `camouflage in a feature passes`() {
         fixture()
         write("feature/b/src/main/kotlin/B.kt", header + "package b\n\nimport com.srctool.camouflage.core.CamoButton\n")
-        val out = fail("checkImports").output
-        assertContains(out, "B.kt:5")
-        assertContains(out, "com.srctool.camouflage")
+        pass("checkImports")
     }
 
     @Test

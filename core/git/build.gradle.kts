@@ -6,5 +6,6 @@ plugins {
 }
 
 dependencies {
-    implementation(projects.core.model)
+    implementation(projects.core.models)
+    implementation(projects.core.exception)
 }

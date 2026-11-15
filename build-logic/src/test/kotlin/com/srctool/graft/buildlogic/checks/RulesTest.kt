@@ -44,45 +44,45 @@ class ModuleGraphTest {
 class ImportRulesTest {
     private fun violations(path: String, source: String) = ImportRules.violations(path, "X.kt", source).map { it.line }
 
+    private val uiModules = listOf(":core:ui", ":feature:graph", ":navigation", ":app:desktop")
+    private val plainModules = listOf(":core:git", ":data:git", ":presentation", ":domain", ":app:cli")
+
     @Test
-    fun `material3 is allowed nowhere, ui-kit included`() {
+    fun `material3 is allowed nowhere`() {
         val src = "package x\n\nimport androidx.compose.material3.Text\n"
-        assertEquals(listOf(3), violations(":ui:kit", src))
-        assertEquals(listOf(3), violations(":feature:graph", src))
-        assertEquals(listOf(3), violations(":app:desktop", src))
+        (uiModules + plainModules).forEach { assertEquals(listOf(3), violations(it, src), it) }
     }
 
     @Test
-    fun `camouflage is allowed only in ui-kit`() {
-        val src = "package x\n\nimport com.srctool.camouflage.core.CamoButton\n"
-        assertEquals(emptyList(), violations(":ui:kit", src))
-        assertEquals(listOf(3), violations(":feature:graph", src))
-        assertEquals(listOf(3), violations(":app:desktop", src))
-        assertEquals(emptyList(), violations(":feature:graph", "import com.srctool.camouflagex.Foo\n"))
+    fun `compose and camouflage only in the UI modules`() {
+        listOf(
+            "import androidx.compose.runtime.Composable",
+            "import com.srctool.camouflage.core.CamoButton",
+        ).forEach { line ->
+            val src = "package x\n$line\n"
+            uiModules.forEach { assertEquals(emptyList(), violations(it, src), "$it: $line") }
+            plainModules.forEach { assertEquals(listOf(2), violations(it, src), "$it: $line") }
+        }
     }
 
     @Test
-    fun `fully qualified material3 references count too`() {
+    fun `fully qualified references count too`() {
         assertEquals(listOf(2), violations(":feature:graph", "package x\nval t = androidx.compose.material3.Text\n"))
-    }
-
-    @Test
-    fun `core and app-cli never import compose`() {
-        val src = "package x\nimport androidx.compose.runtime.Composable\n"
-        assertEquals(listOf(2), violations(":core:git", src))
-        assertEquals(listOf(2), violations(":app:cli", src))
-        assertEquals(emptyList(), violations(":feature:graph", src))
+        assertEquals(listOf(2), violations(":data:git", "package x\nval c = com.srctool.camouflage.core.CamoButton\n"))
     }
 
     @Test
     fun `comments are ignored`() {
-        val src = "// androidx.compose.material3 is only for ui-kit\n/*\n * androidx.compose.runtime\n */\n"
+        val src = "// androidx.compose.material3 is not used\n/*\n * androidx.compose.runtime\n */\n"
         assertEquals(emptyList(), violations(":core:git", src))
     }
 
     @Test
     fun `similar package names are not matched`() {
-        assertEquals(emptyList(), violations(":core:git", "import androidx.composex.Foo\n"))
+        assertEquals(
+            emptyList(),
+            violations(":core:git", "import androidx.composex.Foo\nimport com.srctool.camouflagex.Foo\n"),
+        )
     }
 }
 

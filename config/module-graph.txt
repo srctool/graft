@@ -1,46 +1,144 @@
-# Allowed project dependencies, one "from -> to" per line, copied from the module graph in
-# docs/design/01 - Foundations/02 - Architecture.md. checkModuleGraph fails on any edge not listed here.
-# A new edge needs an ADR first.
+# Allowed project dependencies, one "from -> to" per line, from the module structure in
+# docs/design/01 - Foundations/02 - Architecture.md (ADR-24). Dependencies point down only:
+# app -> navigation -> feature -> domain / presentation / data -> core.
+# checkModuleGraph fails on any edge not listed here. A new edge needs an ADR first.
 
-:core:git -> :core:model
-:core:repo -> :core:git
-:core:provider -> :core:model
-:core:data -> :core:model
+# core
+:core:exception -> :core:models
+:core:git -> :core:models
+:core:git -> :core:exception
+:core:network -> :core:security
+:core:network -> :core:exception
+:core:ui -> :core:models
+:core:ui -> :core:exception
 
-:provider:github -> :core:provider
-:provider:github -> :core:network
+# data
+:data:git -> :core:git
+:data:git -> :core:models
+:data:git -> :core:exception
+:data:app -> :core:database
+:data:app -> :core:preference
+:data:app -> :core:security
+:data:app -> :core:configuration
+:data:app -> :core:models
+:data:app -> :core:exception
+:data:hosting -> :core:models
+:data:hosting -> :core:exception
+:data:hosting-github -> :data:hosting
+:data:hosting-github -> :core:network
+:data:hosting-github -> :core:database
+:data:hosting-github -> :core:models
+:data:hosting-github -> :core:exception
 
-:feature:graph -> :core:repo
-:feature:graph -> :core:data
-:feature:graph -> :ui:kit
-:feature:workingcopy -> :core:repo
-:feature:workingcopy -> :core:data
-:feature:workingcopy -> :ui:kit
-:feature:shelves -> :core:repo
-:feature:shelves -> :core:data
-:feature:shelves -> :ui:kit
-:feature:worktrees -> :core:repo
-:feature:worktrees -> :core:data
-:feature:worktrees -> :ui:kit
-:feature:submodules -> :core:repo
-:feature:submodules -> :core:data
-:feature:submodules -> :ui:kit
-:feature:changerequests -> :core:provider
-:feature:changerequests -> :core:data
-:feature:changerequests -> :ui:kit
-:feature:issues -> :core:provider
-:feature:issues -> :core:data
-:feature:issues -> :ui:kit
+# domain (created when the first shared use case needs it)
+:domain -> :data:git
+:domain -> :data:app
+:domain -> :data:hosting
+:domain -> :core:models
+:domain -> :core:exception
 
-:app:desktop -> :feature:graph
-:app:desktop -> :feature:workingcopy
-:app:desktop -> :feature:shelves
-:app:desktop -> :feature:worktrees
-:app:desktop -> :feature:submodules
-:app:desktop -> :feature:changerequests
-:app:desktop -> :feature:issues
-:app:desktop -> :provider:github
+# presentation
+:presentation -> :data:git
+:presentation -> :data:app
+:presentation -> :data:hosting
+:presentation -> :core:models
+:presentation -> :core:exception
 
-:app:cli -> :core:repo
-:app:cli -> :core:data
-:app:cli -> :provider:github
+# features
+:feature:graph -> :presentation
+:feature:graph -> :data:git
+:feature:graph -> :data:app
+:feature:graph -> :data:hosting
+:feature:graph -> :core:ui
+:feature:graph -> :core:models
+:feature:graph -> :core:exception
+:feature:graph -> :domain
+:feature:workingcopy -> :presentation
+:feature:workingcopy -> :data:git
+:feature:workingcopy -> :data:app
+:feature:workingcopy -> :data:hosting
+:feature:workingcopy -> :core:ui
+:feature:workingcopy -> :core:models
+:feature:workingcopy -> :core:exception
+:feature:workingcopy -> :domain
+:feature:shelves -> :presentation
+:feature:shelves -> :data:git
+:feature:shelves -> :data:app
+:feature:shelves -> :data:hosting
+:feature:shelves -> :core:ui
+:feature:shelves -> :core:models
+:feature:shelves -> :core:exception
+:feature:shelves -> :domain
+:feature:worktrees -> :presentation
+:feature:worktrees -> :data:git
+:feature:worktrees -> :data:app
+:feature:worktrees -> :data:hosting
+:feature:worktrees -> :core:ui
+:feature:worktrees -> :core:models
+:feature:worktrees -> :core:exception
+:feature:worktrees -> :domain
+:feature:submodules -> :presentation
+:feature:submodules -> :data:git
+:feature:submodules -> :data:app
+:feature:submodules -> :data:hosting
+:feature:submodules -> :core:ui
+:feature:submodules -> :core:models
+:feature:submodules -> :core:exception
+:feature:submodules -> :domain
+:feature:changerequests -> :presentation
+:feature:changerequests -> :data:git
+:feature:changerequests -> :data:app
+:feature:changerequests -> :data:hosting
+:feature:changerequests -> :core:ui
+:feature:changerequests -> :core:models
+:feature:changerequests -> :core:exception
+:feature:changerequests -> :domain
+:feature:issues -> :presentation
+:feature:issues -> :data:git
+:feature:issues -> :data:app
+:feature:issues -> :data:hosting
+:feature:issues -> :core:ui
+:feature:issues -> :core:models
+:feature:issues -> :core:exception
+:feature:issues -> :domain
+
+# navigation
+:navigation -> :feature:graph
+:navigation -> :feature:workingcopy
+:navigation -> :feature:shelves
+:navigation -> :feature:worktrees
+:navigation -> :feature:submodules
+:navigation -> :feature:changerequests
+:navigation -> :feature:issues
+:navigation -> :presentation
+:navigation -> :core:ui
+
+# apps
+:app:desktop -> :navigation
+:app:desktop -> :presentation
+:app:desktop -> :data:git
+:app:desktop -> :data:app
+:app:desktop -> :data:hosting
+:app:desktop -> :data:hosting-github
+:app:desktop -> :core:ui
+:app:desktop -> :core:git
+:app:desktop -> :core:network
+:app:desktop -> :core:database
+:app:desktop -> :core:security
+:app:desktop -> :core:preference
+:app:desktop -> :core:models
+:app:desktop -> :core:exception
+:app:desktop -> :core:notification
+:app:desktop -> :core:configuration
+:app:cli -> :data:git
+:app:cli -> :data:app
+:app:cli -> :data:hosting
+:app:cli -> :data:hosting-github
+:app:cli -> :core:git
+:app:cli -> :core:network
+:app:cli -> :core:database
+:app:cli -> :core:security
+:app:cli -> :core:preference
+:app:cli -> :core:models
+:app:cli -> :core:exception
+:app:cli -> :core:configuration

@@ -87,7 +87,7 @@ abstract class CheckImportsTask : DefaultTask() {
             }
         if (violations.isNotEmpty()) {
             throw GradleException(
-                "Import rule violations (Architecture, ADR-19, ADR-20):\n" + violations.joinToString("\n") {
+                "Import rule violations (Architecture, ADR-22, ADR-24):\n" + violations.joinToString("\n") {
                     "  $it"
                 },
             )
