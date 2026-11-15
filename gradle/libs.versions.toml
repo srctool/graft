@@ -13,6 +13,7 @@ coroutines = "1.11.0"
 serialization = "1.11.0"
 directory-watcher = "0.19.1"
 turbine = "1.2.1"
+roborazzi = "1.79.0"
 
 [libraries]
 compose-runtime = { module = "org.jetbrains.compose.runtime:runtime", version.ref = "compose" }
@@ -28,11 +29,14 @@ sinew-models = { module = "com.srctool.sinew:sinew-models" }
 sinew-exception = { module = "com.srctool.sinew:sinew-exception" }
 sinew-viewmodel = { module = "com.srctool.sinew:sinew-viewmodel" }
 sinew-presentation = { module = "com.srctool.sinew:sinew-presentation" }
+sinew-l10n = { module = "com.srctool.sinew:sinew-l10n" }
 kotlinx-coroutines-core = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-core", version.ref = "coroutines" }
 kotlinx-coroutines-swing = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-swing", version.ref = "coroutines" }
 kotlinx-serialization-json = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json", version.ref = "serialization" }
 directory-watcher = { module = "io.methvin:directory-watcher", version.ref = "directory-watcher" }
 turbine = { module = "app.cash.turbine:turbine", version.ref = "turbine" }
+roborazzi-compose-desktop = { module = "io.github.takahirom.roborazzi:roborazzi-compose-desktop", version.ref = "roborazzi" }
+compose-ui-test = { module = "org.jetbrains.compose.ui:ui-test", version.ref = "compose" }
 kotlinx-coroutines-test = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-test", version.ref = "coroutines" }
 junit-jupiter-api = { module = "org.junit.jupiter:junit-jupiter-api" }
 junit-bom = { module = "org.junit:junit-bom", version.ref = "junit" }
