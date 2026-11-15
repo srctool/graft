@@ -7,6 +7,8 @@ plugins {
 
 dependencies {
     implementation(projects.module.navigation)
+    // G0 Task 8 spike only; removed in G1 (config/module-graph.txt).
+    implementation(projects.module.feature.graph)
     implementation(projects.module.presentation)
     implementation(projects.module.data.git)
     implementation(projects.module.data.app)
@@ -21,6 +23,8 @@ dependencies {
     implementation(projects.module.core.exception)
     implementation(projects.module.core.notification)
     implementation(projects.module.core.configuration)
+    // Dispatchers.Main on the Swing event thread, which Compose Desktop draws on; view models run there.
+    runtimeOnly(libs.kotlinx.coroutines.swing)
 }
 
 compose.desktop {

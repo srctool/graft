@@ -18,7 +18,9 @@ camouflage-skin-carbon = { module = "com.srctool.camouflage:camouflage-skin-carb
 sinew-bom = { module = "com.srctool.sinew:sinew-bom", version.ref = "sinew" }
 sinew-models = { module = "com.srctool.sinew:sinew-models" }
 sinew-exception = { module = "com.srctool.sinew:sinew-exception" }
+sinew-viewmodel = { module = "com.srctool.sinew:sinew-viewmodel" }
 kotlinx-coroutines-core = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-core", version.ref = "coroutines" }
+kotlinx-coroutines-swing = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-swing", version.ref = "coroutines" }
 kotlinx-coroutines-test = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-test", version.ref = "coroutines" }
 junit-jupiter-api = { module = "org.junit.jupiter:junit-jupiter-api" }
 junit-bom = { module = "org.junit:junit-bom", version.ref = "junit" }

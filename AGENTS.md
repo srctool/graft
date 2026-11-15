@@ -108,9 +108,9 @@ Before reporting a task done: `./gradlew check` passes. Say so with the output; 
 
 | | |
 |---|---|
-| Milestone | **G0 Setup + spike**: plan in `plans/G0.md` |
-| Next | G0 Task 6 (#7): log and refs parsers in `:module:core:git` |
-| Open decisions | final name checks (Naming), G0 spike confirming ADR-1 |
+| Milestone | **G0 Setup + spike**: done (ADR-1 confirmed 2026-11-15); G1 next |
+| Next | G1: draft `plans/G1.md` from the Roadmap, then stop for review |
+| Open decisions | final name checks (Naming); from the G0 spike: writing a commit-graph file on open, and the first-screen and frame-time gaps (`plans/progress.md`) |
 
 <!-- gitnexus:start -->
 # GitNexus — Code Intelligence

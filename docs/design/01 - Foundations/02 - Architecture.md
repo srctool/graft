@@ -86,6 +86,25 @@ Rules:
         request     request DTOs
         api         the API client calls
   ```
+- **Every feature module has the same packages** (`com.srctool.graft.feature.<name>.…`). `domain` is pure Kotlin with no Compose, so it's tested without a UI, and it's shaped like a data module without `di`; logic a second feature needs moves to `:module:domain`.
+
+  ```
+  presentation
+    <screen>          one screen, one file each:
+                        <Screen>Page          the page: renders State, sends Events, handles Effects
+                        <Screen>ViewModel     Sinew's EventActionViewModel: Event → Action → State + Effect
+                        <Screen>State, <Screen>Event, <Screen>Action, <Screen>Effect
+                        <Screen>Navigation    the route with its arguments, and the destination that builds
+                                              the view model from them and its dependencies and connects it
+                                              to the page (the screen's coordinator)
+    components        components only this feature uses
+  domain
+    api
+      models          the feature's models (the graph's GraphRow)
+      usecases        use-case and pure-logic interfaces (GraphLayout)
+    implementation
+      usecases        their implementations (LaneLayout); the navigation file wires them
+  ```
 - The allowed edges are listed in `config/module-graph.txt`; CI fails any other.
 
 ## Layers

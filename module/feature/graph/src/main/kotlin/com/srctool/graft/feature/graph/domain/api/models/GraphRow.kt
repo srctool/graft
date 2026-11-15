@@ -1,21 +1,23 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Copyright (C) 2026 Graft contributors
 
-package com.srctool.graft.feature.graph.layout
+package com.srctool.graft.feature.graph.domain.api.models
 
 import com.srctool.graft.data.git.api.models.CommitRow
 
 /**
- * One row of the commit graph (Commit Graph note): the commit, the lane its node sits in, and the line segments
- * crossing the row. A row is split at the node's height: [GraphEdge.Kind.TOP] segments run from the row's top edge to
- * the node, [GraphEdge.Kind.BOTTOM] segments from the node to the row's bottom edge, and [GraphEdge.Kind.THROUGH]
- * lanes pass straight down without touching it. Lanes never move sideways between rows, so the lanes at the bottom of
- * one row are exactly those at the top of the next.
+ * One row of the commit graph (Commit Graph note): the commit, the lane its node sits in, and the lines that touch the
+ * node. A row is split at the node's height: [GraphEdge.Kind.TOP] segments run from the row's top edge to the node,
+ * [GraphEdge.Kind.BOTTOM] segments from the node to the row's bottom edge. Lanes passing straight down without touching
+ * the node aren't stored per row; ask `GraphLayout.through`. Lanes never move sideways between rows, so the lanes at the
+ * bottom of one row are exactly those at the top of the next.
  *
  * Edges are packed into one array per row, since a 500k-commit history has millions of them.
  */
 internal class GraphRow(
     val commit: CommitRow,
+    /** The row's position in the graph, from 0 at the top. */
+    val index: Int,
     /** The lane of the commit's node, from 0 at the left. */
     val lane: Int,
     /** The node's color: stable along a branch's first-parent line, not tied to the lane index. */
@@ -40,9 +42,6 @@ internal value class GraphEdge(private val bits: Long) {
 
         /** From the node in lane [from] to lane [to] at the row's bottom: a line leaving for a parent. */
         BOTTOM,
-
-        /** Lane [from] (equal to [to]) passing straight through the row. */
-        THROUGH,
     }
 
     val kind: Kind get() = Kind.entries[(bits ushr KIND_SHIFT).toInt() and 0x3]

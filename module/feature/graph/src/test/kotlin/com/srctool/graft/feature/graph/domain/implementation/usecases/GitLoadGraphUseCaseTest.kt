@@ -1,0 +1,97 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+// Copyright (C) 2026 Graft contributors
+
+package com.srctool.graft.feature.graph.domain.implementation.usecases
+
+import com.srctool.graft.data.git.api.models.CommitLog
+import com.srctool.graft.data.git.api.models.CommitRow
+import com.srctool.graft.data.git.api.models.People
+import com.srctool.graft.data.git.api.repositories.CommitRepository
+import com.srctool.graft.feature.graph.domain.api.models.GraphLoad
+import com.srctool.graft.feature.graph.domain.api.usecases.LoadGraphUseCase.Companion.FIRST_BATCH_ROWS
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.asFlow
+import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.toList
+import kotlinx.coroutines.test.StandardTestDispatcher
+import kotlinx.coroutines.test.TestDispatcher
+import kotlinx.coroutines.test.runTest
+import java.nio.file.Path
+import java.nio.file.Paths
+import kotlin.test.Test
+import kotlin.test.assertEquals
+import kotlin.test.assertIs
+import kotlin.test.assertTrue
+
+class GitLoadGraphUseCaseTest {
+    private val history = LaneLayoutBenchmarkTest.synthetic(5_000)
+    private val repo = Paths.get("/repo")
+
+    private fun useCase(rows: Flow<CommitRow>, dispatcher: TestDispatcher) =
+        GitLoadGraphUseCase(FakeCommits(rows), ::LaneLayout, dispatcher)
+
+    @Test
+    fun `lays out every commit, a screen first, then reports the end`() = runTest {
+        val steps = useCase(history.asFlow(), StandardTestDispatcher(testScheduler)).load(repo).toList()
+        val first = assertIs<GraphLoad.Progress>(steps.first())
+        assertEquals(FIRST_BATCH_ROWS, first.rowCount, "the first batch is one screen")
+        val loaded = assertIs<GraphLoad.Loaded>(steps.last())
+        assertEquals(5_000, loaded.rowCount)
+        assertEquals(5_000, loaded.graph.size)
+        assertTrue(steps.dropLast(1).all { it is GraphLoad.Progress })
+        assertTrue(steps.all { it.graph === loaded.graph }, "one graph grows across the steps")
+        // Progress only grows.
+        val counts = steps.filterIsInstance<GraphLoad.Progress>().map { it.rowCount }
+        assertEquals(counts.sorted(), counts)
+    }
+
+    @Test
+    fun `the graph matches a plain layout of the same commits`() = runTest {
+        val loaded = useCase(history.asFlow(), StandardTestDispatcher(testScheduler)).load(repo).toList().last()
+        val plain = LaneLayout()
+        history.forEachIndexed { i, commit ->
+            val expected = plain.next(commit)
+            val row = loaded.graph[i]
+            assertEquals(expected.lane, row.lane)
+            assertEquals(expected.color, row.color)
+            assertEquals(expected.edges(), row.edges())
+        }
+        assertEquals(plain.widest, loaded.graph.widest)
+    }
+
+    @Test
+    fun `the limit caps the commits`() = runTest {
+        val loaded = useCase(history.asFlow(), StandardTestDispatcher(testScheduler)).load(repo, limit = 100).toList()
+        assertEquals(100, assertIs<GraphLoad.Loaded>(loaded.last()).rowCount)
+    }
+
+    @Test
+    fun `a failing log ends in Failed, keeping the rows before it`() = runTest {
+        val boom = IllegalStateException("GIT-R-LOG-NF")
+        val failing = flow {
+            history.take(70).forEach { emit(it) }
+            throw boom
+        }
+        val steps = useCase(failing, StandardTestDispatcher(testScheduler)).load(repo).toList()
+        val failed = assertIs<GraphLoad.Failed>(steps.last())
+        // Coroutines may hand on a copy with a recovered stack trace, so compare type and message.
+        assertIs<IllegalStateException>(failed.error)
+        assertEquals(boom.message, failed.error.message)
+        assertEquals(70, failed.graph.size)
+        assertTrue(steps.none { it is GraphLoad.Loaded })
+    }
+
+    @Test
+    fun `each load starts a new graph`() = runTest {
+        val useCase = useCase(history.take(10).asFlow(), StandardTestDispatcher(testScheduler))
+        val first = useCase.load(repo).toList().last().graph
+        val second = useCase.load(repo).toList().last().graph
+        assertTrue(first !== second)
+        assertEquals(10, second.size)
+    }
+}
+
+/** A repository whose log is [rows], for any path. */
+internal class FakeCommits(private val rows: Flow<CommitRow>) : CommitRepository {
+    override fun log(repository: Path): CommitLog = CommitLog(rows, People())
+}
