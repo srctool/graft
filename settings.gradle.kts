@@ -27,7 +27,6 @@ enableFeaturePreview("TYPESAFE_PROJECT_ACCESSORS")
 rootProject.name = "graft"
 
 include(
-    ":module:core:models",
     ":module:core:exception",
     ":module:core:git",
     ":module:core:network",

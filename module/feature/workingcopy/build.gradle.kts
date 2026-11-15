@@ -11,6 +11,5 @@ dependencies {
     implementation(projects.module.data.app)
     implementation(projects.module.data.hosting)
     implementation(projects.module.core.ui)
-    implementation(projects.module.core.models)
     implementation(projects.module.core.exception)
 }

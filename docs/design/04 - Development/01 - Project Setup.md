@@ -35,7 +35,7 @@ graft/
 ├─ module/domain/              shared use cases (created when first needed)
 ├─ module/data/git/  app/  hosting/  hosting-github/
 ├─ module/core/ui/  git/  network/  database/  security/
-├─ module/core/preference/  models/  exception/  notification/  configuration/
+├─ module/core/preference/  exception/  notification/  configuration/
 ├─ fixtures/                    recorded repos and API responses (see Testing Strategy)
 ├─ plans/                       milestone plans and the progress ledger (agent workflow)
 ├─ AGENTS.md  CLAUDE.md         agent instructions

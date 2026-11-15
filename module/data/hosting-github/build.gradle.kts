@@ -9,6 +9,5 @@ dependencies {
     implementation(projects.module.data.hosting)
     implementation(projects.module.core.network)
     implementation(projects.module.core.database)
-    implementation(projects.module.core.models)
     implementation(projects.module.core.exception)
 }

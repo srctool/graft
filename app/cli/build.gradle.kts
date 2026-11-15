@@ -15,7 +15,6 @@ dependencies {
     implementation(projects.module.core.database)
     implementation(projects.module.core.security)
     implementation(projects.module.core.preference)
-    implementation(projects.module.core.models)
     implementation(projects.module.core.exception)
     implementation(projects.module.core.configuration)
 }
