@@ -3,10 +3,13 @@
 
 package com.srctool.graft.data.git.api.repositories
 
+import com.srctool.graft.data.git.api.models.CommitDetails
 import com.srctool.graft.data.git.api.models.CommitLog
+import com.srctool.graft.data.git.api.models.ObjectId
+import com.srctool.sinew.models.Result
 import java.nio.file.Path
 
-/** Commits of a repository, for the graph. */
+/** Commits of a repository, for the graph and its details panel. */
 public interface CommitRepository {
     /**
      * Every commit reachable from the repository's branches, remote branches and tags; the stash and Graft's own refs
@@ -17,4 +20,10 @@ public interface CommitRepository {
      * `ParseException`; cancellation is never a failure.
      */
     public fun log(repository: Path): CommitLog
+
+    /**
+     * Everything the details panel shows about commit [id]: metadata, full message, trailers, signature status, and
+     * the files it changed against its first parent (`GIT-R-DETL-…`, `GIT-R-FILS-…`).
+     */
+    public suspend fun details(repository: Path, id: ObjectId): Result<CommitDetails>
 }

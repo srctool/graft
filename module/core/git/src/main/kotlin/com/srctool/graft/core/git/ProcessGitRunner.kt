@@ -84,6 +84,11 @@ public class ProcessGitRunner(
         }
     }.flowOn(Dispatchers.IO)
 
+    override fun objectReader(cwd: Path): GitObjectReader {
+        val argv = argv(CatFileInvocation)
+        return ProcessGitObjectReader(argv, { start(CatFileInvocation, argv, cwd) }, config.stderrLimit)
+    }
+
     /** Runs [cmd] and returns its parsed output; throws [GitException] when git fails. */
     private suspend fun <T> exec(cmd: GitCommand<T>, cwd: Path, input: ByteArray?): T = withContext(Dispatchers.IO) {
         val argv = argv(cmd)

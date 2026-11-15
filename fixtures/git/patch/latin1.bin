@@ -1,0 +1,7 @@
+diff --git a/café.txt b/café.txt
+new file mode 100644
+index 0000000..cadb7b0
+--- /dev/null
++++ b/café.txt
+@@ -0,0 +1 @@
++café au lait
