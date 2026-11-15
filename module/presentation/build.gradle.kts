@@ -6,8 +6,10 @@ plugins {
 }
 
 dependencies {
-    implementation(projects.module.data.git)
+    // The state types carry data:git's models (a tab's repository, its refs) and Flow.
+    api(projects.module.data.git)
     implementation(projects.module.data.app)
     implementation(projects.module.data.hosting)
     implementation(projects.module.core.exception)
+    testImplementation(libs.kotlinx.coroutines.test)
 }

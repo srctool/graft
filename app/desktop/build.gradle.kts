@@ -26,6 +26,10 @@ dependencies {
     implementation(projects.module.core.watcher)
     // Dispatchers.Main on the Swing event thread, which Compose Desktop draws on; view models run there.
     runtimeOnly(libs.kotlinx.coroutines.swing)
+    implementation(platform(libs.sinew.bom))
+    implementation(libs.sinew.presentation)
+
+    testImplementation(libs.kotlinx.coroutines.test)
 }
 
 compose.desktop {
