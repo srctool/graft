@@ -6,7 +6,7 @@ status: seedling
 
 # 04 - Provider Model
 
-Hosting services (GitHub first) plug in through one contract in `:data:hosting` ([ADR-4](../03%20-%20Project/02%20-%20Decisions.md)). The core and the features speak only in neutral terms.
+Hosting services (GitHub first) plug in through one contract in `:module:data:hosting` ([ADR-4](../03%20-%20Project/02%20-%20Decisions.md)). The core and the features speak only in neutral terms.
 
 ## Neutral vocabulary
 
@@ -58,9 +58,9 @@ Tokens live only in the OS keychain, per profile, host and account. Accounts bel
 
 ## Adding a provider later
 
-1. New module `:data:hosting-<name>` implementing `HostingProvider`.
+1. New module `:module:data:hosting-<name>` implementing `HostingProvider`.
 2. Map its objects to the neutral models; declare capabilities.
 3. Register it in `:app:desktop`.
-4. Pass the shared provider contract test suite (in `:data:hosting`) against recorded fixtures.
+4. Pass the shared provider contract test suite (in `:module:data:hosting`) against recorded fixtures.
 
 Planned order after GitHub: GitLab, Gitea/Forgejo (Codeberg), Bitbucket Cloud, Azure DevOps. Jira and Linear as **issue-only** providers.

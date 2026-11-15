@@ -16,14 +16,14 @@ Many people and agents will write Graft's code. One set of rules keeps it readin
 |---|---|
 | Packages | `com.srctool.graft.<area>` mirroring the module path: `core.git`, `data.git`, `data.hosting.github`, `feature.graph`, `core.ui`, `app.desktop`, `app.cli` |
 | Style | Kotlin official style; Spotless + ktlint; 120 columns |
-| Visibility | `:core:*` and `:data:*` use `explicitApi()`; a data module's public API is its repository interfaces and models, sources and DTOs stay `internal`; everything is `internal` unless another module needs it |
+| Visibility | `:module:core:*` and `:module:data:*` use `explicitApi()`; a data module's public API is its repository interfaces and models, sources and DTOs stay `internal`; everything is `internal` unless another module needs it |
 | Types | hand-written sealed types for states and results; no code generation except SQLDelight |
 | Errors | Sinew's `Result<T>` + `SinewException` subclasses with `MODULE-LAYER-FUNCTION-TYPE` codes; no exceptions across module boundaries; cancellation is rethrown; view models never `try`/`catch` ([Architecture](../01%20-%20Foundations/02%20-%20Architecture.md), [ADR-23](../03%20-%20Project/02%20-%20Decisions.md)) |
 | Coroutines | structured concurrency only; `Dispatchers.IO` for processes; no `GlobalScope`; every long operation cancellable |
 | Git | only through `GitRunner`, with argv lists; never a shell string ([Git Engine](../01%20-%20Foundations/03%20-%20Git%20Engine.md)) |
-| UI | screens use Camouflage components and `:core:ui`; Camouflage theme tokens, never hard-coded colors or sizes ([UI Design](../01%20-%20Foundations/06%20-%20UI%20Design.md)) |
+| UI | screens use Camouflage components and `:module:core:ui`; Camouflage theme tokens, never hard-coded colors or sizes ([UI Design](../01%20-%20Foundations/06%20-%20UI%20Design.md)) |
 | Strings | every user-facing string in resources (English and Indonesian from G8); no string concatenation for sentences |
-| Comments | explain *why*; public APIs of `:core:*` and `:data:*` get KDoc |
+| Comments | explain *why*; public APIs of `:module:core:*` and `:module:data:*` get KDoc |
 
 ## 3. Error code registry
 
@@ -36,7 +36,7 @@ Codes are Sinew's `MODULE-LAYER-FUNCTION-TYPE`, for example `GIT-R-PUSH-REJ` ([A
 | Function | 2–4 letters: `PUSH`, `PULL`, `LOG`, `SHLV`, `CLON`, … |
 | Type | git failures: `REJ` rejected, `AUTH`, `CONF` conflict, `LOCK`, `NF` not found, `NET`, `TO` timeout, `VER` version, `EXIT` unrecognized non-zero exit. HTTP failures use Sinew's built-in types (`NIC`, `RTO`, `UNA`, `FOR`, `NTF`, `CFL`, `RTL`, `SRV`, …); unreadable output is `DF` and anything unmatched `GEN`. Cancellation is never a failure |
 
-New modules, functions and types are added to the registry in `:core:exception`. A test fails on duplicate codes.
+New modules, functions and types are added to the registry in `:module:core:exception`. A test fails on duplicate codes.
 
 ## 4. Logging and secrets
 
@@ -60,7 +60,7 @@ New modules, functions and types are added to the registry in `:core:exception`.
 | Topic | Rule |
 |---|---|
 | Branches | `main` always green; work on `feat/…`, `fix/…`, `docs/…` branches |
-| Commits | Conventional Commits with the module as scope: `feat(core-git): stream git log` (the scope is the module path with dashes: `:core:git` → `core-git`) |
+| Commits | Conventional Commits with the module as scope: `feat(core-git): stream git log` (the scope is the module path with dashes: `:module:core:git` → `core-git`) |
 | Sign-off | DCO: `git commit -s` on every commit; a CI check rejects commits without it |
 | AI-assisted commits | keep the tool's `Co-Authored-By` trailer |
 | PRs | small; one plan task per PR where possible; CI green; one review |

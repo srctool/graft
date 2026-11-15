@@ -19,15 +19,18 @@ class ChecksFunctionalTest {
 
     private fun write(path: String, text: String) = dir.resolve(path).apply { parentFile.mkdirs() }.writeText(text)
 
-    // Two modules, `:core:a` and `:feature:b`, with only `:feature:b -> :core:a` allowed.
-    private fun fixture(bDependsOn: String = ":core:a", aDependsOn: String? = null) {
-        write("settings.gradle.kts", header + "rootProject.name = \"fixture\"\ninclude(\":core:a\", \":feature:b\")\n")
+    // Two modules, `:core:a` and `:feature:b`, with only `:module:feature:b -> :module:core:a` allowed.
+    private fun fixture(bDependsOn: String = ":module:core:a", aDependsOn: String? = null) {
+        write(
+            "settings.gradle.kts",
+            header + "rootProject.name = \"fixture\"\ninclude(\":module:core:a\", \":module:feature:b\")\n",
+        )
         write("build.gradle.kts", header + "plugins { id(\"graft.license-headers\") }\n")
-        write("config/module-graph.txt", "# allowed edges\n:feature:b -> :core:a\n")
-        write("core/a/build.gradle.kts", header + module(aDependsOn))
-        write("feature/b/build.gradle.kts", header + module(bDependsOn))
-        write("core/a/src/main/kotlin/A.kt", header + "package a\n")
-        write("feature/b/src/main/kotlin/B.kt", header + "package b\n")
+        write("config/module-graph.txt", "# allowed edges\n:module:feature:b -> :module:core:a\n")
+        write("module/core/a/build.gradle.kts", header + module(aDependsOn))
+        write("module/feature/b/build.gradle.kts", header + module(bDependsOn))
+        write("module/core/a/src/main/kotlin/A.kt", header + "package a\n")
+        write("module/feature/b/src/main/kotlin/B.kt", header + "package b\n")
     }
 
     private fun module(dependsOn: String?) = "plugins {\n    `java-library`\n    id(\"graft.checks\")\n}\n" +
@@ -53,16 +56,19 @@ class ChecksFunctionalTest {
 
     @Test
     fun `an edge missing from module-graph txt fails`() {
-        fixture(aDependsOn = ":feature:b")
+        fixture(aDependsOn = ":module:feature:b")
         val out = fail("checkModuleGraph").output
-        assertContains(out, ":core:a -> :feature:b")
+        assertContains(out, ":module:core:a -> :module:feature:b")
         assertContains(out, "config/module-graph.txt")
     }
 
     @Test
     fun `camouflage outside the UI modules fails`() {
         fixture()
-        write("core/a/src/main/kotlin/A.kt", header + "package a\n\nimport com.srctool.camouflage.core.CamoButton\n")
+        write(
+            "module/core/a/src/main/kotlin/A.kt",
+            header + "package a\n\nimport com.srctool.camouflage.core.CamoButton\n",
+        )
         val out = fail("checkImports").output
         assertContains(out, "A.kt:5")
         assertContains(out, "com.srctool.camouflage")
@@ -71,14 +77,17 @@ class ChecksFunctionalTest {
     @Test
     fun `camouflage in a feature passes`() {
         fixture()
-        write("feature/b/src/main/kotlin/B.kt", header + "package b\n\nimport com.srctool.camouflage.core.CamoButton\n")
+        write(
+            "module/feature/b/src/main/kotlin/B.kt",
+            header + "package b\n\nimport com.srctool.camouflage.core.CamoButton\n",
+        )
         pass("checkImports")
     }
 
     @Test
     fun `material3 anywhere fails`() {
         fixture()
-        write("feature/b/src/main/kotlin/B.kt", header + "package b\n\nimport androidx.compose.material3.Text\n")
+        write("module/feature/b/src/main/kotlin/B.kt", header + "package b\n\nimport androidx.compose.material3.Text\n")
         val out = fail("checkImports").output
         assertContains(out, "B.kt:5")
         assertContains(out, "androidx.compose.material3")
@@ -87,7 +96,10 @@ class ChecksFunctionalTest {
     @Test
     fun `compose in a core module fails`() {
         fixture()
-        write("core/a/src/test/kotlin/ATest.kt", header + "package a\n\nimport androidx.compose.runtime.Composable\n")
+        write(
+            "module/core/a/src/test/kotlin/ATest.kt",
+            header + "package a\n\nimport androidx.compose.runtime.Composable\n",
+        )
         val out = fail("check").output
         assertContains(out, "ATest.kt:5")
     }
@@ -95,7 +107,7 @@ class ChecksFunctionalTest {
     @Test
     fun `a missing license header fails`() {
         fixture()
-        write("feature/b/src/main/kotlin/NoHeader.kt", "package b\n")
+        write("module/feature/b/src/main/kotlin/NoHeader.kt", "package b\n")
         val out = fail("check").output
         assertContains(out, "NoHeader.kt")
         assertContains(out, "SPDX-License-Identifier")
@@ -104,7 +116,7 @@ class ChecksFunctionalTest {
     @Test
     fun `build output is not checked for headers`() {
         fixture()
-        write("feature/b/build/generated/Gen.kt", "package b\n")
+        write("module/feature/b/build/generated/Gen.kt", "package b\n")
         pass("checkLicenseHeaders")
     }
 }

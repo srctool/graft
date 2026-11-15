@@ -41,7 +41,8 @@ object ImportRules {
 
     /** The modules allowed to use Compose and Camouflage; everything else, `:app:cli` included, stays UI-free. */
     fun isUiModule(projectPath: String): Boolean =
-        projectPath in setOf(":core:ui", ":navigation", ":app:desktop") || projectPath.startsWith(":feature:")
+        projectPath in setOf(":module:core:ui", ":module:navigation", ":app:desktop") ||
+            projectPath.startsWith(":module:feature:")
 
     fun violations(projectPath: String, file: String, text: String): List<Violation> {
         val ui = isUiModule(projectPath)

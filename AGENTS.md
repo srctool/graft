@@ -29,20 +29,20 @@ Rules:
 
 | Rule | Source |
 |---|---|
-| Module graph: `:app` → `:navigation` → `:feature:*` → `:domain` / `:presentation` / `:data:*` → `:core:*`, exactly as `config/module-graph.txt` lists it. A new dependency edge needs an ADR | Architecture, ADR-24 |
-| Compose (and Camouflage) only in `:core:ui`, `:feature:*`, `:navigation`, `:app:desktop`; `:app:cli` never depends on them | Architecture, ADR-19, ADR-24 |
-| Features never import each other; shared UI lives in `:core:ui`, app-level state in `:presentation`, shared use cases in `:domain` | Architecture, ADR-24 |
-| Screens use Camouflage components and `:core:ui`; nothing imports `androidx.compose.material3` | ADR-22, ADR-24 |
+| Module graph: `:app` → `:module:navigation` → `:module:feature:*` → `:module:domain` / `:module:presentation` / `:module:data:*` → `:module:core:*`, exactly as `config/module-graph.txt` lists it. Everything but the apps lives under `module/` (ADR-25). A new dependency edge needs an ADR | Architecture, ADR-24, ADR-25 |
+| Compose (and Camouflage) only in `:module:core:ui`, `:module:feature:*`, `:module:navigation`, `:app:desktop`; `:app:cli` never depends on them | Architecture, ADR-19, ADR-24 |
+| Features never import each other; shared UI lives in `:module:core:ui`, app-level state in `:module:presentation`, shared use cases in `:module:domain` | Architecture, ADR-24 |
+| Screens use Camouflage components and `:module:core:ui`; nothing imports `androidx.compose.material3` | ADR-22, ADR-24 |
 | Look: IBM Carbon through Camouflage's Carbon skin, in Atom One colors, at desktop density (24/32 px controls, square corners, layered surfaces, inset focus) | UI Design, ADR-22 |
-| **Git is only reached through `GitRunner`** in `:core:git`, running the `git` executable. No JGit, no libgit2, no shell (`sh -c`): argv only | Git Engine, ADR-2 |
+| **Git is only reached through `GitRunner`** in `:module:core:git`, running the `git` executable. No JGit, no libgit2, no shell (`sh -c`): argv only | Git Engine, ADR-2 |
 | Machine-readable git output only (`-z`, `--porcelain=v2`, `--format` with `%x00`); `LC_ALL=C`, `GIT_TERMINAL_PROMPT=0`, the askpass/editor helpers | Git Engine |
 | One mutating git operation at a time per repository (write queue); reads may run in parallel with `GIT_OPTIONAL_LOCKS=0` | ADR-3 |
 | Never `push --force`: always `--force-with-lease --force-if-includes` | ADR-6 |
 | Tokens and passphrases only in the OS keychain; never in files, logs, exceptions or test output | ADR-7 |
 | Errors are `SinewException` subclasses with a `MODULE-LAYER-FUNCTION-TYPE` code (`GIT-R-PUSH-REJ`); every fallible call returns Sinew's `Result`; git failures keep stderr and exit code; cancellation is rethrown | Architecture, ADR-23 |
-| Nothing outside `:data:hosting-github` says "GitHub"; use the neutral types (`ChangeRequest`, `Review`, `Check`, `Issue`, `Pipeline`) | Provider Model, ADR-4 |
+| Nothing outside `:module:data:hosting-github` says "GitHub"; use the neutral types (`ChangeRequest`, `Review`, `Check`, `Issue`, `Pipeline`) | Provider Model, ADR-4 |
 | Camouflage is the UI toolkit; Sinew provides errors, view models and the network client | ADR-22, ADR-23 |
-| Build each milestone bottom to top: `:core` → `:data` → use cases → `:presentation` → feature UI → `:navigation` / `:app`; stop for the author's review after the data layer | ADR-24 |
+| Build each milestone bottom to top: `:module:core` → `:module:data` → use cases → `:module:presentation` → feature UI → `:module:navigation` / `:app`; stop for the author's review after the data layer | ADR-24 |
 
 ## 3. How work is executed
 
@@ -82,7 +82,7 @@ The Gradle build is created in G0 Task 1. Until then, these don't exist.
 |---|---|
 | Build everything | `./gradlew build` |
 | All checks (tests, lint, module graph, license headers) | `./gradlew check` |
-| One module's tests | `./gradlew :core:git:test` |
+| One module's tests | `./gradlew :module:core:git:test` |
 | Run the app | `./gradlew :app:desktop:run` |
 | Run the CLI | `./gradlew :app:cli:run --args="whoami"` |
 | Format | `./gradlew spotlessApply` |
@@ -100,7 +100,7 @@ Before reporting a task done: `./gradlew check` passes. Say so with the output; 
   ```
 - Dependencies only through `gradle/libs.versions.toml`. New libraries must be GPL-3.0-compatible (Apache-2.0, MIT, BSD, LGPL, MPL-2.0, EPL-2.0 with its GPL secondary license). Never GPL-2.0-only, EPL-1.0, SSPL, "non-commercial" or proprietary.
 - No code generation except what the docs name (SQLDelight). Hand-written sealed types.
-- Comments explain *why*, not *what*. Public APIs in `:core:*` and `:data:*` get KDoc.
+- Comments explain *why*, not *what*. Public APIs in `:module:core:*` and `:module:data:*` get KDoc.
 - No secrets in logs: redact tokens, `Authorization` headers, and credential-helper I/O.
 
 ## 7. Current state
@@ -108,7 +108,7 @@ Before reporting a task done: `./gradlew check` passes. Say so with the output; 
 | | |
 |---|---|
 | Milestone | **G0 Setup + spike**: plan in `plans/G0.md` |
-| Next | G0 Task 5a (#121, restructure the modules for ADR-24), then Task 5 (#6) on Sinew's types |
+| Next | G0 Task 5 (#6): `GitRunner` on Sinew's types in `:module:core:git` and `:module:core:exception` |
 | Open decisions | final name checks (Naming), G0 spike confirming ADR-1 |
 
 <!-- gitnexus:start -->

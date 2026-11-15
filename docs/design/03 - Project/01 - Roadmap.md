@@ -8,7 +8,7 @@ status: seedling
 
 Order: read-only first (safe to dogfood daily), then local writes, then the network, then hosting. Each milestone is usable on its own.
 
-Inside each milestone, tasks are built bottom to top: `:core` → `:data` → use cases → `:presentation` → feature UI → `:navigation` / `:app`. The author reviews the data layer before its UI is built ([ADR-24](02%20-%20Decisions.md)).
+Inside each milestone, tasks are built bottom to top: `:module:core` → `:module:data` → use cases → `:module:presentation` → feature UI → `:module:navigation` / `:app`. The author reviews the data layer before its UI is built ([ADR-24](02%20-%20Decisions.md)).
 
 | Milestone | Content | Notes | Done when |
 |---|---|---|---|

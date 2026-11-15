@@ -83,7 +83,7 @@ jobs:
         run: |
           "$GIT_MIN_PREFIX/bin/git" --version
           test "$("$GIT_MIN_PREFIX/bin/git" --version)" = "git version ${GIT_MIN_VERSION}"
-      - run: ./gradlew :core:git:test :data:git:test -Pgit="$GIT_MIN_PREFIX/bin/git"
+      - run: ./gradlew :module:core:git:test :module:data:git:test -Pgit="$GIT_MIN_PREFIX/bin/git"
       - if: failure()
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:

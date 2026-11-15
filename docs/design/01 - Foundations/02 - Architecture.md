@@ -11,10 +11,10 @@ status: seedling
 | Concern | Choice |
 |---|---|
 | Language | Kotlin (JVM 21) |
-| UI | Compose Multiplatform Desktop + Camouflage with the Carbon skin in Atom One colors, themed in `:core:ui` ([UI Design](06%20-%20UI%20Design.md), [ADR-22](../03%20-%20Project/02%20-%20Decisions.md)) |
+| UI | Compose Multiplatform Desktop + Camouflage with the Carbon skin in Atom One colors, themed in `:module:core:ui` ([UI Design](06%20-%20UI%20Design.md), [ADR-22](../03%20-%20Project/02%20-%20Decisions.md)) |
 | Presentation | Sinew's ViewModel base (`sinew-viewmodel`, on AndroidX `lifecycle-viewmodel`): Event → Action → State + Effect ([ADR-23](../03%20-%20Project/02%20-%20Decisions.md)) |
 | Errors | Sinew's `Result` + `SinewException` subclasses with Graft's codes ([ADR-23](../03%20-%20Project/02%20-%20Decisions.md)) |
-| Network | `sinew-network` on the Ktor Java engine, configured in `:core:network`, plus Graft's ETag cache ([ADR-23](../03%20-%20Project/02%20-%20Decisions.md)) |
+| Network | `sinew-network` on the Ktor Java engine, configured in `:module:core:network`, plus Graft's ETag cache ([ADR-23](../03%20-%20Project/02%20-%20Decisions.md)) |
 | Git | the `git` executable, `>= 2.38` ([Git Engine](03%20-%20Git%20Engine.md)) |
 | Hosting APIs | Ktor client; GitHub GraphQL v4 + REST v3 |
 | Local storage | SQLite (SQLDelight) for caches and app state; JSON for settings |
@@ -44,31 +44,31 @@ flowchart TB
 |---|---|---|
 | `:app:desktop` | startup, hand-wired DI, the root Camouflage provider, the window shell, and the **app services** on Sinew's `AppService` / `AppServiceHost`: the repository session and watcher, background fetch, auto-snapshot, the inbox poller | yes |
 | `:app:cli` | the `graft` CLI and `graft mcp`, a GraalVM native image ([CLI](../02%20-%20Features/31%20-%20CLI.md)) | **no** |
-| `:navigation` | routes for the center pane (graph, diff, PR, issue, compare, bisect) and the tabs | yes |
-| `:feature:graph`, `:feature:workingcopy`, `:feature:shelves`, `:feature:worktrees`, `:feature:submodules`, `:feature:changerequests`, `:feature:issues` | one area each: screens, their view models (`.presentation` package), the area's own use cases | yes |
-| `:presentation` | app-level state, split by case: `WindowState` (tabs, active repository, its profile), `OperationsState` (background work for the status bar), `InboxState`, `ProviderState` (sign-in, rate limit) | no |
-| `:domain` | use cases shared by two or more features; created when the first one is shared | no |
-| `:data:git` | git-backed repositories: commits, refs, working copy, stash, shelves, local history, changelists, worktrees, submodules, sync | no |
-| `:data:app` | profiles, settings, repositories and workspaces | no |
-| `:data:hosting` | provider-neutral repository interfaces and models (`ChangeRequest`, `Issue`, `Pipeline`, `Account`, `Notification`) and the contract test kit ([Provider Model](04%20-%20Provider%20Model.md)) | no |
-| `:data:hosting-github` | the GitHub implementation and its API source | no |
-| `:core:ui` | the theme (Carbon skin, Atom One colors, IBM Plex Sans, 24/32 px density), Graft-only shared components (diff viewer, ref chips, avatars), stopgap components until Camouflage ships them, the `Localizer` | yes |
-| `:core:git` | `GitRunner`: the configured git process runner, its environment, the write queue | no |
-| `:core:network` | the configured HTTP client on `sinew-network`, the token source, the ETag cache | no |
-| `:core:database` | the SQLDelight cache | no |
-| `:core:security` | `SecretStore` on the OS keychain | no |
-| `:core:preference` | versioned settings files, atomic writes | no |
-| `:core:models` | domain models shared by the data modules: commit, ref, status, shelf, profile, … | no |
-| `:core:exception` | Graft's `SinewException` subclasses, the error-code registry, redaction | no |
-| `:core:notification` | desktop notifications | no |
-| `:core:configuration` | app folders and platform paths | no |
+| `:module:navigation` | routes for the center pane (graph, diff, PR, issue, compare, bisect) and the tabs | yes |
+| `:module:feature:graph`, `:module:feature:workingcopy`, `:module:feature:shelves`, `:module:feature:worktrees`, `:module:feature:submodules`, `:module:feature:changerequests`, `:module:feature:issues` | one area each: screens, their view models (`.presentation` package), the area's own use cases | yes |
+| `:module:presentation` | app-level state, split by case: `WindowState` (tabs, active repository, its profile), `OperationsState` (background work for the status bar), `InboxState`, `ProviderState` (sign-in, rate limit) | no |
+| `:module:domain` | use cases shared by two or more features; created when the first one is shared | no |
+| `:module:data:git` | git-backed repositories: commits, refs, working copy, stash, shelves, local history, changelists, worktrees, submodules, sync | no |
+| `:module:data:app` | profiles, settings, repositories and workspaces | no |
+| `:module:data:hosting` | provider-neutral repository interfaces and models (`ChangeRequest`, `Issue`, `Pipeline`, `Account`, `Notification`) and the contract test kit ([Provider Model](04%20-%20Provider%20Model.md)) | no |
+| `:module:data:hosting-github` | the GitHub implementation and its API source | no |
+| `:module:core:ui` | the theme (Carbon skin, Atom One colors, IBM Plex Sans, 24/32 px density), Graft-only shared components (diff viewer, ref chips, avatars), stopgap components until Camouflage ships them, the `Localizer` | yes |
+| `:module:core:git` | `GitRunner`: the configured git process runner, its environment, the write queue | no |
+| `:module:core:network` | the configured HTTP client on `sinew-network`, the token source, the ETag cache | no |
+| `:module:core:database` | the SQLDelight cache | no |
+| `:module:core:security` | `SecretStore` on the OS keychain | no |
+| `:module:core:preference` | versioned settings files, atomic writes | no |
+| `:module:core:models` | domain models shared by the data modules: commit, ref, status, shelf, profile, … | no |
+| `:module:core:exception` | Graft's `SinewException` subclasses, the error-code registry, redaction | no |
+| `:module:core:notification` | desktop notifications | no |
+| `:module:core:configuration` | app folders and platform paths | no |
 
 Rules:
 - Dependencies point down only. Features never import each other; navigation imports features, never the reverse.
-- `:data:*` never imports `:feature:*`, `:presentation`, `:domain` or `:core:ui`; `:core:*` never imports a business module.
-- Compose only in `:core:ui`, `:feature:*`, `:navigation` and `:app:desktop`. `:app:cli` never depends on them; it talks to a running app over a local socket.
+- `:module:data:*` never imports `:module:feature:*`, `:module:presentation`, `:module:domain` or `:module:core:ui`; `:module:core:*` never imports a business module.
+- Compose only in `:module:core:ui`, `:module:feature:*`, `:module:navigation` and `:app:desktop`. `:app:cli` never depends on them; it talks to a running app over a local socket.
 - Camouflage (`com.srctool.camouflage`) is used only where Compose is; nothing imports `androidx.compose.material3` ([ADR-22](../03%20-%20Project/02%20-%20Decisions.md)).
-- Only `:data:hosting-github` says "GitHub" ([ADR-4](../03%20-%20Project/02%20-%20Decisions.md)).
+- Only `:module:data:hosting-github` says "GitHub" ([ADR-4](../03%20-%20Project/02%20-%20Decisions.md)).
 - The allowed edges are listed in `config/module-graph.txt`; CI fails any other.
 
 ## Layers
@@ -80,14 +80,14 @@ Rules:
 | Use case (only when there's orchestration) | `UC` | multi-step flows, safety steps, retry and polling | `ShelveUseCase`, `PushUseCase` (guards, then push) |
 | App service (app or session lifetime) | `SV` | work triggered by the watcher, timers or the inbox; Sinew's `AppService`, started by `AppServiceHost` in `:app:desktop` (Sinew 1.1) | `RepositorySession`, background fetch |
 | View model | `VM` | folds `Result`s into state and effects, no `try`/`catch` | `GraphViewModel` |
-| UI | | Compose screens from Camouflage and `:core:ui` | `GraphPane` |
+| UI | | Compose screens from Camouflage and `:module:core:ui` | `GraphPane` |
 
-**Build order** ([ADR-24](../03%20-%20Project/02%20-%20Decisions.md)): within each milestone, tasks go bottom to top: `:core` → `:data` → use cases → `:presentation` → feature UI → `:navigation` / `:app`. The author reviews each layer before the next is built on it.
+**Build order** ([ADR-24](../03%20-%20Project/02%20-%20Decisions.md)): within each milestone, tasks go bottom to top: `:module:core` → `:module:data` → use cases → `:module:presentation` → feature UI → `:module:navigation` / `:app`. The author reviews each layer before the next is built on it.
 
 ## Repository session
 
 Opening a repository creates a `RepositorySession`:
-- the repositories of `:data:git` for that folder, and one file watcher on `.git/` and the working tree (an app service in `:app:desktop`);
+- the repositories of `:module:data:git` for that folder, and one file watcher on `.git/` and the working tree (an app service in `:app:desktop`);
 - a **write queue**: Git mutations run one at a time per repository (Git holds `index.lock` anyway), reads run in parallel;
 - a `StateFlow<RepoSnapshot>` (HEAD, refs, status, operation in progress) every pane observes.
 
@@ -112,7 +112,7 @@ Each worktree and each opened submodule is its own session. They share the objec
 
 ## Error model
 
-Every failure is a `SinewException` with a code `module-layer-function-type`, for example `GIT-R-PUSH-REJ` (push rejected, non-fast-forward), and every fallible call returns Sinew's `Result` ([ADR-23](../03%20-%20Project/02%20-%20Decisions.md)). Git failures are Graft's own subclasses in `:core:exception` and keep argv, exit code and redacted stderr. Messages are `ErrorMessage.Local` keys with an English fallback, rendered by the `Localizer`; the UI shows the message, the code and a "Show output" button.
+Every failure is a `SinewException` with a code `module-layer-function-type`, for example `GIT-R-PUSH-REJ` (push rejected, non-fast-forward), and every fallible call returns Sinew's `Result` ([ADR-23](../03%20-%20Project/02%20-%20Decisions.md)). Git failures are Graft's own subclasses in `:module:core:exception` and keep argv, exit code and redacted stderr. Messages are `ErrorMessage.Local` keys with an English fallback, rendered by the `Localizer`; the UI shows the message, the code and a "Show output" button.
 
 ## Storage locations
 

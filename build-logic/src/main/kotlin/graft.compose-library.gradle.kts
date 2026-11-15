@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Copyright (C) 2026 Graft contributors
 
-// Compose Desktop library: :core:ui, :feature:*, :navigation.
+// Compose Desktop library: :module:core:ui, :module:feature:*, :module:navigation.
 
 plugins {
     id("graft.kotlin-library")

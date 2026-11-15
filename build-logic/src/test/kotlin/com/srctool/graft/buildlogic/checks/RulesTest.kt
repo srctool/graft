@@ -44,8 +44,9 @@ class ModuleGraphTest {
 class ImportRulesTest {
     private fun violations(path: String, source: String) = ImportRules.violations(path, "X.kt", source).map { it.line }
 
-    private val uiModules = listOf(":core:ui", ":feature:graph", ":navigation", ":app:desktop")
-    private val plainModules = listOf(":core:git", ":data:git", ":presentation", ":domain", ":app:cli")
+    private val uiModules = listOf(":module:core:ui", ":module:feature:graph", ":module:navigation", ":app:desktop")
+    private val plainModules =
+        listOf(":module:core:git", ":module:data:git", ":module:presentation", ":module:domain", ":app:cli")
 
     @Test
     fun `material3 is allowed nowhere`() {
@@ -67,21 +68,27 @@ class ImportRulesTest {
 
     @Test
     fun `fully qualified references count too`() {
-        assertEquals(listOf(2), violations(":feature:graph", "package x\nval t = androidx.compose.material3.Text\n"))
-        assertEquals(listOf(2), violations(":data:git", "package x\nval c = com.srctool.camouflage.core.CamoButton\n"))
+        assertEquals(
+            listOf(2),
+            violations(":module:feature:graph", "package x\nval t = androidx.compose.material3.Text\n"),
+        )
+        assertEquals(
+            listOf(2),
+            violations(":module:data:git", "package x\nval c = com.srctool.camouflage.core.CamoButton\n"),
+        )
     }
 
     @Test
     fun `comments are ignored`() {
         val src = "// androidx.compose.material3 is not used\n/*\n * androidx.compose.runtime\n */\n"
-        assertEquals(emptyList(), violations(":core:git", src))
+        assertEquals(emptyList(), violations(":module:core:git", src))
     }
 
     @Test
     fun `similar package names are not matched`() {
         assertEquals(
             emptyList(),
-            violations(":core:git", "import androidx.composex.Foo\nimport com.srctool.camouflagex.Foo\n"),
+            violations(":module:core:git", "import androidx.composex.Foo\nimport com.srctool.camouflagex.Foo\n"),
         )
     }
 }

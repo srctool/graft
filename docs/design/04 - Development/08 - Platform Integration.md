@@ -14,13 +14,13 @@ Desktop apps break on the details each OS does differently: file watching, proce
 
 | Interface | Module | macOS | Windows | Linux |
 |---|---|---|---|---|
-| `FileWatcher` | `:data:git` (driven by the session app service) | FSEvents (via `directory-watcher`) | `ReadDirectoryChangesW` (JDK `WatchService`) | inotify (JDK `WatchService`) |
-| `SecretStore` | `:core:security` | Keychain | Credential Manager | Secret Service (gnome-keyring, KWallet) |
-| `ProcessControl` | `:core:git` | `ProcessHandle` tree | `ProcessHandle` tree + `destroyForcibly` | `ProcessHandle` tree |
+| `FileWatcher` | `:module:data:git` (driven by the session app service) | FSEvents (via `directory-watcher`) | `ReadDirectoryChangesW` (JDK `WatchService`) | inotify (JDK `WatchService`) |
+| `SecretStore` | `:module:core:security` | Keychain | Credential Manager | Secret Service (gnome-keyring, KWallet) |
+| `ProcessControl` | `:module:core:git` | `ProcessHandle` tree | `ProcessHandle` tree + `destroyForcibly` | `ProcessHandle` tree |
 | `AppInstance` (single instance + IPC) | `:app:desktop`, `:app:cli` | Unix domain socket | Unix domain socket (Windows 10+, via JDK 16+ `AF_UNIX`) | Unix domain socket |
 | `PowerState` | `:app:desktop` | OSHI | OSHI | OSHI |
 | `Launcher` (editor, terminal, file manager, URL) | `:app:desktop` | `open -a` | `start`, `wt.exe` | `xdg-open`, `$TERMINAL` |
-| `DesktopNotifier` | `:core:notification` | Compose `Tray` notification first, native later | same | same (libnotify via D-Bus later) |
+| `DesktopNotifier` | `:module:core:notification` | Compose `Tray` notification first, native later | same | same (libnotify via D-Bus later) |
 
 ## 3. API and details
 

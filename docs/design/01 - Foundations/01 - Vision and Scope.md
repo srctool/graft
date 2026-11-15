@@ -44,7 +44,7 @@ A Git client that shows the **whole state of a repository at once**: every branc
 2. **Show the command.** Every action can show the `git` command it runs, and an operation log keeps them.
 3. **Safe by default.** `--force-with-lease`, never `--force`. A destructive action shows what will be lost. Undo uses the reflog.
 4. **Keyboard first.** Every action has a command-palette entry and a shortcut.
-5. **Provider-neutral core.** Nothing outside `:data:hosting-github` says "GitHub".
+5. **Provider-neutral core.** Nothing outside `:module:data:hosting-github` says "GitHub".
 
 ## Competitors, for reference
 

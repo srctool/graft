@@ -60,7 +60,7 @@ The author is a fixed Graft identity, not the user's, so shelf commits never car
 
 ## 4. Build steps
 
-1. A `FormatVersion` helper and atomic file writer in `:core:preference` (G2).
+1. A `FormatVersion` helper and atomic file writer in `:module:core:preference` (G2).
 2. Shelf and history commit codecs with golden fixtures (G2, G4).
 3. The migration runner with backups (before G8).
 

@@ -5,6 +5,12 @@ plugins {
     `kotlin-dsl`
 }
 
+// Compile the convention plugins and run their tests on the project's JDK, not on whichever JDK started Gradle;
+// otherwise a cached build from a newer JDK fails here with UnsupportedClassVersionError.
+kotlin {
+    jvmToolchain(21)
+}
+
 dependencies {
     implementation(libs.kotlin.gradle.plugin)
     implementation(libs.compose.compiler.gradle.plugin)

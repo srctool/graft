@@ -101,7 +101,7 @@ The code is free under GPL-3.0; the **name** is not. Anyone may fork, change and
 
 ```
 graft/
-├─ app/   navigation/   feature/   presentation/   domain/   data/   core/
+├─ app/   module/ (navigation, feature, presentation, domain, data, core)
 ├─ docs/                 (user + contributor docs site, Docusaurus)
 ├─ fixtures/             (recorded git repos and API responses for tests)
 ├─ .github/              (workflows, issue forms, PR template, CODEOWNERS)

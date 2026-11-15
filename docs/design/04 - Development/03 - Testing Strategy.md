@@ -24,8 +24,8 @@ flowchart TB
 |---|---|---|
 | **Unit** | pure logic: parsers, lane layout, patch building, retention thinning, rule matching, error codes | most tests; milliseconds each |
 | **Integration** | every git command and every feature service against real `git` in temp repos | one or more per command and per edge case in the notes |
-| **Contract** | the contract test kit in `:data:hosting`: one suite every provider must pass, with recorded HTTP | per provider |
-| **UI** | Compose UI tests (semantics, keyboard), screenshot (golden) tests for `:core:ui` and the main screens, light and dark | per component and screen |
+| **Contract** | the contract test kit in `:module:data:hosting`: one suite every provider must pass, with recorded HTTP | per provider |
+| **UI** | Compose UI tests (semantics, keyboard), screenshot (golden) tests for `:module:core:ui` and the main screens, light and dark | per component and screen |
 | **End-to-end** | a few scripted user flows on the packaged app | per release |
 | **Performance** | graph layout and rendering benchmarks, status on a large repo | in CI on Ubuntu, nightly |
 
@@ -33,7 +33,7 @@ flowchart TB
 
 ### 3.1 The sandbox (`GitSandbox`)
 
-Every test that runs git, SSH or config code gets a `GitSandbox` (a JUnit 5 extension in `:core:git`'s test fixtures). It sets up:
+Every test that runs git, SSH or config code gets a `GitSandbox` (a JUnit 5 extension in `:module:core:git`'s test fixtures). It sets up:
 
 | Variable / fake | Value |
 |---|---|
@@ -92,8 +92,8 @@ val repo = sandbox.repo {
 
 1. `GitSandbox` and the repository DSL (G0 Task 5).
 2. Parser fixtures with each new command.
-3. The `:data:hosting` contract test kit with the first provider (G6).
-4. Screenshot tests for `:core:ui` from G1; goldens are updated only on purpose (`-PupdateGoldens`).
+3. The `:module:data:hosting` contract test kit with the first provider (G6).
+4. Screenshot tests for `:module:core:ui` from G1; goldens are updated only on purpose (`-PupdateGoldens`).
 5. End-to-end flows before G7: clone → branch → commit → shelve → push → PR → merge.
 
 ## 5. Edge cases

@@ -209,3 +209,11 @@ ADRs are never edited after acceptance; a later ADR supersedes. Status: **Propos
 - **Consequences:**
   - G0's skeleton (Task 1) and the module-graph check are reworked to these modules before Task 5 resumes.
   - Plans list tasks per layer; a milestone plan shows the review point after the data layer.
+
+### ADR-25 Every module except the apps lives under `:module` (Accepted 2026-11-15; amends ADR-24's module paths)
+- **Context:** ADR-24 put `:core`, `:data`, `:feature`, `:navigation` and `:presentation` at the top of the repository next to `:app`. The author wants the apps at the top and everything else grouped in one folder.
+- **Decision:**
+  - Every module except `:app:desktop` and `:app:cli` lives under `module/`, and its Gradle path starts with `:module`: `:module:core:git`, `:module:data:git`, `:module:feature:graph`, `:module:navigation`, `:module:presentation`, `:module:domain`.
+  - Package names don't include `module`: `:module:core:git` is still `com.srctool.graft.core.git`.
+  - ADR-24's structure, rules and build order are unchanged; only the paths move.
+- **Consequences:** commands, accessors (`projects.module.core.git`), `config/module-graph.txt` and the import check use the `:module` paths. Artifacts are named `graft-module-core-git`.

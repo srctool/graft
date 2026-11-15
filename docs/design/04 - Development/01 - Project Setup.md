@@ -28,21 +28,21 @@ graft/
 │  ├─ libs.versions.toml        every dependency and plugin version
 │  └─ wrapper/
 ├─ app/desktop/  app/cli/      the Compose Desktop app; the graft CLI + graft mcp (GraalVM native image)
-├─ navigation/                 center-pane routes and tabs
-├─ feature/graph/  feature/workingcopy/  feature/shelves/  feature/worktrees/
-├─ feature/submodules/  feature/changerequests/  feature/issues/
-├─ presentation/               app-level state
-├─ domain/                     shared use cases (created when first needed)
-├─ data/git/  data/app/  data/hosting/  data/hosting-github/
-├─ core/ui/  core/git/  core/network/  core/database/  core/security/
-├─ core/preference/  core/models/  core/exception/  core/notification/  core/configuration/
+├─ module/navigation/          center-pane routes and tabs
+├─ module/feature/graph/  workingcopy/  shelves/  worktrees/
+├─ module/feature/submodules/  changerequests/  issues/
+├─ module/presentation/        app-level state
+├─ module/domain/              shared use cases (created when first needed)
+├─ module/data/git/  app/  hosting/  hosting-github/
+├─ module/core/ui/  git/  network/  database/  security/
+├─ module/core/preference/  models/  exception/  notification/  configuration/
 ├─ fixtures/                    recorded repos and API responses (see Testing Strategy)
 ├─ plans/                       milestone plans and the progress ledger (agent workflow)
 ├─ AGENTS.md  CLAUDE.md         agent instructions
 └─ settings.gradle.kts  build.gradle.kts  gradle.properties
 ```
 
-Module folders mirror Gradle paths (`core/git` is `:core:git`), per [ADR-24](../03%20-%20Project/02%20-%20Decisions.md). New feature modules from notes 11–32 (`:feature:profiles`, `:feature:history`, …) are added in the milestone that builds them, each with its edges added to `module-graph.txt` first.
+Module folders mirror Gradle paths (`module/core/git` is `:module:core:git`; the apps sit at the top), per [ADR-25](../03%20-%20Project/02%20-%20Decisions.md) and [ADR-24](../03%20-%20Project/02%20-%20Decisions.md). New feature modules from notes 11–32 (`:module:feature:profiles`, `:module:feature:history`, …) are added in the milestone that builds them, each with its edges added to `module-graph.txt` first.
 
 ## 3. API
 
@@ -69,8 +69,8 @@ Module folders mirror Gradle paths (`core/git` is `:core:git`), per [ADR-24](../
 
 | Plugin | Applies | Used by |
 |---|---|---|
-| `graft.kotlin-library` | Kotlin JVM, toolchain 21, `explicitApi()` for `:core:*` and `:data:*`, JUnit 5, Spotless + ktlint, the module-graph and import checks | `:core:*` (except `:core:ui`), `:data:*`, `:domain`, `:presentation` |
-| `graft.compose-library` | the above + Compose Multiplatform (desktop) + compose compiler | `:core:ui`, `:feature:*`, `:navigation` |
+| `graft.kotlin-library` | Kotlin JVM, toolchain 21, `explicitApi()` for `:module:core:*` and `:module:data:*`, JUnit 5, Spotless + ktlint, the module-graph and import checks | `:module:core:*` (except `:module:core:ui`), `:module:data:*`, `:module:domain`, `:module:presentation` |
+| `graft.compose-library` | the above + Compose Multiplatform (desktop) + compose compiler | `:module:core:ui`, `:module:feature:*`, `:module:navigation` |
 | `graft.compose-app` | the above + `compose.desktop.application` (main class, package formats, app icon, version) | `:app:desktop` |
 | `graft.native-cli` | `graft.kotlin-library` + `application` + GraalVM native-image plugin (reflection config for parsers and SQLDelight) | `:app:cli` |
 
@@ -79,7 +79,7 @@ Module folders mirror Gradle paths (`core/git` is `:core:git`), per [ADR-24](../
 | Task | Fails when |
 |---|---|
 | `checkModuleGraph` | a project dependency isn't listed in `config/module-graph.txt` |
-| `checkImports` | a module without Compose (anything but `:core:ui`, `:feature:*`, `:navigation`, `:app:desktop`) imports `androidx.compose` or `com.srctool.camouflage`, or any file imports `androidx.compose.material3` |
+| `checkImports` | a module without Compose (anything but `:module:core:ui`, `:module:feature:*`, `:module:navigation`, `:app:desktop`) imports `androidx.compose` or `com.srctool.camouflage`, or any file imports `androidx.compose.material3` |
 | `checkLicenseHeaders` | a `.kt` / `.kts` file lacks the SPDX header ([Conventions](02%20-%20Conventions.md)) |
 | `checkDependencyLicenses` | a dependency's license isn't on the GPL-3.0-compatible list ([Open Source](../03%20-%20Project/03%20-%20Open%20Source.md)) |
 
@@ -89,7 +89,7 @@ Module folders mirror Gradle paths (`core/git` is `:core:git`), per [ADR-24](../
 |---|---|
 | Build | `./gradlew build` |
 | All checks | `./gradlew check` |
-| One module | `./gradlew :core:git:test` |
+| One module | `./gradlew :module:core:git:test` |
 | Run the app | `./gradlew :app:desktop:run` |
 | Run the CLI (JVM) | `./gradlew :app:cli:run --args="whoami"` |
 | Native CLI | `./gradlew :app:cli:nativeCompile` |

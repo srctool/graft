@@ -11,7 +11,7 @@ milestone: G3 (core), G9 (agent commands)
 
 ## How it runs
 
-- **A separate small binary** sharing the Compose-free `:data:*` and `:core:*` modules with the app ([ADR-24](../03%20-%20Project/02%20-%20Decisions.md)), compiled with GraalVM native-image so it starts in milliseconds, not JVM seconds ([ADR-19](../03%20-%20Project/02%20-%20Decisions.md)).
+- **A separate small binary** sharing the Compose-free `:module:data:*` and `:module:core:*` modules with the app ([ADR-24](../03%20-%20Project/02%20-%20Decisions.md)), compiled with GraalVM native-image so it starts in milliseconds, not JVM seconds ([ADR-19](../03%20-%20Project/02%20-%20Decisions.md)).
 - **Works without the app.** If the app is running, the CLI also tells it what changed (local socket: a Unix domain socket, or a named pipe on Windows), so the UI updates at once.
 - Installed on `PATH` by [Onboarding](22%20-%20Onboarding.md).
 
