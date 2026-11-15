@@ -5,6 +5,7 @@ package com.srctool.graft.data.git.api.repositories
 
 import com.srctool.graft.data.git.api.models.CommitDetails
 import com.srctool.graft.data.git.api.models.CommitLog
+import com.srctool.graft.data.git.api.models.LogQuery
 import com.srctool.graft.data.git.api.models.ObjectId
 import com.srctool.sinew.models.Result
 import java.nio.file.Path
@@ -20,6 +21,12 @@ public interface CommitRepository {
      * `ParseException`; cancellation is never a failure.
      */
     public fun log(repository: Path): CommitLog
+
+    /**
+     * The commits of [log] that match [query] (Commit Graph, "Search"), streamed the same way and failing the same
+     * way. The graph draws them as a filtered history.
+     */
+    public fun search(repository: Path, query: LogQuery): CommitLog
 
     /**
      * Everything the details panel shows about commit [id]: metadata, full message, trailers, signature status, and

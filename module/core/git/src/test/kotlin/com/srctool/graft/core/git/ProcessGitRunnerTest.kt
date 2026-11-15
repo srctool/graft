@@ -116,6 +116,87 @@ class ProcessGitRunnerTest {
         assertEquals("rev-parse", error.argv[6])
     }
 
+    /** `merge-base --is-ancestor HEAD HEAD~1`: exit 1 means "no", which only some commands treat as an answer. */
+    private class IsAncestor(accepts: Set<Int>) : GitCommand<Boolean>() {
+        override val function = "ANCS"
+        override val args = listOf("merge-base", "--is-ancestor", "HEAD", "HEAD~1")
+        override val successExitCodes = accepts
+
+        override fun parse(stdout: ByteArray) = true
+    }
+
+    @Test
+    fun `a command can treat another exit code as an answer`(sandbox: GitSandbox) = runBlocking<Unit> {
+        val repo = sandbox.history(2)
+        assertEquals(true, sandbox.runner().run(IsAncestor(setOf(0, 1)), repo).getOrThrow())
+        val error = assertIs<GitExitException>(sandbox.runner().run(IsAncestor(setOf(0)), repo).errorOrNull)
+        assertEquals(1, error.exitCode)
+    }
+
+    /** A process that exits at once with [code] and prints nothing, like git dying while Windows loads it. */
+    private class DeadProcess(private val code: Int) : Process() {
+        override fun getOutputStream(): java.io.OutputStream = java.io.OutputStream.nullOutputStream()
+
+        override fun getInputStream(): InputStream = InputStream.nullInputStream()
+
+        override fun getErrorStream(): InputStream = InputStream.nullInputStream()
+
+        override fun waitFor(): Int = code
+
+        override fun exitValue(): Int = code
+
+        override fun destroy() = Unit
+
+        override fun isAlive(): Boolean = false
+
+        override fun onExit(): java.util.concurrent.CompletableFuture<Process> =
+            java.util.concurrent.CompletableFuture.completedFuture(this)
+
+        override fun descendants(): java.util.stream.Stream<ProcessHandle> = java.util.stream.Stream.empty()
+    }
+
+    /** A runner whose first [failures] starts die with [code]; later ones start real git in the sandbox. */
+    private fun GitSandbox.flakyRunner(code: Int, failures: Int, starts: java.util.concurrent.atomic.AtomicInteger) =
+        ProcessGitRunner(
+            GitRunnerConfig(
+                environment = environment,
+                launcher = { argv, cwd, env ->
+                    if (starts.getAndIncrement() < failures) DeadProcess(code) else launcher.start(argv, cwd, env)
+                },
+            ),
+        )
+
+    @Test
+    fun `git that failed to load on Windows is started again`(sandbox: GitSandbox) = runBlocking<Unit> {
+        val repo = sandbox.history(2)
+        val starts = java.util.concurrent.atomic.AtomicInteger()
+        val runner = sandbox.flakyRunner(code = -1073741502, failures = 2, starts = starts)
+        assertEquals("2", runner.run(read("rev-list", "--count", "HEAD"), repo).getOrThrow().trim())
+        assertEquals(3, starts.get())
+
+        starts.set(0)
+        assertEquals(2, runner.stream(Hashes(), repo).toList().size)
+        assertEquals(3, starts.get())
+    }
+
+    @Test
+    fun `starting again gives up after three tries, and other exits aren't retried`(sandbox: GitSandbox) =
+        runBlocking<Unit> {
+            val repo = sandbox.history(1)
+            val starts = java.util.concurrent.atomic.AtomicInteger()
+            val alwaysDead = sandbox.flakyRunner(code = -1073741502, failures = Int.MAX_VALUE, starts = starts)
+            assertIs<GitExitException>(alwaysDead.run(read("rev-parse", "HEAD"), repo).errorOrNull)
+            assertEquals(3, starts.get())
+
+            starts.set(0)
+            val exitOne = sandbox.flakyRunner(code = 1, failures = Int.MAX_VALUE, starts = starts)
+            assertEquals(
+                1,
+                assertIs<GitExitException>(exitOne.run(read("rev-parse", "HEAD"), repo).errorOrNull).exitCode,
+            )
+            assertEquals(1, starts.get())
+        }
+
     @Test
     fun `outside a repository is not found`(sandbox: GitSandbox) = runBlocking {
         val error = sandbox.runner().run(read("rev-parse", "HEAD"), sandbox.dir("empty")).errorOrNull

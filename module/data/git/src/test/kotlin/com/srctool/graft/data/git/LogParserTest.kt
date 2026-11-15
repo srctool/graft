@@ -4,6 +4,7 @@
 package com.srctool.graft.data.git
 
 import com.srctool.graft.core.git.GitParseException
+import com.srctool.graft.data.git.api.models.AuthorType
 import com.srctool.graft.data.git.api.models.People
 import com.srctool.graft.data.git.implementation.source.local.LogParser
 import kotlin.test.Test
@@ -32,6 +33,17 @@ class LogParserTest {
         assertEquals(2, subject("Merge feature").parents.size)
         assertEquals(4, subject("Octopus").parents.size)
         assertEquals(subject("main 2").id, subject("Merge feature").parents.first())
+    }
+
+    @Test
+    fun `author types tell people, AI co-authored commits and bots apart`() {
+        val authored = LogParser.parse(Fixtures.read("log", "authors").inputStream(), People()).toList()
+        assertEquals(AuthorsRepo.expected, authored.reversed().associate { it.subject to it.authorType })
+    }
+
+    @Test
+    fun `the graph repository's commits are all by people`() {
+        assertTrue(rows.all { it.authorType == AuthorType.PERSON })
     }
 
     @Test

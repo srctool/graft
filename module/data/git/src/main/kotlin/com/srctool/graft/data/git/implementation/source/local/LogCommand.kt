@@ -5,6 +5,7 @@ package com.srctool.graft.data.git.implementation.source.local
 
 import com.srctool.graft.core.git.GitParseException
 import com.srctool.graft.core.git.StreamingGitCommand
+import com.srctool.graft.data.git.api.models.AuthorType
 import com.srctool.graft.data.git.api.models.CommitRow
 import com.srctool.graft.data.git.api.models.ObjectId
 import com.srctool.graft.data.git.api.models.People
@@ -28,19 +29,24 @@ internal class LogCommand(revisions: List<String> = DEFAULT_REVISIONS, public va
     override fun parse(stdout: InputStream): Sequence<CommitRow> = LogParser.parse(stdout, people)
 
     companion object {
-        /** Hash, parents, author name, email and time, committer name and time, subject; every field NUL-terminated. */
-        const val FORMAT: String = "%H%x00%P%x00%an%x00%ae%x00%at%x00%cn%x00%ct%x00%s%x00"
+        /**
+         * Hash, parents, author name, email and time, committer name and time, subject, and the `Co-authored-by`
+         * trailer values separated by 0x1F; every field NUL-terminated.
+         */
+        const val FORMAT: String =
+            "%H%x00%P%x00%an%x00%ae%x00%at%x00%cn%x00%ct%x00%s%x00" +
+                "%(trailers:key=Co-authored-by,valueonly=true,separator=%x1f)%x00"
         val DEFAULT_REVISIONS: List<String> = listOf("--exclude=refs/stash", "--exclude=refs/graft/*", "--all")
     }
 }
 
 /**
- * Parses [LogCommand.FORMAT] with `-z`: eight NUL-terminated fields per commit, then the NUL that `-z` puts after each
+ * Parses [LogCommand.FORMAT] with `-z`: nine NUL-terminated fields per commit, then the NUL that `-z` puts after each
  * record. Fields may be empty (a root commit's parents, an empty subject), so records are read by count, never by
  * skipping empty fields.
  */
 internal object LogParser {
-    private const val FIELDS = 8
+    private const val FIELDS = 9
 
     fun parse(stdout: InputStream, people: People): Sequence<CommitRow> = sequence {
         val reader = NulReader(stdout)
@@ -64,7 +70,9 @@ internal object LogParser {
         val id = objectId(f[0]!!)
         val parentsText = ascii(f[1]!!)
         val parents = if (parentsText.isEmpty()) emptyList() else parentsText.split(' ').map(::objectId)
-        val author = people.intern(Person(GitText.decode(f[2]!!), GitText.decode(f[3]!!)))
+        val authorName = GitText.decode(f[2]!!)
+        val authorEmail = GitText.decode(f[3]!!)
+        val author = people.intern(Person(authorName, authorEmail))
         // %cn has no email in the format: the graph shows committers by name only, so the email stays empty.
         val committer = people.intern(Person(GitText.decode(f[5]!!), ""))
         return CommitRow(
@@ -75,6 +83,7 @@ internal object LogParser {
             committerIndex = committer,
             committerTime = time(f[6]!!),
             subject = GitText.decode(f[7]!!),
+            authorType = AuthorTypes.of(authorName, authorEmail, f[8]!!),
         )
     }
 
@@ -90,6 +99,46 @@ internal object LogParser {
 
     private fun time(bytes: ByteArray): Long = ascii(bytes).toLongOrNull()
         ?: throw GitParseException("git log printed \"${ascii(bytes)}\" where a timestamp was expected")
+}
+
+/**
+ * Who wrote a commit, for the author-type filter: a bot by its `[bot]` name or address; AI-assisted when the author
+ * or a `Co-authored-by` value is a known assistant, by name or by its no-reply address; otherwise a person.
+ */
+internal object AuthorTypes {
+    private val assistantNames = listOf("claude", "cursor", "copilot")
+    private val assistantEmails =
+        listOf(
+            "noreply@anthropic.com",
+            "cursoragent@cursor.com",
+            "copilot@github.com",
+            "+copilot@users.noreply.github.com",
+        )
+
+    fun of(name: String, email: String, coAuthors: ByteArray): AuthorType {
+        if (name.endsWith("[bot]", ignoreCase = true) ||
+            email.contains("[bot]@", ignoreCase = true)
+        ) {
+            return AuthorType.BOT
+        }
+        if (isAssistant(name, email)) return AuthorType.AI_ASSISTED
+        if (coAuthors.isEmpty()) return AuthorType.PERSON
+        val assisted =
+            GitText.decode(coAuthors).split('\u001f').any { value ->
+                val coName = value.substringBefore('<').trim()
+                val coEmail = value.substringAfter('<', "").substringBefore('>')
+                isAssistant(coName, coEmail)
+            }
+        return if (assisted) AuthorType.AI_ASSISTED else AuthorType.PERSON
+    }
+
+    /** "Claude", "Claude Opus 5.5", "Cursor Agent", "Copilot": the first word names the assistant. */
+    private fun isAssistant(name: String, email: String): Boolean {
+        val firstWord = name.substringBefore(' ').lowercase()
+        val address = email.lowercase()
+        return firstWord in assistantNames ||
+            assistantEmails.any { address == it || (it.startsWith('+') && address.endsWith(it)) }
+    }
 }
 
 /** Reads NUL-terminated tokens from a byte stream. The last token may end at EOF without a NUL. */
