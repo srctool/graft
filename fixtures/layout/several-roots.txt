@@ -1,0 +1,5 @@
+* \    M                lane 0 c0 | BOTTOM 0>0 c0, BOTTOM 0>1 c1
+| | *  Z                lane 2 c2 | THROUGH 0>0 c0, THROUGH 1>1 c1, BOTTOM 2>2 c2
+* | |  A                lane 0 c0 | TOP 0>0 c0, THROUGH 1>1 c1, THROUGH 2>2 c2
+  | *  Y                lane 2 c2 | THROUGH 1>1 c1, TOP 2>2 c2
+  *    D                lane 1 c1 | TOP 1>1 c1

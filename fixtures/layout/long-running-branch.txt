@@ -1,0 +1,7 @@
+* \    M3               lane 0 c0 | BOTTOM 0>0 c0, BOTTOM 0>1 c1
+| * \  D3               lane 1 c1 | THROUGH 0>0 c0, TOP 1>1 c1, BOTTOM 1>1 c1, BOTTOM 1>2 c2
+* | |  M2               lane 0 c0 | TOP 0>0 c0, THROUGH 1>1 c1, THROUGH 2>2 c2, BOTTOM 0>0 c0
+| * |  D2               lane 1 c1 | THROUGH 0>0 c0, TOP 1>1 c1, THROUGH 2>2 c2, BOTTOM 1>1 c1
+* | /  M1               lane 0 c0 | TOP 0>0 c0, THROUGH 1>1 c1, TOP 2>0 c2, BOTTOM 0>0 c0
+| *    D1               lane 1 c1 | THROUGH 0>0 c0, TOP 1>1 c1, BOTTOM 1>1 c1
+* /    M0               lane 0 c0 | TOP 0>0 c0, TOP 1>0 c1
