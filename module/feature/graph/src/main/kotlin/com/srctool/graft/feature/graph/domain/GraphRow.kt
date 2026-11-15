@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Copyright (C) 2026 Graft contributors
 
-package com.srctool.graft.feature.graph.layout
+package com.srctool.graft.feature.graph.domain
 
 import com.srctool.graft.data.git.api.models.CommitRow
 

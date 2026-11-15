@@ -50,7 +50,7 @@ The shape comes from the author's architecture board and matches Sinew's App Arc
 | `:module:core:exception` | the error-code registry and text redaction | depend on a business module |
 | `:module:core:notification`, `:module:core:configuration` | desktop notifications; app folders and platform paths | |
 
-Models live in the data or domain module that needs them, never in `:module:core`. Every data module has the same packages: public `api` (`models`, `repositories`) and `di`; internal `implementation` (`repositories`, `source/local/entity`, `source/remote/{response,request,api}`). `checkImports` fails on a `public` declaration outside `api` and `di`. The allowed edges are listed in `config/module-graph.txt`, and `./gradlew check` fails on any other.
+Models live in the data or domain module that needs them, never in `:module:core`. Every data module has the same packages: public `api` (`models`, `repositories`) and `di`; internal `implementation` (`repositories`, `source/local/entity`, `source/remote/{response,request,api}`). `checkImports` fails on a `public` declaration outside `api` and `di`. Every feature module has the same packages (`com.srctool.graft.feature.<name>.…`): `presentation/<screen>` (the page, its state management and its navigation definition), `presentation/components` (the feature's own components), and `domain` (its use cases and pure logic, no Compose). Logic a second feature needs moves to `:module:domain`. The allowed edges are listed in `config/module-graph.txt`, and `./gradlew check` fails on any other.
 
 ## Invariants
 

@@ -1,9 +1,8 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Copyright (C) 2026 Graft contributors
 
-package com.srctool.graft.feature.graph.spike
+package com.srctool.graft.feature.graph.presentation.spike
 
-import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.VerticalScrollbar
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.scrollBy
@@ -30,7 +29,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.TextStyle
@@ -40,9 +38,12 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.srctool.graft.data.git.api.models.CommitLog
 import com.srctool.graft.data.git.api.models.CommitRow
-import com.srctool.graft.feature.graph.layout.GraphEdge.Kind
-import com.srctool.graft.feature.graph.layout.GraphRow
-import com.srctool.graft.feature.graph.layout.LaneLayout
+import com.srctool.graft.feature.graph.domain.GraphRow
+import com.srctool.graft.feature.graph.domain.LaneLayout
+import com.srctool.graft.feature.graph.presentation.components.GraphColors
+import com.srctool.graft.feature.graph.presentation.components.GraphLanes
+import com.srctool.graft.feature.graph.presentation.components.LaneWidth
+import com.srctool.graft.feature.graph.presentation.components.MAX_DRAWN_LANES
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
@@ -79,19 +80,7 @@ public data class ScrollResults(
 )
 
 private val RowHeight = 24.dp
-private val LaneWidth = 14.dp
-private const val MAX_DRAWN_LANES = 40
 private const val FIRST_SCREEN_ROWS = 60
-
-// Atom One Dark (ADR-22): background, text, and the branch palette.
-private val Background = Color(0xFF282C34)
-private val Foreground = Color(0xFFABB2BF)
-private val Muted = Color(0xFF5C6370)
-private val Palette =
-    listOf(0xFF61AFEF, 0xFF98C379, 0xFFE06C75, 0xFFC678DD, 0xFFE5C07B, 0xFF56B6C2, 0xFFD19A66, 0xFFBE5046)
-        .map { Color(it) }
-
-private fun colorOf(index: Int) = Palette[index.mod(Palette.size)]
 
 /**
  * The spike: streams [log] through the lane layout into a virtualized list. With [autoScrollRows] > 0 it waits for
@@ -156,23 +145,27 @@ public fun GraphSpike(
     }
 
     val graphWidth = LaneWidth * minOf(widest, MAX_DRAWN_LANES)
-    Column(Modifier.fillMaxSize().background(Background)) {
-        BasicText(status, Modifier.padding(8.dp), style = TextStyle(color = Muted, fontSize = 12.sp))
+    Column(Modifier.fillMaxSize().background(GraphColors.Background)) {
+        BasicText(status, Modifier.padding(8.dp), style = TextStyle(color = GraphColors.Muted, fontSize = 12.sp))
         Box(Modifier.fillMaxSize()) {
             LazyColumn(Modifier.fillMaxSize(), state = listState) {
                 items(count) { index ->
                     val row = rows[index]
                     Row(Modifier.fillMaxWidth().height(RowHeight), verticalAlignment = Alignment.CenterVertically) {
-                        Lanes(row, lanes, Modifier.width(graphWidth).height(RowHeight))
+                        GraphLanes(row, lanes, Modifier.width(graphWidth).height(RowHeight))
                         BasicText(
                             row.commit.id.short(),
                             Modifier.width(72.dp),
-                            style = TextStyle(color = Muted, fontSize = 12.sp, fontFamily = FontFamily.Monospace),
+                            style = TextStyle(
+                                color = GraphColors.Muted,
+                                fontSize = 12.sp,
+                                fontFamily = FontFamily.Monospace,
+                            ),
                         )
                         BasicText(
                             row.commit.subject,
                             Modifier.weight(1f),
-                            style = TextStyle(color = Foreground, fontSize = 13.sp),
+                            style = TextStyle(color = GraphColors.Foreground, fontSize = 13.sp),
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis,
                         )
@@ -180,34 +173,6 @@ public fun GraphSpike(
                 }
             }
             VerticalScrollbar(rememberScrollbarAdapter(listState), Modifier.align(Alignment.CenterEnd))
-        }
-    }
-}
-
-/** One row's lanes: the edges, then the node on top. */
-@Composable
-private fun Lanes(row: GraphRow, lanes: LaneLayout, modifier: Modifier) {
-    Canvas(modifier) {
-        val lane = LaneWidth.toPx()
-        val mid = size.height / 2
-        val stroke = 2.dp.toPx()
-        fun x(i: Int) = lane * i + lane / 2
-        for (l in 0 until minOf(row.width, MAX_DRAWN_LANES)) {
-            val through = lanes.through(row.index, l)
-            if (through >= 0) drawLine(colorOf(through), Offset(x(l), 0f), Offset(x(l), size.height), stroke)
-        }
-        for (i in 0 until row.edgeCount) {
-            val e = row.edge(i)
-            if (e.from >= MAX_DRAWN_LANES || e.to >= MAX_DRAWN_LANES) continue
-            val color = colorOf(e.color)
-            when (e.kind) {
-                Kind.TOP -> drawLine(color, Offset(x(e.from), 0f), Offset(x(e.to), mid), stroke)
-                Kind.BOTTOM -> drawLine(color, Offset(x(e.from), mid), Offset(x(e.to), size.height), stroke)
-            }
-        }
-        if (row.lane < MAX_DRAWN_LANES) {
-            drawCircle(colorOf(row.color), radius = 4.dp.toPx(), center = Offset(x(row.lane), mid))
-            if (row.commit.isMerge) drawCircle(Background, radius = 2.dp.toPx(), center = Offset(x(row.lane), mid))
         }
     }
 }

@@ -1,11 +1,11 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Copyright (C) 2026 Graft contributors
 
-package com.srctool.graft.feature.graph.layout
+package com.srctool.graft.feature.graph.domain
 
 import com.srctool.graft.data.git.api.models.CommitRow
 import com.srctool.graft.data.git.api.models.ObjectId
-import com.srctool.graft.feature.graph.layout.GraphEdge.Kind
+import com.srctool.graft.feature.graph.domain.GraphEdge.Kind
 
 /**
  * The incremental lane algorithm from the Commit Graph note. `waiting[i]` is the commit lane `i` is waiting for, or

@@ -10,7 +10,7 @@ import androidx.compose.ui.window.rememberWindowState
 import com.srctool.graft.core.git.GitRunnerConfig
 import com.srctool.graft.core.git.ProcessGitRunner
 import com.srctool.graft.data.git.di.GitDataModule
-import com.srctool.graft.feature.graph.spike.GraphSpike
+import com.srctool.graft.feature.graph.presentation.spike.GraphSpike
 import java.nio.file.Paths
 import kotlin.system.exitProcess
 
