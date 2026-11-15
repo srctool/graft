@@ -11,6 +11,8 @@ import androidx.lifecycle.ViewModelStore
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
 import com.srctool.graft.data.git.api.repositories.CommitRepository
+import com.srctool.graft.feature.graph.benchmark.SpikeBenchmark
+import com.srctool.graft.feature.graph.domain.implementation.usecases.GitLoadGraphUseCase
 import com.srctool.graft.feature.graph.domain.implementation.usecases.LaneLayout
 
 /*
@@ -23,31 +25,26 @@ import com.srctool.graft.feature.graph.domain.implementation.usecases.LaneLayout
 public data class GraphSpikeRoute(
     /** The repository folder to lay out. */
     val repository: String,
-    /** Rows to scroll in the benchmark after the load; 0 for none. */
-    val autoScrollRows: Int = 0,
     /** At most this many commits. */
     val limit: Int = Int.MAX_VALUE,
 )
 
 /**
- * Shows [route]: builds its [GraphSpikeViewModel] from the route's arguments, [commits] and the lane layout in a store this
- * destination owns, clears it when the destination leaves, and connects it to the page. [onResults] gets the
- * measurements once every one is in.
+ * Shows [route]: builds its [GraphSpikeViewModel] from the route's arguments and the graph-loading use case (over
+ * [commits]) in a store this destination owns, clears it when the destination leaves, and connects it to the page.
+ * A [benchmark] (spike only) measures the screen from outside.
  */
 @Composable
-public fun GraphSpikeDestination(
-    route: GraphSpikeRoute,
-    commits: CommitRepository,
-    startNanos: Long,
-    onResults: (SpikeResults) -> Unit = {},
-) {
+public fun GraphSpikeDestination(route: GraphSpikeRoute, commits: CommitRepository, benchmark: SpikeBenchmark? = null) {
     val store = remember(route) { ViewModelStore() }
     DisposableEffect(store) { onDispose { store.clear() } }
     val viewModel =
         remember(store) {
             val factory =
-                viewModelFactory { initializer { GraphSpikeViewModel(route, commits, LaneLayout(), startNanos) } }
+                viewModelFactory {
+                    initializer { GraphSpikeViewModel(route, GitLoadGraphUseCase(commits, ::LaneLayout)) }
+                }
             ViewModelProvider.create(store, factory)[GraphSpikeViewModel::class]
         }
-    GraphSpikePage(viewModel, onResults)
+    GraphSpikePage(viewModel, benchmark)
 }

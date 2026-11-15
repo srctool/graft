@@ -3,18 +3,15 @@
 
 package com.srctool.graft.feature.graph.presentation.spike
 
+import com.srctool.graft.feature.graph.domain.api.models.LaidOutGraph
+
 internal data class GraphSpikeState(
-    val graph: GraphRows,
+    /** The graph being loaded; null until the first batch. */
+    val graph: LaidOutGraph? = null,
     /** Rows the page may show; grows as batches arrive, and drives recomposition. */
     val rowCount: Int = 0,
     val widest: Int = 1,
     val phase: Phase = Phase.Idle,
-    val openNanos: Long = 0,
-    val firstScreenMillis: Long? = null,
-    val openToFirstScreenMillis: Long? = null,
-    val fullLoadMillis: Long? = null,
-    val heapAfterLoadMb: Long? = null,
-    val scroll: ScrollResults? = null,
     /** Why `git log` failed (the exception, with Graft's error code in its message). */
     val error: String? = null,
 ) {
