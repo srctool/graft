@@ -1,11 +1,14 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Copyright (C) 2026 Graft contributors
 
-package com.srctool.graft.feature.graph.domain
+package com.srctool.graft.feature.graph.domain.implementation.usecases
 
 import com.srctool.graft.data.git.api.models.CommitRow
 import com.srctool.graft.data.git.api.models.ObjectId
-import com.srctool.graft.feature.graph.domain.GraphEdge.Kind
+import com.srctool.graft.feature.graph.domain.api.models.GraphEdge
+import com.srctool.graft.feature.graph.domain.api.models.GraphEdge.Kind
+import com.srctool.graft.feature.graph.domain.api.models.GraphRow
+import com.srctool.graft.feature.graph.domain.api.usecases.GraphLayout
 
 /**
  * The incremental lane algorithm from the Commit Graph note. `waiting[i]` is the commit lane `i` is waiting for, or
@@ -19,7 +22,7 @@ import com.srctool.graft.feature.graph.domain.GraphEdge.Kind
  * [through]: a large history keeps hundreds of lanes open at once, and an edge per open lane per row took 3.5 GB on
  * the Linux kernel's 1.5M commits (G0 Task 8). Not thread-safe: lay out and query on one thread.
  */
-internal class LaneLayout {
+internal class LaneLayout : GraphLayout {
     private val waiting = ArrayList<ObjectId?>()
     private val colors = ArrayList<Int>()
 
@@ -30,18 +33,16 @@ internal class LaneLayout {
     /** Closed pass-through runs per lane: (first row, last row, color) triples in row order. */
     private val runs = ArrayList<IntArrayBuilder>()
 
-    /** Rows laid out so far. */
-    var rowCount: Int = 0
+    override var rowCount: Int = 0
         private set
 
-    /** The widest any row has been so far. */
-    var widest: Int = 0
+    override var widest: Int = 0
         private set
 
     // Reused between rows; each row copies the edges it produced.
     private val edges = LongArrayBuilder()
 
-    fun next(commit: CommitRow): GraphRow {
+    override fun next(commit: CommitRow): GraphRow {
         val row = rowCount
         edges.clear()
         val id = commit.id
@@ -109,11 +110,7 @@ internal class LaneLayout {
         return GraphRow(commit, row, lane, color, width, edges.toArray())
     }
 
-    /**
-     * The color of the line passing straight through [lane] in [row] without touching its node, or -1 if none does.
-     * [row] must already be laid out.
-     */
-    fun through(row: Int, lane: Int): Int {
+    override fun through(row: Int, lane: Int): Int {
         if (lane < waiting.size && waiting[lane] != null && opened[lane] < row) return colors[lane]
         val lineRuns = runs.getOrNull(lane) ?: return -1
         // The last run starting at or before [row].

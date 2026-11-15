@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Copyright (C) 2026 Graft contributors
 
-package com.srctool.graft.feature.graph.domain
+package com.srctool.graft.feature.graph.domain.api.models
 
 import com.srctool.graft.data.git.api.models.CommitRow
 
@@ -9,7 +9,7 @@ import com.srctool.graft.data.git.api.models.CommitRow
  * One row of the commit graph (Commit Graph note): the commit, the lane its node sits in, and the lines that touch the
  * node. A row is split at the node's height: [GraphEdge.Kind.TOP] segments run from the row's top edge to the node,
  * [GraphEdge.Kind.BOTTOM] segments from the node to the row's bottom edge. Lanes passing straight down without touching
- * the node aren't stored per row; ask [LaneLayout.through]. Lanes never move sideways between rows, so the lanes at the
+ * the node aren't stored per row; ask `GraphLayout.through`. Lanes never move sideways between rows, so the lanes at the
  * bottom of one row are exactly those at the top of the next.
  *
  * Edges are packed into one array per row, since a 500k-commit history has millions of them.

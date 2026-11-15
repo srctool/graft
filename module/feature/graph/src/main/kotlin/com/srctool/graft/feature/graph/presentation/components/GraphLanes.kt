@@ -9,9 +9,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
-import com.srctool.graft.feature.graph.domain.GraphEdge.Kind
-import com.srctool.graft.feature.graph.domain.GraphRow
-import com.srctool.graft.feature.graph.domain.LaneLayout
+import com.srctool.graft.feature.graph.domain.api.models.GraphEdge.Kind
+import com.srctool.graft.feature.graph.domain.api.models.GraphRow
 
 internal val LaneWidth = 14.dp
 internal const val MAX_DRAWN_LANES = 40
@@ -31,18 +30,19 @@ internal object GraphColors {
 
 /**
  * One graph row's lanes: the lines passing by, the lines touching the node, then the node on top (hollow for a merge).
- * Lanes past [MAX_DRAWN_LANES] are cut off.
+ * [through] answers which line passes a lane without touching the node (`GraphLayout.through`). Lanes past
+ * [MAX_DRAWN_LANES] are cut off.
  */
 @Composable
-internal fun GraphLanes(row: GraphRow, lanes: LaneLayout, modifier: Modifier) {
+internal fun GraphLanes(row: GraphRow, through: (row: Int, lane: Int) -> Int, modifier: Modifier) {
     Canvas(modifier) {
         val lane = LaneWidth.toPx()
         val mid = size.height / 2
         val stroke = 2.dp.toPx()
         fun x(i: Int) = lane * i + lane / 2
         for (l in 0 until minOf(row.width, MAX_DRAWN_LANES)) {
-            val through = lanes.through(row.index, l)
-            if (through >= 0) drawLine(GraphColors.branch(through), Offset(x(l), 0f), Offset(x(l), size.height), stroke)
+            val passing = through(row.index, l)
+            if (passing >= 0) drawLine(GraphColors.branch(passing), Offset(x(l), 0f), Offset(x(l), size.height), stroke)
         }
         for (i in 0 until row.edgeCount) {
             val e = row.edge(i)

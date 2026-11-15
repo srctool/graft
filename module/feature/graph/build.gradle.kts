@@ -12,4 +12,7 @@ dependencies {
     implementation(projects.module.data.hosting)
     implementation(projects.module.core.ui)
     implementation(projects.module.core.exception)
+    implementation(platform(libs.sinew.bom))
+    implementation(libs.sinew.viewmodel)
+    testImplementation(libs.kotlinx.coroutines.test)
 }

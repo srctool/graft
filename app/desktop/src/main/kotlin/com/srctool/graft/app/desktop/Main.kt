@@ -10,8 +10,8 @@ import androidx.compose.ui.window.rememberWindowState
 import com.srctool.graft.core.git.GitRunnerConfig
 import com.srctool.graft.core.git.ProcessGitRunner
 import com.srctool.graft.data.git.di.GitDataModule
-import com.srctool.graft.feature.graph.presentation.spike.GraphSpike
-import java.nio.file.Paths
+import com.srctool.graft.feature.graph.presentation.spike.GraphSpikeDestination
+import com.srctool.graft.feature.graph.presentation.spike.GraphSpikeRoute
 import kotlin.system.exitProcess
 
 fun main() {
@@ -26,11 +26,15 @@ fun main() {
         ) {
             if (spikeRepo != null) {
                 val data = GitDataModule(ProcessGitRunner(GitRunnerConfig()))
-                GraphSpike(
-                    log = data.commits.log(Paths.get(spikeRepo)),
+                GraphSpikeDestination(
+                    route =
+                    GraphSpikeRoute(
+                        repository = spikeRepo,
+                        autoScrollRows = System.getenv("GRAFT_SPIKE_SCROLL")?.toIntOrNull() ?: 0,
+                        limit = System.getenv("GRAFT_SPIKE_LIMIT")?.toIntOrNull() ?: Int.MAX_VALUE,
+                    ),
+                    commits = data.commits,
                     startNanos = startNanos,
-                    autoScrollRows = System.getenv("GRAFT_SPIKE_SCROLL")?.toIntOrNull() ?: 0,
-                    limit = System.getenv("GRAFT_SPIKE_LIMIT")?.toIntOrNull() ?: Int.MAX_VALUE,
                     onResults = { results ->
                         println("GRAFT_SPIKE_RESULTS $results")
                         if (System.getenv("GRAFT_SPIKE_EXIT") == "1") exitProcess(0)
