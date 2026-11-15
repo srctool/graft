@@ -3,8 +3,6 @@
 
 package com.srctool.graft.core.git
 
-import com.srctool.graft.core.exception.GitException
-import com.srctool.graft.core.exception.GitNotFoundException
 import com.srctool.sinew.exception.CrashReporter
 import com.srctool.sinew.exception.ExceptionHandler
 import com.srctool.sinew.exception.ParseException

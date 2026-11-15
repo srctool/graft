@@ -3,8 +3,6 @@
 
 package com.srctool.graft.core.git
 
-import com.srctool.graft.core.exception.GitExitException
-import com.srctool.graft.core.exception.GitNotFoundException
 import com.srctool.graft.core.git.testing.GitSandbox
 import com.srctool.graft.core.git.testing.GitSandboxExtension
 import com.srctool.graft.core.git.testing.RawGitCommand

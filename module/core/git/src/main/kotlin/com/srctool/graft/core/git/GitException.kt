@@ -1,9 +1,11 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Copyright (C) 2026 Graft contributors
 
-package com.srctool.graft.core.exception
+package com.srctool.graft.core.git
 
+import com.srctool.graft.core.exception.GraftCodes
 import com.srctool.graft.core.exception.GraftCodes.Types
+import com.srctool.graft.core.exception.Redaction
 import com.srctool.sinew.models.ErrorMessage
 import com.srctool.sinew.models.ExceptionLayer
 import com.srctool.sinew.models.SinewException

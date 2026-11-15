@@ -3,7 +3,6 @@
 
 package com.srctool.graft.core.git
 
-import com.srctool.graft.core.exception.GitVersionException
 import com.srctool.graft.core.git.testing.GitSandbox
 import com.srctool.graft.core.git.testing.GitSandboxExtension
 import com.srctool.graft.core.git.testing.RawGitCommand

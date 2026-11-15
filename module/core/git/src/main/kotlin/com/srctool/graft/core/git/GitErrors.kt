@@ -3,13 +3,6 @@
 
 package com.srctool.graft.core.git
 
-import com.srctool.graft.core.exception.GitAuthException
-import com.srctool.graft.core.exception.GitException
-import com.srctool.graft.core.exception.GitExitException
-import com.srctool.graft.core.exception.GitLockedException
-import com.srctool.graft.core.exception.GitNetworkException
-import com.srctool.graft.core.exception.GitNotFoundException
-
 /** Turns a failed git process into the matching [GitException]: the command's own rule first, then the general ones. */
 internal fun gitFailure(cmd: GitInvocation, argv: List<String>, exitCode: Int, stderr: String): GitException =
     cmd.failure(argv, exitCode, stderr)

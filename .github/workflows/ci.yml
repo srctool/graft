@@ -41,9 +41,9 @@ jobs:
         with:
           name: reports-${{ matrix.os }}
           path: |
-            **/build/reports/
-            **/build/test-results/
-          if-no-files-found: ignore
+            **/build/reports/**
+            **/build/test-results/**
+          if-no-files-found: warn
 
   git-min:
     name: git-min (Git 2.38.0)
@@ -91,9 +91,9 @@ jobs:
         with:
           name: reports-git-min
           path: |
-            **/build/reports/
-            **/build/test-results/
-          if-no-files-found: ignore
+            **/build/reports/**
+            **/build/test-results/**
+          if-no-files-found: warn
 
   spaces-path:
     name: spaces-path (Ubuntu)

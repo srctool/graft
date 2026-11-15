@@ -11,7 +11,7 @@ import java.nio.file.Path
  * The only way Graft runs git (ADR-2): the `git` executable with an argv list, never a shell, machine-readable
  * output only.
  *
- * Results are Sinew's [Result] (ADR-23). A failure is a [com.srctool.graft.core.exception.GitException] subclass
+ * Results are Sinew's [Result] (ADR-23). A failure is a [GitException] subclass
  * with git's argv, exit code and stderr, or Sinew's `ParseException` when the output can't be read. Cancelling a
  * call kills the whole process tree, and the cancellation propagates: it's never a failure.
  */

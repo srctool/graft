@@ -3,8 +3,8 @@
 
 package com.srctool.graft.core.git.testing
 
-import com.srctool.graft.core.exception.GitException
 import com.srctool.graft.core.git.GitCommand
+import com.srctool.graft.core.git.GitException
 import com.srctool.graft.core.git.GitRunner
 import com.srctool.graft.core.git.GitRunnerConfig
 import com.srctool.graft.core.git.ProcessGitRunner

@@ -108,7 +108,7 @@ Before reporting a task done: `./gradlew check` passes. Say so with the output; 
 | | |
 |---|---|
 | Milestone | **G0 Setup + spike**: plan in `plans/G0.md` |
-| Next | G0 Task 5 (#6): `GitRunner` on Sinew's types in `:module:core:git` and `:module:core:exception` |
+| Next | G0 Task 6 (#7): log and refs parsers in `:module:core:git` |
 | Open decisions | final name checks (Naming), G0 spike confirming ADR-1 |
 
 <!-- gitnexus:start -->

@@ -53,13 +53,13 @@ flowchart TB
 | `:module:data:hosting` | provider-neutral repository interfaces and models (`ChangeRequest`, `Issue`, `Pipeline`, `Account`, `Notification`) and the contract test kit ([Provider Model](04%20-%20Provider%20Model.md)) | no |
 | `:module:data:hosting-github` | the GitHub implementation and its API source | no |
 | `:module:core:ui` | the theme (Carbon skin, Atom One colors, IBM Plex Sans, 24/32 px density), Graft-only shared components (diff viewer, ref chips, avatars), stopgap components until Camouflage ships them, the `Localizer` | yes |
-| `:module:core:git` | `GitRunner`: the configured git process runner, its environment, the write queue | no |
+| `:module:core:git` | `GitRunner`: the configured git process runner, its environment, the write queue, and the `GitException` family | no |
 | `:module:core:network` | the configured HTTP client on `sinew-network`, the token source, the ETag cache | no |
 | `:module:core:database` | the SQLDelight cache | no |
 | `:module:core:security` | `SecretStore` on the OS keychain | no |
 | `:module:core:preference` | versioned settings files, atomic writes | no |
 | `:module:core:models` | domain models shared by the data modules: commit, ref, status, shelf, profile, … | no |
-| `:module:core:exception` | Graft's `SinewException` subclasses, the error-code registry, redaction | no |
+| `:module:core:exception` | the error-code registry and text redaction, shared by every module; each module's own `SinewException` subclasses live with the code that raises them (git's in `:module:core:git`) | no |
 | `:module:core:notification` | desktop notifications | no |
 | `:module:core:configuration` | app folders and platform paths | no |
 
@@ -112,7 +112,7 @@ Each worktree and each opened submodule is its own session. They share the objec
 
 ## Error model
 
-Every failure is a `SinewException` with a code `module-layer-function-type`, for example `GIT-R-PUSH-REJ` (push rejected, non-fast-forward), and every fallible call returns Sinew's `Result` ([ADR-23](../03%20-%20Project/02%20-%20Decisions.md)). Git failures are Graft's own subclasses in `:module:core:exception` and keep argv, exit code and redacted stderr. Messages are `ErrorMessage.Local` keys with an English fallback, rendered by the `Localizer`; the UI shows the message, the code and a "Show output" button.
+Every failure is a `SinewException` with a code `module-layer-function-type`, for example `GIT-R-PUSH-REJ` (push rejected, non-fast-forward), and every fallible call returns Sinew's `Result` ([ADR-23](../03%20-%20Project/02%20-%20Decisions.md)). Git failures are the `GitException` subclasses in `:module:core:git` and keep argv, exit code and redacted stderr. Messages are `ErrorMessage.Local` keys with an English fallback, rendered by the `Localizer`; the UI shows the message, the code and a "Show output" button.
 
 ## Storage locations
 
