@@ -3,8 +3,6 @@
 
 package com.srctool.graft.core.git
 
-import com.srctool.graft.core.exception.GitException
-import com.srctool.graft.core.exception.GitRejectedException
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertIs

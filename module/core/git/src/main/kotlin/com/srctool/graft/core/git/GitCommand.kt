@@ -3,7 +3,6 @@
 
 package com.srctool.graft.core.git
 
-import com.srctool.graft.core.exception.GitException
 import java.io.InputStream
 
 /** What every git command declares: its arguments, whether it changes the repository, and how it fails. */

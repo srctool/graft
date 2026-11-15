@@ -3,7 +3,6 @@
 
 package com.srctool.graft.core.git
 
-import com.srctool.graft.core.exception.GitVersionException
 import com.srctool.sinew.models.Result
 import java.nio.file.Path
 

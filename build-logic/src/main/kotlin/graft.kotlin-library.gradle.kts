@@ -36,5 +36,10 @@ val testGit = providers.gradleProperty("git")
 
 tasks.withType<Test>().configureEach {
     useJUnitPlatform()
+    // CI logs then show why a test failed, not only which one. Assertion messages never contain the environment.
+    testLogging {
+        events(org.gradle.api.tasks.testing.logging.TestLogEvent.FAILED)
+        exceptionFormat = org.gradle.api.tasks.testing.logging.TestExceptionFormat.FULL
+    }
     testGit.orNull?.let { systemProperty("graft.test.git", it) }
 }
