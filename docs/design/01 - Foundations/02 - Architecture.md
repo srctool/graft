@@ -29,14 +29,15 @@ The shape is *Modular App with Navigation* from the author's architecture board,
 
 ```mermaid
 flowchart TB
-    app["app: desktop, cli"] --> nav["navigation"]
+    app["app: desktop, cli"] --> nav["navigation (app navigation, hosts)"]
     nav --> feat["feature-* (screens, view models, own use cases)"]
     feat --> dom["domain (shared use cases, on demand)"]
     feat --> pres["presentation (app-level state)"]
     feat --> data["data: git, app, hosting, hosting-github"]
+    nav -->|"api, to pass on"| data
     dom --> data
     pres --> data
-    data --> core["core: git, network, database, security, preference, exception, notification, configuration"]
+    data --> core["core: git, network, database, security, preference, exception, notification, configuration, watcher"]
     feat --> ui["core:ui (theme, shared components)"]
 ```
 
@@ -44,7 +45,8 @@ flowchart TB
 |---|---|---|
 | `:app:desktop` | startup, hand-wired DI, the root Camouflage provider, the window shell, and the **app services** on Sinew's `AppService` / `AppServiceHost`: the repository session and watcher, background fetch, auto-snapshot, the inbox poller | yes |
 | `:app:cli` | the `graft` CLI and `graft mcp`, a GraalVM native image ([CLI](../02%20-%20Features/31%20-%20CLI.md)) | **no** |
-| `:module:navigation` | routes for the center pane (graph, diff, PR, issue, compare, bisect) and the tabs | yes |
+| `:module:navigation` | the app navigation on Navigation 3 ([ADR-26](../03%20-%20Project/02%20-%20Decisions.md)): back stacks per tab, `NavDisplay` with each feature's entries, and the **hosts** features contribute to: the main-window shell, the left panel, Settings, Search Everywhere, About. It receives the data modules `:app:desktop` built and passes each feature the `api` types it needs | yes |
+| `:module:feature:home` | what isn't about one open repository: Home, workspaces, Clone, Init, Onboarding | yes |
 | `:module:feature:graph`, `:module:feature:workingcopy`, `:module:feature:shelves`, `:module:feature:worktrees`, `:module:feature:submodules`, `:module:feature:changerequests`, `:module:feature:issues` | one area each: screens, their view models (`.presentation` package), the area's own use cases | yes |
 | `:module:presentation` | app-level state, split by case: `WindowState` (tabs, active repository, its profile), `OperationsState` (background work for the status bar), `InboxState`, `ProviderState` (sign-in, rate limit) | no |
 | `:module:domain` | use cases shared by two or more features; created when the first one is shared | no |
@@ -61,9 +63,10 @@ flowchart TB
 | `:module:core:exception` | the error-code registry and text redaction, shared by every module; each module's own `SinewException` subclasses live with the code that raises them (git's in `:module:core:git`) | no |
 | `:module:core:notification` | desktop notifications | no |
 | `:module:core:configuration` | app folders and platform paths | no |
+| `:module:core:watcher` | `FileWatcher` on `directory-watcher`, used only by `:app:desktop`'s repository session ([Platform Integration](../04%20-%20Development/08%20-%20Platform%20Integration.md)) | no |
 
 Rules:
-- Dependencies point down only. Features never import each other; navigation imports features, never the reverse.
+- Dependencies point down only. Features never import each other; navigation imports features, never the reverse, and the data modules' `api`, to pass them on.
 - `:module:data:*` never imports `:module:feature:*`, `:module:presentation`, `:module:domain` or `:module:core:ui`; `:module:core:*` never imports a business module.
 - Compose only in `:module:core:ui`, `:module:feature:*`, `:module:navigation` and `:app:desktop`. `:app:cli` never depends on them; it talks to a running app over a local socket.
 - Camouflage (`com.srctool.camouflage`) is used only where Compose is; nothing imports `androidx.compose.material3` ([ADR-22](../03%20-%20Project/02%20-%20Decisions.md)).

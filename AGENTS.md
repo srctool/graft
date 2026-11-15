@@ -108,8 +108,8 @@ Before reporting a task done: `./gradlew check` passes. Say so with the output; 
 
 | | |
 |---|---|
-| Milestone | **G0 Setup + spike**: done (ADR-1 confirmed 2026-11-15); G1 next |
-| Next | G1: draft `plans/G1.md` from the Roadmap, then stop for review |
+| Milestone | **G1 Read-only browser**: plan in `plans/G1.md` (G0 done, ADR-1 confirmed 2026-11-15) |
+| Next | G1 Task 1 (app folders, settings and app state), after Task 0 (ADR-26 and the module setup) is reviewed |
 | Open decisions | final name checks (Naming); from the G0 spike: writing a commit-graph file on open, and the first-screen and frame-time gaps (`plans/progress.md`) |
 
 <!-- gitnexus:start -->

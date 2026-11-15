@@ -14,7 +14,7 @@ Desktop apps break on the details each OS does differently: file watching, proce
 
 | Interface | Module | macOS | Windows | Linux |
 |---|---|---|---|---|
-| `FileWatcher` | `:module:data:git` (driven by the session app service) | FSEvents (via `directory-watcher`) | `ReadDirectoryChangesW` (JDK `WatchService`) | inotify (JDK `WatchService`) |
+| `FileWatcher` | `:module:core:watcher` (driven by the session app service in `:app:desktop`, [ADR-26](../03%20-%20Project/02%20-%20Decisions.md)) | FSEvents (via `directory-watcher`) | `ReadDirectoryChangesW` (JDK `WatchService`) | inotify (JDK `WatchService`) |
 | `SecretStore` | `:module:core:security` | Keychain | Credential Manager | Secret Service (gnome-keyring, KWallet) |
 | `ProcessControl` | `:module:core:git` | `ProcessHandle` tree | `ProcessHandle` tree + `destroyForcibly` | `ProcessHandle` tree |
 | `AppInstance` (single instance + IPC) | `:app:desktop`, `:app:cli` | Unix domain socket | Unix domain socket (Windows 10+, via JDK 16+ `AF_UNIX`) | Unix domain socket |
@@ -81,7 +81,7 @@ Desktop apps break on the details each OS does differently: file watching, proce
 ## 4. Build steps
 
 1. `ProcessControl` with tree kill and concurrent stream reading (G0 Task 5).
-2. `FileWatcher` with debounce and overflow handling (G1).
+2. `FileWatcher` with debounce and overflow handling, in `:module:core:watcher` (G1).
 3. `SecretStore` on all three OSes plus `InMemorySecretStore` for tests (G3).
 4. `AppInstance` socket and CLI hand-off (G1 for `graft open`).
 5. Shell integration items as listed, by milestone.
