@@ -42,7 +42,7 @@ flowchart TB
 
 | Module | Holds | Compose |
 |---|---|---|
-| `:app:desktop` | startup, hand-wired DI, the root Camouflage provider, the window shell, and the **app services**: the repository session and watcher, background fetch, auto-snapshot, the inbox poller | yes |
+| `:app:desktop` | startup, hand-wired DI, the root Camouflage provider, the window shell, and the **app services** on Sinew's `AppService` / `AppServiceHost`: the repository session and watcher, background fetch, auto-snapshot, the inbox poller | yes |
 | `:app:cli` | the `graft` CLI and `graft mcp`, a GraalVM native image ([CLI](../02%20-%20Features/31%20-%20CLI.md)) | **no** |
 | `:navigation` | routes for the center pane (graph, diff, PR, issue, compare, bisect) and the tabs | yes |
 | `:feature:graph`, `:feature:workingcopy`, `:feature:shelves`, `:feature:worktrees`, `:feature:submodules`, `:feature:changerequests`, `:feature:issues` | one area each: screens, their view models (`.presentation` package), the area's own use cases | yes |
@@ -78,7 +78,7 @@ Rules:
 | Source | `R` | a configured instance that reaches git, the network or a store | `GitRunner.run(LogCommand(...))` |
 | Repository | `R` | data access and mapping, no branching logic | `CommitRepository.log()`, `ShelfRepository.shelve(selection)` |
 | Use case (only when there's orchestration) | `UC` | multi-step flows, safety steps, retry and polling | `ShelveUseCase`, `PushUseCase` (guards, then push) |
-| App service (app or session lifetime) | `SV` (`UC` until Sinew ships it) | work triggered by the watcher, timers or the inbox | `RepositorySession`, background fetch |
+| App service (app or session lifetime) | `SV` | work triggered by the watcher, timers or the inbox; Sinew's `AppService`, started by `AppServiceHost` in `:app:desktop` (Sinew 1.1) | `RepositorySession`, background fetch |
 | View model | `VM` | folds `Result`s into state and effects, no `try`/`catch` | `GraphViewModel` |
 | UI | | Compose screens from Camouflage and `:core:ui` | `GraphPane` |
 

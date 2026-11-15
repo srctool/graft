@@ -32,7 +32,7 @@ Codes are Sinew's `MODULE-LAYER-FUNCTION-TYPE`, for example `GIT-R-PUSH-REJ` ([A
 | Part | Values |
 |---|---|
 | Module | `GIT` (git), `REPO`, `PRV` (provider), `NET`, `DATA`, `UI`, `CLI`, `SSH`, `PRF` (profiles) |
-| Layer | Sinew's: `R` source or repository, `UC` use case, `VM` view model, `UT` Sinew's retry and polling helpers, `SV` app service once Sinew ships it (`UC` until then) |
+| Layer | Sinew's: `R` source or repository, `UC` use case, `VM` view model, `UT` Sinew's retry and polling helpers, `SV` app service (`ExceptionLayer.Service`, Sinew 1.1) |
 | Function | 2–4 letters: `PUSH`, `PULL`, `LOG`, `SHLV`, `CLON`, … |
 | Type | git failures: `REJ` rejected, `AUTH`, `CONF` conflict, `LOCK`, `NF` not found, `NET`, `TO` timeout, `VER` version, `EXIT` unrecognized non-zero exit. HTTP failures use Sinew's built-in types (`NIC`, `RTO`, `UNA`, `FOR`, `NTF`, `CFL`, `RTL`, `SRV`, …); unreadable output is `DF` and anything unmatched `GEN`. Cancellation is never a failure |
 
