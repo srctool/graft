@@ -58,7 +58,7 @@ Graft is built milestone by milestone (G0 … G10), and **task by task with a re
 3. **Stop after each task** and report: what changed, test results (real output, failures included), any rulings, and what's next. Don't start the next task until the user says so.
 4. **Ledger** `plans/progress.md`: one line per state change (`Task 3: drafted …`, `Task 3: complete (reviewed: …)`), plus `Ruling:` lines (`what — why — cost if wrong`). It's the record of decisions taken during implementation.
 5. **Commits:** only when the user approves a task. Use Conventional Commits (`feat(core-git): …`), a DCO sign-off (`git commit -s`), and one commit per task unless asked otherwise.
-6. **`main` is protected** (2026-11-15): changes reach it only through a pull request. After approval, push the task's branch (`feat/…`, `fix/…`, `docs/…`), open a PR, and squash-merge it once the required checks pass: `check` on macOS, Windows and Ubuntu, `git-min` and `dco`. Never push to `main` directly, never force-push, and push a branch or merge only when the user says so.
+6. **`main` is protected** (2026-11-15): changes reach it only through a pull request. After approval, push the task's branch (`feat/…`, `fix/…`, `docs/…`), open a PR, and merge it with a merge commit (no squash, no rebase) once the required checks pass: `check` on macOS, Windows and Ubuntu, `git-min` and `dco`. Never push to `main` directly, never force-push, and push a branch or merge only when the user says so.
 
 ## 4. Testing rules
 

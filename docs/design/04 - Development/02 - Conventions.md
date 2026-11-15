@@ -64,5 +64,5 @@ New modules, functions and types are added to the registry in `:module:core:exce
 | Sign-off | DCO: `git commit -s` on every commit; a CI check rejects commits without it |
 | AI-assisted commits | keep the tool's `Co-Authored-By` trailer |
 | PRs | small; one plan task per PR where possible; CI green; one review |
-| Merging | squash merge; the PR title becomes the commit subject |
+| Merging | a merge commit per PR (no squash, no rebase), so each signed-off commit lands as written; keep every commit a clean Conventional Commit |
 | Contract changes | an ADR in the design docs **before** the code that changes a contract, storage format, or module edge |
