@@ -27,7 +27,8 @@ class SearchCompareTest {
     private class Built(val path: Path, val forkPoint: String)
 
     /**
-     * main: init → "Fix login timeout" → "main edit" (conflicts with feature) → "Docs [draft]*" (an odd path) → merge of
+     * main: init → "Fix login timeout" → "main edit" (conflicts with feature) → "Docs [draft]*" (a path with brackets,
+     * valid on Windows too) → merge of
      * `side`. feature (from "Fix login timeout", by Ann Lee): "Add retry", "conflicting edit". side: "Side work".
      * orphan: unrelated history.
      */
@@ -60,7 +61,7 @@ class SearchCompareTest {
         git("switch", "--quiet", "main")
         write("a.txt", "main\n")
         commit("main edit")
-        write("docs/[odd]*name.md", "doc\n")
+        write("docs/[odd] name.md", "doc\n")
         commit("Docs [draft]*")
         git("merge", "--quiet", "--no-ff", "-m", "Merge side", "side")
         git("switch", "--quiet", "--orphan", "orphan")
@@ -91,9 +92,9 @@ class SearchCompareTest {
     }
 
     @Test
-    fun `a path is literal, whatever characters it has`(sandbox: GitSandbox) = runBlocking {
+    fun `a path is literal, brackets and all`(sandbox: GitSandbox) = runBlocking {
         val repo = sandbox.build().path
-        assertEquals(listOf("Docs [draft]*"), sandbox.subjects(repo, LogQuery(path = "docs/[odd]*name.md")))
+        assertEquals(listOf("Docs [draft]*"), sandbox.subjects(repo, LogQuery(path = "docs/[odd] name.md")))
         assertEquals(emptyList(), sandbox.subjects(repo, LogQuery(path = "docs/*")))
         assertTrue("init" in sandbox.subjects(repo, LogQuery(path = "a.txt")))
     }
