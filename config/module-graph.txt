@@ -5,6 +5,9 @@
 
 # core
 :module:core:git -> :module:core:exception
+# The error-code registry is shared by every module (Architecture); these core modules raise DATA codes.
+:module:core:configuration -> :module:core:exception
+:module:core:preference -> :module:core:exception
 :module:core:network -> :module:core:security
 :module:core:network -> :module:core:exception
 :module:core:ui -> :module:core:exception
