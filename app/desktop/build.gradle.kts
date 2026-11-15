@@ -23,6 +23,7 @@ dependencies {
     implementation(projects.module.core.exception)
     implementation(projects.module.core.notification)
     implementation(projects.module.core.configuration)
+    implementation(projects.module.core.watcher)
     // Dispatchers.Main on the Swing event thread, which Compose Desktop draws on; view models run there.
     runtimeOnly(libs.kotlinx.coroutines.swing)
 }

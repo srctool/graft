@@ -87,6 +87,7 @@
 :module:feature:issues -> :module:domain
 
 # navigation
+:module:navigation -> :module:feature:home
 :module:navigation -> :module:feature:graph
 :module:navigation -> :module:feature:workingcopy
 :module:navigation -> :module:feature:shelves
@@ -96,6 +97,10 @@
 :module:navigation -> :module:feature:issues
 :module:navigation -> :module:presentation
 :module:navigation -> :module:core:ui
+# ADR-26: navigation receives the data modules :app:desktop built and passes their api to features.
+:module:navigation -> :module:data:git
+:module:navigation -> :module:data:app
+:module:navigation -> :module:data:hosting
 
 # apps
 :app:desktop -> :module:navigation
@@ -127,3 +132,16 @@
 :app:cli -> :module:core:preference
 :app:cli -> :module:core:exception
 :app:cli -> :module:core:configuration
+
+# ADR-26: feature:home (Home, workspaces, Clone, Init, Onboarding), the same edges as feature:graph
+:module:feature:home -> :module:presentation
+:module:feature:home -> :module:data:git
+:module:feature:home -> :module:data:app
+:module:feature:home -> :module:data:hosting
+:module:feature:home -> :module:core:ui
+:module:feature:home -> :module:core:exception
+:module:feature:home -> :module:domain
+
+# ADR-26: core:watcher (FileWatcher), used only by the desktop app
+:module:core:watcher -> :module:core:exception
+:app:desktop -> :module:core:watcher
