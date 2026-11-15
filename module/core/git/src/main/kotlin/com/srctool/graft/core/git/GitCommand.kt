@@ -31,9 +31,20 @@ public abstract class GitCommand<out T> : GitInvocation {
     public abstract fun parse(stdout: ByteArray): T
 }
 
+/** Which of git's streams a [StreamingGitCommand] parses. */
+public enum class GitOutput {
+    STDOUT,
+
+    /** For progress, which git writes to stderr (`clone --progress`). The runner still keeps it for errors. */
+    STDERR,
+}
+
 /** A read-only command whose output is parsed while git is still writing it, such as `git log`. */
 public abstract class StreamingGitCommand<out T> : GitInvocation {
     final override val mutates: Boolean get() = false
+
+    /** The stream [parse] reads; the other one is drained so git never blocks on a full pipe. */
+    public open val output: GitOutput get() = GitOutput.STDOUT
 
     /**
      * Parses stdout lazily. The runner consumes the sequence on an I/O thread and closes the stream afterwards.

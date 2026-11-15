@@ -53,6 +53,16 @@ class ProcessGitRunnerTest {
         }
     }
 
+    /** `git clone --progress`, reading git's progress lines from stderr. */
+    private class CloneProgress(url: String, target: String) : StreamingGitCommand<String>() {
+        override val function = "CLON"
+        override val args = listOf("clone", "--progress", url, target)
+        override val output = GitOutput.STDERR
+
+        override fun parse(stdout: InputStream): Sequence<String> =
+            stdout.bufferedReader().lineSequence().flatMap { it.split('\r') }.filter { it.isNotBlank() }
+    }
+
     private fun GitSandbox.history(commits: Int): Path =
         repo { repeat(commits) { i -> commit("commit $i") { file("f.txt", "$i") } } }
 
@@ -154,6 +164,26 @@ class ProcessGitRunnerTest {
                 runBlocking { sandbox.runner().stream(Hashes(), sandbox.dir("empty")).toList() }
             }
         assertEquals("GIT-R-LOG-NF", e.code)
+    }
+
+    @Test
+    fun `a command can stream git's stderr, as clone reports progress there`(sandbox: GitSandbox) = runBlocking {
+        val source = sandbox.history(20)
+        val lines = sandbox.runner().stream(CloneProgress(source.toUri().toString(), "copy"), sandbox.root).toList()
+        assertTrue(lines.any { it.startsWith("Cloning into") }, lines.toString())
+        assertTrue(lines.any { "objects" in it && "%" in it }, lines.toString())
+        assertTrue(Files.isDirectory(sandbox.root.resolve("copy/.git")))
+    }
+
+    @Test
+    fun `a failing stderr stream still keeps git's error`(sandbox: GitSandbox) {
+        val missing = sandbox.root.resolve("nowhere").toUri().toString()
+        val e =
+            assertFailsWith<GitException> {
+                runBlocking { sandbox.runner().stream(CloneProgress(missing, "copy2"), sandbox.root).toList() }
+            }
+        assertEquals("CLON", e.function)
+        assertContains(e.stderr, "fatal:")
     }
 
     @Test

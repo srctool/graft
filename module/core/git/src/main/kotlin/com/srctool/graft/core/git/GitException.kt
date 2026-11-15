@@ -60,6 +60,25 @@ public class GitConflictException(function: String, argv: List<String>, exitCode
     override val errorMessage: ErrorMessage = local("conflict", "The operation stopped on conflicts.")
 }
 
+/**
+ * Git refused the repository because another user owns it (`safe.directory`, Git's fix for CVE-2022-24765).
+ * [repositoryPath] is the folder git named, for the **Trust this folder** offer; empty if git didn't say.
+ */
+public class GitUnsafeOwnerException(function: String, argv: List<String>, exitCode: Int?, stderr: String) :
+    GitException(function, argv, exitCode, stderr) {
+    override val typeCode: String = Types.UNSAFE_OWNER
+    override val errorMessage: ErrorMessage =
+        local("unsafeOwner", "Git doesn't trust this folder because another user owns it.")
+
+    public val repositoryPath: String =
+        (newWording.find(this.stderr) ?: oldWording.find(this.stderr))?.groupValues?.get(1).orEmpty()
+
+    private companion object {
+        val newWording = Regex("""dubious ownership in repository at '([^'\n]*)'""")
+        val oldWording = Regex("""unsafe repository \('([^'\n]*)' is owned""")
+    }
+}
+
 /** Another git process holds a lock (`index.lock`, a ref lock). */
 public class GitLockedException(function: String, argv: List<String>, exitCode: Int?, stderr: String) :
     GitException(function, argv, exitCode, stderr) {

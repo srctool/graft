@@ -24,8 +24,11 @@ public object GraftCodes {
         public const val VERSION: String = "VER"
         public const val EXIT: String = "EXIT"
 
+        /** Git refused a repository owned by another user (`safe.directory`). */
+        public const val UNSAFE_OWNER: String = "OWN"
+
         public val all: List<String> =
-            listOf(REJECTED, AUTH, CONFLICT, LOCKED, NOT_FOUND, NETWORK, TIMEOUT, VERSION, EXIT)
+            listOf(REJECTED, AUTH, CONFLICT, LOCKED, NOT_FOUND, NETWORK, TIMEOUT, VERSION, EXIT, UNSAFE_OWNER)
     }
 
     private val functionPattern = Regex("[A-Z][A-Z0-9]{1,3}")
