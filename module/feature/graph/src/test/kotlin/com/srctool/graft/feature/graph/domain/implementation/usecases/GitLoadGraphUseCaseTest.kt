@@ -6,6 +6,7 @@ package com.srctool.graft.feature.graph.domain.implementation.usecases
 import com.srctool.graft.data.git.api.models.CommitDetails
 import com.srctool.graft.data.git.api.models.CommitLog
 import com.srctool.graft.data.git.api.models.CommitRow
+import com.srctool.graft.data.git.api.models.LogQuery
 import com.srctool.graft.data.git.api.models.ObjectId
 import com.srctool.graft.data.git.api.models.People
 import com.srctool.graft.data.git.api.repositories.CommitRepository
@@ -100,4 +101,6 @@ internal class FakeCommits(private val rows: Flow<CommitRow>) : CommitRepository
 
     override suspend fun details(repository: Path, id: ObjectId): Result<CommitDetails> =
         error("not used by these tests")
+
+    override fun search(repository: Path, query: LogQuery): CommitLog = error("not used by these tests")
 }

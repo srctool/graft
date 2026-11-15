@@ -29,6 +29,8 @@ class RecordFixturesTest {
         val runner = sandbox.runner()
         Fixtures.write("log", "graph", runner.run(RawBytesCommand(LogCommand().args), repo).getOrThrow())
         Fixtures.write("refs", "graph", runner.run(RawBytesCommand(RefsCommand().args), repo).getOrThrow())
+        val authors = AuthorsRepo.build(sandbox)
+        Fixtures.write("log", "authors", runner.run(RawBytesCommand(LogCommand().args), authors).getOrThrow())
     }
 
     @Test

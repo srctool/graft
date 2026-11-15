@@ -17,11 +17,19 @@ public interface GitInvocation {
     public val mutates: Boolean
 
     /**
+     * Exit codes that are answers, not failures, for commands that report through them: `merge-tree` exits 1 when
+     * the merge would conflict, `merge-base` when there's no common ancestor. Their output is parsed as usual.
+     */
+    public val successExitCodes: Set<Int> get() = SUCCESS_ONLY
+
+    /**
      * The exception for a failure this command recognizes (a rejected push, a conflict), or null to fall back to
      * the runner's general rules.
      */
     public fun failure(argv: List<String>, exitCode: Int, stderr: String): GitException? = null
 }
+
+private val SUCCESS_ONLY = setOf(0)
 
 /** A command whose whole output is parsed at once. */
 public abstract class GitCommand<out T> : GitInvocation {

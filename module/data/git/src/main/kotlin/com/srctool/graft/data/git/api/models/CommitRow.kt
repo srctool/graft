@@ -20,10 +20,18 @@ public data class CommitRow(
     val committerTime: Long,
     /** The first line of the message; may be empty. */
     val subject: String,
+    /** Who wrote it, for the graph's author-type filter. */
+    val authorType: AuthorType = AuthorType.PERSON,
 ) {
     val isMerge: Boolean get() = parents.size > 1
     val isRoot: Boolean get() = parents.isEmpty()
 }
+
+/**
+ * The graph's author-type filter (Commit Graph, "Filter"): people, commits an AI assistant co-wrote (a
+ * `Co-authored-by` trailer from Claude, Cursor or Copilot), and bots (`dependabot[bot]`, `github-actions[bot]`).
+ */
+public enum class AuthorType { PERSON, AI_ASSISTED, BOT }
 
 /** A name and email as git recorded them. */
 public data class Person(val name: String, val email: String)

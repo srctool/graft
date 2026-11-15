@@ -116,6 +116,23 @@ class ProcessGitRunnerTest {
         assertEquals("rev-parse", error.argv[6])
     }
 
+    /** `merge-base --is-ancestor HEAD HEAD~1`: exit 1 means "no", which only some commands treat as an answer. */
+    private class IsAncestor(accepts: Set<Int>) : GitCommand<Boolean>() {
+        override val function = "ANCS"
+        override val args = listOf("merge-base", "--is-ancestor", "HEAD", "HEAD~1")
+        override val successExitCodes = accepts
+
+        override fun parse(stdout: ByteArray) = true
+    }
+
+    @Test
+    fun `a command can treat another exit code as an answer`(sandbox: GitSandbox) = runBlocking<Unit> {
+        val repo = sandbox.history(2)
+        assertEquals(true, sandbox.runner().run(IsAncestor(setOf(0, 1)), repo).getOrThrow())
+        val error = assertIs<GitExitException>(sandbox.runner().run(IsAncestor(setOf(0)), repo).errorOrNull)
+        assertEquals(1, error.exitCode)
+    }
+
     @Test
     fun `outside a repository is not found`(sandbox: GitSandbox) = runBlocking {
         val error = sandbox.runner().run(read("rev-parse", "HEAD"), sandbox.dir("empty")).errorOrNull

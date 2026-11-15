@@ -108,7 +108,7 @@ public class ProcessGitRunner(
             val out = stdout.await()
             val err = stderr.await()
             killer.cancel()
-            if (exitCode != 0) throw gitFailure(cmd, argv, exitCode, err)
+            if (exitCode !in cmd.successExitCodes) throw gitFailure(cmd, argv, exitCode, err)
             cmd.parse(out)
         }
     }

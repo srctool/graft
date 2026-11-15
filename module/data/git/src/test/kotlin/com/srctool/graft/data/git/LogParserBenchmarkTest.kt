@@ -17,7 +17,7 @@ import kotlin.test.assertTrue
 class LogParserBenchmarkTest {
     private val rowsCount = 500_000
 
-    private fun stream(): ByteArray {
+    fun stream(): ByteArray {
         val out = ByteArrayOutputStream(rowsCount * 160)
         val nul = 0
         fun hash(i: Int) = "%040x".format(i.toLong() + 1)
@@ -38,6 +38,7 @@ class LogParserBenchmarkTest {
             out.write(nul)
             out.write("Commit subject number $i with some typical length".toByteArray())
             out.write(nul)
+            out.write(nul) // no co-author trailers
             out.write(nul)
         }
         return out.toByteArray()
