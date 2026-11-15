@@ -3,6 +3,8 @@ kotlin = "2.4.21"
 compose = "1.12.2"
 spotless = "8.10.4"
 camouflage = "0.1.0"
+navigation3 = "1.2.0"
+lifecycle-navigation3 = "2.11.0"
 sinew = "1.1.0"
 ktlint = "1.8.0"
 junit = "5.14.4"
@@ -12,6 +14,8 @@ coroutines = "1.11.0"
 compose-runtime = { module = "org.jetbrains.compose.runtime:runtime", version.ref = "compose" }
 compose-foundation = { module = "org.jetbrains.compose.foundation:foundation", version.ref = "compose" }
 compose-ui = { module = "org.jetbrains.compose.ui:ui", version.ref = "compose" }
+navigation3-ui = { module = "org.jetbrains.androidx.navigation3:navigation3-ui", version.ref = "navigation3" }
+lifecycle-viewmodel-navigation3 = { module = "org.jetbrains.androidx.lifecycle:lifecycle-viewmodel-navigation3", version.ref = "lifecycle-navigation3" }
 camouflage-bom = { module = "com.srctool.camouflage:camouflage-bom", version.ref = "camouflage" }
 camouflage-core = { module = "com.srctool.camouflage:camouflage-core" }
 camouflage-skin-carbon = { module = "com.srctool.camouflage:camouflage-skin-carbon" }

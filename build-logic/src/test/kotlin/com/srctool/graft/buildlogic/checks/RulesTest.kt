@@ -44,9 +44,19 @@ class ModuleGraphTest {
 class ImportRulesTest {
     private fun violations(path: String, source: String) = ImportRules.violations(path, "X.kt", source).map { it.line }
 
-    private val uiModules = listOf(":module:core:ui", ":module:feature:graph", ":module:navigation", ":app:desktop")
+    private val uiModules =
+        listOf(":module:core:ui", ":module:feature:graph", ":module:feature:home", ":module:navigation", ":app:desktop")
+
+    // :module:core:watcher (ADR-26) is platform code with no UI.
     private val plainModules =
-        listOf(":module:core:git", ":module:data:git", ":module:presentation", ":module:domain", ":app:cli")
+        listOf(
+            ":module:core:git",
+            ":module:core:watcher",
+            ":module:data:git",
+            ":module:presentation",
+            ":module:domain",
+            ":app:cli",
+        )
 
     @Test
     fun `material3 is allowed nowhere`() {

@@ -217,3 +217,21 @@ ADRs are never edited after acceptance; a later ADR supersedes. Status: **Propos
   - Package names don't include `module`: `:module:core:git` is still `com.srctool.graft.core.git`.
   - ADR-24's structure, rules and build order are unchanged; only the paths move.
 - **Consequences:** commands, accessors (`projects.module.core.git`), `config/module-graph.txt` and the import check use the `:module` paths. Artifacts are named `graft-module-core-git`.
+
+### ADR-26 G1's modules, Navigation 3, and dependencies passed through navigation (Accepted 2026-11-15; extends ADR-24 and ADR-25)
+- **Context:**
+  - G1 (Read-only browser) has screens with no module in ADR-24's graph: Home, workspaces, Clone, Init and Onboarding aren't about one repository, and Settings, Search Everywhere, About and the left panel collect contributions from many features over the milestones.
+  - The Libraries note listed no navigation library. The author's Kotlin guide uses Navigation 3; JetBrains publishes it for Compose Multiplatform with a desktop artifact (`org.jetbrains.androidx.navigation3:navigation3-ui` 1.2.0, Apache-2.0), and `lifecycle-viewmodel-navigation3` 2.11.0 gives each entry its own `ViewModelStore`.
+  - `:app:desktop` builds the data modules (hand-wired DI), but `:module:navigation` couldn't name their types: the G0 spike needed a temporary `:app:desktop -> :module:feature:graph` edge to reach a screen.
+  - [Platform Integration](../04%20-%20Development/08%20-%20Platform%20Integration.md) defines a `FileWatcher` but no module held it. Only the app's repository session uses it, and it's platform code (FSEvents through `directory-watcher` and JNA, inotify limits).
+- **Decision:**
+  - **`:module:feature:home`** (new) holds what isn't about one open repository: Home, workspaces, Clone, Init, Onboarding. **`:module:feature:graph`** holds everything inside one open repository: the graph, its left-panel sections, commit details, the diff screen, Compare and the reflog timeline. Features still never import each other.
+  - **Hosts in `:module:navigation`:** the main-window shell, the left panel, Settings, Search Everywhere and About. Features contribute to them (left-panel sections, settings pages, search results, actions) through small contracts in `:module:core:ui`, which both sides already depend on, so a later milestone adds a section without touching the host.
+  - **Navigation 3:** `@Serializable` keys, a `{Screen}Navigation.kt` per screen (its key and the destination composable that builds the view model and connects it to the page), a `{Feature}Navigation.kt` per feature with its `entry<Key>` registrations, and the app navigation (back stacks per tab, `NavDisplay`, the hosts) in `:module:navigation`. One `ViewModelStore` per entry through `lifecycle-viewmodel-navigation3`.
+  - **Dependencies through navigation:** `:app:desktop` is the bootstrap. It creates the `GitRunner`, the data modules and the app services, and hands them to the app navigation, which passes each feature's destinations the `api` types they need. New edges **`:module:navigation -> :module:data:git`, `:module:data:app`, `:module:data:hosting`**; only the data modules' `api` and `di` are public, and navigation receives modules the app already built. `:module:data:hosting-github` stays wired by `:app:desktop` alone (ADR-4).
+  - **`:module:core:watcher`** (new, no Compose) holds `FileWatcher` and its `directory-watcher` implementation. Only `:app:desktop` depends on it.
+- **Consequences:**
+  - The spike's temporary edge goes away in G1: the app reaches every screen through navigation.
+  - Graft's navigation matches the Kotlin guide's three levels, so the guide's rules (keys carry only IDs, view models never navigate, one store per entry) apply as written.
+  - Navigation 3 and its view-model integration are new dependencies, pinned with Compose and Lifecycle; the license check covers them.
+  - Navigation sees data `api` types, so a change to a data module's `api` can now break navigation's compile, not only features'.

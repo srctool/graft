@@ -35,8 +35,8 @@ The shape comes from the author's architecture board and matches Sinew's App Arc
 |---|---|---|
 | `:app:desktop` | startup, hand-wired DI, the root Camouflage provider, windows and menus, platform integration, the app services (repository session and watcher, background fetch, auto-snapshot, inbox poller) | hold business screens |
 | `:app:cli` | the `graft` command and `graft mcp` (GraalVM native image) | depend on Compose modules; change profiles or config; push |
-| `:module:navigation` | center-pane routes and tabs | be imported by features |
-| `:module:feature:*` | one area each: screens, view models, the area's own use cases | import another feature |
+| `:module:navigation` | the app navigation on Navigation 3 (ADR-26): back stacks per tab, each feature's entries, and the hosts features contribute to (window shell, left panel, Settings, Search Everywhere, About); passes the data modules' `api` from `:app:desktop` to features | be imported by features |
+| `:module:feature:*` | one area each: screens, view models, the area's own use cases. `:module:feature:home` holds what isn't about one open repository (Home, workspaces, Clone, Init, Onboarding), `:module:feature:graph` everything inside one | import another feature |
 | `:module:presentation` | app-level state split by case (`WindowState`, `OperationsState`, `InboxState`, `ProviderState`) | import Compose |
 | `:module:domain` | use cases shared by two or more features (created when first needed) | import Compose |
 | `:module:data:git` | `api`: git-backed repositories and their models (`CommitRow`, `Ref`, `ObjectId`, …); `implementation/source/local`: the git commands and parsers they read through `GitRunner`; `GitSandbox` test fixtures come from `:module:core:git` | call git other than through `GitRunner` |
@@ -49,6 +49,7 @@ The shape comes from the author's architecture board and matches Sinew's App Arc
 | `:module:core:database`, `:module:core:security`, `:module:core:preference` | the SQLite cache, `SecretStore` on the OS keychain, versioned settings files | |
 | `:module:core:exception` | the error-code registry and text redaction | depend on a business module |
 | `:module:core:notification`, `:module:core:configuration` | desktop notifications; app folders and platform paths | |
+| `:module:core:watcher` | `FileWatcher`, used only by `:app:desktop`'s repository session (ADR-26) | depend on a business module |
 
 Models live in the data or domain module that needs them, never in `:module:core`. Every data module has the same packages: public `api` (`models`, `repositories`) and `di`; internal `implementation` (`repositories`, `source/local/entity`, `source/remote/{response,request,api}`). `checkImports` fails on a `public` declaration outside `api` and `di`. Every feature module has the same packages (`com.srctool.graft.feature.<name>.…`): `presentation/<screen>` (one file each for the page, the view model, its State, Event, Action and Effect, and the navigation definition: the route with its arguments and the destination that builds the view model and connects it to the page), `presentation/components` (the feature's own components), and `domain`, shaped like a data module without `di`: `api/models` and `api/usecases` (interfaces for use cases and pure logic, no Compose) and `implementation/usecases`. The navigation definition wires the implementations. Logic a second feature needs moves to `:module:domain`. The allowed edges are listed in `config/module-graph.txt`, and `./gradlew check` fails on any other.
 
