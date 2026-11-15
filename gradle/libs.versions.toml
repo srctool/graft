@@ -6,6 +6,7 @@ camouflage = "0.1.0"
 sinew = "1.1.0"
 ktlint = "1.8.0"
 junit = "5.14.4"
+coroutines = "1.11.0"
 
 [libraries]
 compose-runtime = { module = "org.jetbrains.compose.runtime:runtime", version.ref = "compose" }
@@ -17,6 +18,9 @@ camouflage-skin-carbon = { module = "com.srctool.camouflage:camouflage-skin-carb
 sinew-bom = { module = "com.srctool.sinew:sinew-bom", version.ref = "sinew" }
 sinew-models = { module = "com.srctool.sinew:sinew-models" }
 sinew-exception = { module = "com.srctool.sinew:sinew-exception" }
+kotlinx-coroutines-core = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-core", version.ref = "coroutines" }
+kotlinx-coroutines-test = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-test", version.ref = "coroutines" }
+junit-jupiter-api = { module = "org.junit.jupiter:junit-jupiter-api" }
 junit-bom = { module = "org.junit:junit-bom", version.ref = "junit" }
 junit-platform-launcher = { module = "org.junit.platform:junit-platform-launcher" }
 
