@@ -46,6 +46,8 @@ tasks.withType<Test>().configureEach {
         events(org.gradle.api.tasks.testing.logging.TestLogEvent.FAILED)
         exceptionFormat = org.gradle.api.tasks.testing.logging.TestExceptionFormat.FULL
     }
+    // A hung git process fails its test after two minutes instead of holding CI until the job times out.
+    systemProperty("junit.jupiter.execution.timeout.default", "2m")
     testGit.orNull?.let { systemProperty("graft.test.git", it) }
     systemProperty("graft.fixtures", fixturesDir.asFile.absolutePath)
     if (recordFixtures.isPresent) systemProperty("graft.recordFixtures", "true")

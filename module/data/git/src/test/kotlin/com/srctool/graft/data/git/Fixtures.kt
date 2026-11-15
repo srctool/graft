@@ -60,9 +60,19 @@ object GraphRepo {
         git("switch", "--quiet", "main")
         git("merge", "--quiet", "--no-ff", "--allow-unrelated-histories", "-m", "Merge docs", "docs")
 
-        // An octopus merge of three branches.
-        listOf("a", "b", "c").forEach { b -> branch(b) { commit("work $b") { file("o$b.txt", b) } } }
-        git("merge", "--quiet", "--no-ff", "-m", "Octopus", "a", "b", "c")
+        // An octopus merge of three branches. Built from plumbing, not `git merge`: the octopus strategy is a shell
+        // script, and on Windows CI its MSYS shell failed to start (exit 0xC0000142) or hung.
+        val octopus = listOf("a", "b", "c")
+        octopus.forEach { b -> branch(b) { commit("work $b") { file("o$b.txt", b) } } }
+        octopus.forEach { b -> WorkingFile(path).write("o$b.txt", b) }
+        git("add", "--all")
+        val merged = git("write-tree").trim()
+        val parents = (listOf("HEAD") + octopus).flatMap { listOf("-p", git("rev-parse", it).trim()) }
+        git(
+            "update-ref",
+            "refs/heads/main",
+            git("commit-tree", merged, *parents.toTypedArray(), "-m", "Octopus").trim(),
+        )
 
         git("commit", "--quiet", "--allow-empty", "--allow-empty-message", "-m", "")
 
