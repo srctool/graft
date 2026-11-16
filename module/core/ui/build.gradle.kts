@@ -14,6 +14,9 @@ dependencies {
     api(platform(libs.sinew.bom))
     api(libs.sinew.l10n)
     implementation(projects.module.core.exception)
+    // Word-level diff highlights and syntax highlighting (D7), behind DiffViewer and Highlighter.
+    implementation(libs.java.diff.utils)
+    implementation(libs.highlights)
 
     testImplementation(compose.desktop.currentOs)
     testImplementation(libs.compose.ui.test)

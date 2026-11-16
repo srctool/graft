@@ -34,6 +34,8 @@ public enum class GraftThemeMode {
 public data class GraftTokens(
     val density: GraftDensity,
     val lanes: GraftLanes,
+    /** Syntax colors for code in diffs. */
+    val syntax: GraftSyntax,
     /** The 13 px step between label-01 and body-compact-01, for dense panels and the graph (UI Design). */
     val dense: TextStyle,
     val denseStrong: TextStyle,
@@ -79,10 +81,17 @@ internal fun graftTokens(mode: GraftThemeMode, density: GraftDensity): GraftToke
             GraftThemeMode.HIGH_CONTRAST -> GraftLanes.highContrast
             else -> GraftLanes.dark
         }
+    val syntax =
+        when (mode) {
+            GraftThemeMode.LIGHT -> GraftSyntax.light
+            GraftThemeMode.HIGH_CONTRAST -> GraftSyntax.highContrast
+            else -> GraftSyntax.dark
+        }
     val dense = TextStyle(fontFamily = GraftFonts.sans, fontSize = 13.sp, lineHeight = 18.sp, letterSpacing = 0.16.sp)
     return GraftTokens(
         density = density,
         lanes = lanes,
+        syntax = syntax,
         dense = dense,
         denseStrong = dense.copy(fontWeight = FontWeight.SemiBold),
         code = TextStyle(fontFamily = GraftFonts.mono, fontSize = 13.sp, lineHeight = 20.sp),
