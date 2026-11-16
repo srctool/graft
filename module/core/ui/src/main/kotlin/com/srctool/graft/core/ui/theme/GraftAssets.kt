@@ -75,6 +75,7 @@ public enum class GraftIcon(internal val file: String) {
 
     /** Drawn for Graft: Carbon has no stash icon. */
     STASH("stash"),
+    SUBTRACT("subtract"),
     TAG("tag"),
     TIME("time"),
     TREE_VIEW("tree-view"),
