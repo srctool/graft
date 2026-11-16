@@ -43,6 +43,7 @@ jobs:
           path: |
             **/build/reports/**
             **/build/test-results/**
+            **/build/outputs/roborazzi/**
           if-no-files-found: warn
 
   git-min:

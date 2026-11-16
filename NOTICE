@@ -32,3 +32,20 @@ Copyright (c) GitHub Inc., MIT License.
 
 Third-party libraries and assets, and code adapted from other projects, are
 credited here and in the app's About > Licenses as they are added.
+
+IBM Plex Sans, the UI font, Copyright (c) 2017 IBM Corp. with Reserved Font
+Name "Plex", licensed under the SIL Open Font License, Version 1.1. Bundled
+unmodified; the license is in
+module/core/ui/src/main/resources/graft/licenses/IBMPlexSans-OFL.txt.
+
+JetBrains Mono, the code font, Copyright 2020 The JetBrains Mono Project
+Authors, licensed under the SIL Open Font License, Version 1.1. Bundled
+unmodified; the license is in
+module/core/ui/src/main/resources/graft/licenses/JetBrainsMono-OFL.txt.
+
+Carbon icons (@carbon/icons 11.92.0), Copyright IBM Corp., licensed under
+the Apache License, Version 2.0. A subset of the SVG files is bundled
+unmodified; the license is in
+module/core/ui/src/main/resources/graft/licenses/CarbonIcons-Apache-2.0.txt.
+Icons Carbon lacks (stash) are drawn for Graft on Carbon's 32 px grid and are
+GPL-3.0-or-later with the rest of Graft.
