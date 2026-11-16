@@ -49,3 +49,9 @@ unmodified; the license is in
 module/core/ui/src/main/resources/graft/licenses/CarbonIcons-Apache-2.0.txt.
 Icons Carbon lacks (stash) are drawn for Graft on Carbon's 32 px grid and are
 GPL-3.0-or-later with the rest of Graft.
+
+java-diff-utils (io.github.java-diff-utils:java-diff-utils), the word-level
+diff in the diff viewer, licensed under the Apache License, Version 2.0.
+
+Highlights (dev.snipme:highlights), syntax highlighting in the diff viewer,
+licensed under the Apache License, Version 2.0.

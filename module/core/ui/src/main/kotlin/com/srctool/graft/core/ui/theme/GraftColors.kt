@@ -3,6 +3,7 @@
 
 package com.srctool.graft.core.ui.theme
 
+import androidx.compose.runtime.Immutable
 import androidx.compose.ui.graphics.Color
 import com.srctool.camouflage.core.theme.CamoColors
 
@@ -189,6 +190,51 @@ public class GraftLanes internal constructor(public val colors: List<Color>) {
             GraftLanes(
                 listOf(0xFF8CCBFF, 0xFFF0B3FF, 0xFFA8F08A, 0xFFFF9AA2, 0xFFFFB86C, 0xFFFFE08A, 0xFF7FE3EF, 0xFFFFFFFF)
                     .map { Color(it) },
+            )
+    }
+}
+
+/**
+ * Atom One's syntax colors for code in diffs (UI Design: "the diff's syntax highlighting (One's syntax colors)"), with a
+ * lighter (dark) or darker (light) step where the published color fails AA as text: One Dark's comment gray `#5c6370`,
+ * One Light's green, yellow, cyan and comment gray.
+ */
+@Immutable
+public data class GraftSyntax(
+    val keyword: Color,
+    val string: Color,
+    val number: Color,
+    val comment: Color,
+    val annotation: Color,
+    val operator: Color,
+) {
+    internal companion object {
+        val dark =
+            GraftSyntax(
+                keyword = Color(0xFFC678DD),
+                string = Color(0xFF98C379),
+                number = Color(0xFFD19A66),
+                comment = Color(0xFF8B919D),
+                annotation = Color(0xFFE5C07B),
+                operator = Color(0xFF56B6C2),
+            )
+        val light =
+            GraftSyntax(
+                keyword = Color(0xFFA626A4),
+                string = Color(0xFF3A7A39),
+                number = Color(0xFF986801),
+                comment = Color(0xFF696C77),
+                annotation = Color(0xFF7A5401),
+                operator = Color(0xFF0170A0),
+            )
+        val highContrast =
+            GraftSyntax(
+                keyword = Color(0xFFF0B3FF),
+                string = Color(0xFFA8F08A),
+                number = Color(0xFFFFB86C),
+                comment = Color(0xFFE6E6E6),
+                annotation = Color(0xFFFFE08A),
+                operator = Color(0xFF7FE3EF),
             )
     }
 }
