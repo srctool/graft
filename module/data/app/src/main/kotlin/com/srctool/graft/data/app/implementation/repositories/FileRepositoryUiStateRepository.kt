@@ -3,9 +3,13 @@
 
 package com.srctool.graft.data.app.implementation.repositories
 
+import com.srctool.graft.data.app.api.models.GraphAuthorKind
+import com.srctool.graft.data.app.api.models.GraphBranches
+import com.srctool.graft.data.app.api.models.GraphViewState
 import com.srctool.graft.data.app.api.models.RepositoryUiState
 import com.srctool.graft.data.app.api.models.Saved
 import com.srctool.graft.data.app.api.repositories.RepositoryUiStateRepository
+import com.srctool.graft.data.app.implementation.source.local.GraphViewRecord
 import com.srctool.graft.data.app.implementation.source.local.JsonStore
 import com.srctool.graft.data.app.implementation.source.local.RepositoryStateRecord
 import com.srctool.sinew.models.Result
@@ -35,12 +39,40 @@ internal class FileRepositoryUiStateRepository : RepositoryUiStateRepository {
     }
 
     private fun RepositoryStateRecord.toState() =
-        RepositoryUiState(hiddenRefs.toSet(), soloRefs.toSet(), pinnedRefs.toSet())
+        RepositoryUiState(hiddenRefs.toSet(), soloRefs.toSet(), pinnedRefs.toSet(), graph.toState(), columns)
 
     private fun RepositoryUiState.toRecord() =
-        RepositoryStateRecord(hiddenRefs.sorted(), soloRefs.sorted(), pinnedRefs.sorted())
+        RepositoryStateRecord(hiddenRefs.sorted(), soloRefs.sorted(), pinnedRefs.sorted(), graph.toRecord(), columns)
+
+    private fun GraphViewRecord.toState(): GraphViewState {
+        val kinds = authorTypes.mapNotNullTo(HashSet()) { name -> KINDS.entries.firstOrNull { it.value == name }?.key }
+        return GraphViewState(
+            branches = if (branches == "current") GraphBranches.CURRENT else GraphBranches.ALL,
+            hideRemotes = hideRemotes,
+            firstParent = firstParent,
+            // Only unknown names (from a newer Graft) would leave nothing; show everything then.
+            authorKinds = if (kinds.isEmpty() && authorTypes.isNotEmpty()) GraphAuthorKind.entries.toSet() else kinds,
+            commitGraphOffered = commitGraphOffered,
+        )
+    }
+
+    private fun GraphViewState.toRecord() = GraphViewRecord(
+        branches = if (branches == GraphBranches.CURRENT) "current" else "all",
+        hideRemotes = hideRemotes,
+        firstParent = firstParent,
+        authorTypes = GraphAuthorKind.entries.filter { it in authorKinds }.map { KINDS.getValue(it) },
+        commitGraphOffered = commitGraphOffered,
+    )
 
     private companion object {
         const val VERSION = 1
+
+        /** ADR-27's names for the author kinds. */
+        val KINDS =
+            mapOf(
+                GraphAuthorKind.PERSON to "person",
+                GraphAuthorKind.AI_ASSISTED to "aiAssisted",
+                GraphAuthorKind.BOT to "bot",
+            )
     }
 }

@@ -69,6 +69,17 @@ class GraphUseCasesTest {
     }
 
     @Test
+    fun `the current branch is HEAD's history unless something is soloed`() {
+        assertEquals(LogScope.Only(setOf("HEAD")), GraphFilter(currentBranch = true).scope)
+        assertEquals(
+            LogScope.Only(setOf("refs/heads/b")),
+            GraphFilter(soloRefs = setOf("refs/heads/b"), currentBranch = true).scope,
+        )
+        val pruned = GraphFilter(hiddenRefs = setOf("refs/heads/gone"), currentBranch = true, firstParent = true)
+        assertEquals(GraphFilter(currentBranch = true, firstParent = true), pruned.prunedTo(emptySet()))
+    }
+
+    @Test
     fun `refs that no longer exist drop out of the filter`() {
         val filter = GraphFilter(setOf("refs/heads/gone", "refs/heads/kept"), setOf("refs/heads/deleted"))
         assertEquals(GraphFilter(hiddenRefs = setOf("refs/heads/kept")), filter.prunedTo(setOf("refs/heads/kept")))
@@ -80,6 +91,16 @@ class GraphUseCasesTest {
         val load = GitLoadGraphUseCase(commits, ::LaneLayout, StandardTestDispatcher(testScheduler))
         load.load(repo, GraphFilter(soloRefs = setOf("refs/heads/main"))).toList()
         assertEquals(listOf<LogScope>(LogScope.Only(setOf("refs/heads/main"))), commits.scopes)
+        assertEquals(listOf(false), commits.firstParents)
+    }
+
+    @Test
+    fun `first parent reaches git, and the graph names its authors from the log`() = runTest {
+        val commits = RecordingCommits(LaneLayoutBenchmarkTest.synthetic(10))
+        val load = GitLoadGraphUseCase(commits, ::LaneLayout, StandardTestDispatcher(testScheduler))
+        val steps = load.load(repo, GraphFilter(firstParent = true)).toList()
+        assertEquals(listOf(true), commits.firstParents)
+        assertTrue(steps.last().graph.people === commits.people)
     }
 
     @Test
@@ -229,16 +250,23 @@ class GraphUseCasesTest {
 private class RecordingCommits(rows: List<CommitRow>, private val flow: Flow<CommitRow> = rows.asFlow()) :
     CommitRepository {
     val scopes = ArrayList<LogScope>()
+    val firstParents = ArrayList<Boolean>()
+    val people = People()
 
-    override fun log(repository: Path, scope: LogScope): CommitLog {
+    override fun log(repository: Path, scope: LogScope, firstParent: Boolean): CommitLog {
         scopes += scope
-        return CommitLog(flow, People())
+        firstParents += firstParent
+        return CommitLog(flow, people)
     }
 
     override fun search(repository: Path, query: LogQuery, scope: LogScope): CommitLog {
         scopes += scope
         return CommitLog(flow, People())
     }
+
+    override suspend fun hasCommitGraph(repository: Path): Result<Boolean> = error("not used by these tests")
+
+    override suspend fun writeCommitGraph(repository: Path): Result<Unit> = error("not used by these tests")
 
     override suspend fun details(repository: Path, id: ObjectId): Result<CommitDetails> = error("not used")
 }

@@ -60,8 +60,9 @@ internal class TopLevelCommand : GitCommand<Path>() {
 }
 
 /**
- * `status --porcelain=v2 --branch -z`: the `# branch.*` headers give HEAD and the upstream, and any entry after them
- * means the repository is dirty (untracked files count, ignored ones don't).
+ * `status --porcelain=v2 --branch -z`: the `# branch.*` headers give HEAD and the upstream, and each entry after them
+ * is a changed path (untracked files count, ignored ones don't). A rename or copy entry (`2 …`) is followed by its
+ * original path as a record of its own, which isn't another change.
  */
 internal class StatusSummaryCommand : GitCommand<RepositorySummary>() {
     override val function = "STAT"
@@ -76,12 +77,18 @@ internal object StatusSummaryParser {
         var head: String? = null
         var upstream: String? = null
         var ab: Pair<Int, Int>? = null
-        var dirty = false
+        var changed = 0
+        var skipOriginalPath = false
         for (record in GitText.decode(stdout).split('\u0000')) {
             if (record.isEmpty()) continue
+            if (skipOriginalPath) {
+                skipOriginalPath = false
+                continue
+            }
             if (!record.startsWith("# ")) {
-                dirty = true
-                break
+                changed++
+                skipOriginalPath = record.startsWith("2 ")
+                continue
             }
             val header = record.removePrefix("# ")
             val key = header.substringBefore(' ')
@@ -106,7 +113,8 @@ internal object StatusSummaryParser {
                 // An upstream with no branch.ab line is gone: the ref it names was deleted.
                 ab?.let { (ahead, behind) -> Upstream(u, ahead, behind) } ?: Upstream(u, 0, 0, gone = true)
             }
-        return RepositorySummary(headValue, if (headValue is Head.Detached) null else upstreamValue, dirty)
+        val upstreamOfBranch = if (headValue is Head.Detached) null else upstreamValue
+        return RepositorySummary(headValue, upstreamOfBranch, dirty = changed > 0, changedFiles = changed)
     }
 
     private fun parseAheadBehind(value: String): Pair<Int, Int> {

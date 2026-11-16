@@ -3,6 +3,7 @@
 
 package com.srctool.graft.core.git
 
+import com.srctool.graft.core.exception.CommandOutput
 import com.srctool.graft.core.exception.GraftCodes
 import com.srctool.graft.core.exception.GraftCodes.Types
 import com.srctool.graft.core.exception.Redaction
@@ -20,12 +21,13 @@ import com.srctool.sinew.models.SinewException
 public sealed class GitException(
     function: String,
     argv: List<String>,
-    public val exitCode: Int?,
+    override val exitCode: Int?,
     stderr: String,
     cause: Throwable? = null,
-) : SinewException("GIT", ExceptionLayer.Repository, GraftCodes.requireFunction(function), cause) {
-    public val argv: List<String> = argv.map(Redaction::redact)
-    public val stderr: String = Redaction.redact(stderr)
+) : SinewException("GIT", ExceptionLayer.Repository, GraftCodes.requireFunction(function), cause),
+    CommandOutput {
+    override val argv: List<String> = argv.map(Redaction::redact)
+    override val stderr: String = Redaction.redact(stderr)
 
     /** Git's first `fatal:` or `error:` line, or an empty string. Technical detail for "Show output", not the message. */
     public val summary: String =

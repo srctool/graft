@@ -20,9 +20,10 @@ public interface CommitRepository {
      *
      * Git starts when [CommitLog.rows] is collected and stops when collection stops. A failure is thrown to the
      * collector as Graft's `GitException` (for example `GIT-R-LOG-NF` outside a repository) or Sinew's
-     * `ParseException`; cancellation is never a failure.
+     * `ParseException`; cancellation is never a failure. With [firstParent], only each merge's first parent is
+     * followed (`--first-parent`, the graph's "First parent" filter).
      */
-    public fun log(repository: Path, scope: LogScope = LogScope.All()): CommitLog
+    public fun log(repository: Path, scope: LogScope = LogScope.All(), firstParent: Boolean = false): CommitLog
 
     /**
      * The commits of [log] over [scope] that match [query] (Commit Graph, "Search"), streamed the same way and
@@ -35,4 +36,16 @@ public interface CommitRepository {
      * the files it changed against its first parent (`GIT-R-DETL-…`, `GIT-R-FILS-…`).
      */
     public suspend fun details(repository: Path, id: ObjectId): Result<CommitDetails>
+
+    /**
+     * Whether git has a commit-graph file for [repository] (one file or a chain of split ones). Without it, walking a
+     * large history is slow, and the graph offers to write one (G1 plan, D8) (`GIT-R-CGPH-…`).
+     */
+    public suspend fun hasCommitGraph(repository: Path): Result<Boolean>
+
+    /**
+     * Writes the commit-graph file for every reachable commit (`git commit-graph write --reachable`). A mutation: run
+     * it through the repository session's write queue, and only when the author asked (`GIT-R-CGPH-…`).
+     */
+    public suspend fun writeCommitGraph(repository: Path): Result<Unit>
 }

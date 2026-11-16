@@ -162,6 +162,16 @@ class SearchCompareTest {
         GitDataModule(runner()).commits.log(path, scope).rows.map { it.subject }.toList()
 
     @Test
+    fun `the graph's first-parent log follows only each merge's first parent`(sandbox: GitSandbox) = runBlocking {
+        val repo = sandbox.build().path
+        val main = LogScope.Only(setOf("refs/heads/main"))
+        assertTrue("Side work" in sandbox.logged(repo, main))
+        val firstParent = GitDataModule(sandbox.runner()).commits.log(repo, main, firstParent = true)
+        val subjects = firstParent.rows.map { it.subject }.toList()
+        assertEquals(listOf("Merge side", "Docs [draft]*", "main edit", "Fix login timeout", "init"), subjects)
+    }
+
+    @Test
     fun `a hidden ref's own commits leave the graph`(sandbox: GitSandbox) = runBlocking<Unit> {
         val repo = sandbox.build().path
         val all = sandbox.logged(repo, LogScope.All())

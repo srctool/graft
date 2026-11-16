@@ -6,6 +6,9 @@ package com.srctool.graft.data.app
 import com.srctool.graft.core.configuration.AppFolders
 import com.srctool.graft.data.app.api.models.AppSettings
 import com.srctool.graft.data.app.api.models.DiffStyle
+import com.srctool.graft.data.app.api.models.GraphAuthorKind
+import com.srctool.graft.data.app.api.models.GraphBranches
+import com.srctool.graft.data.app.api.models.GraphViewState
 import com.srctool.graft.data.app.api.models.RepositoryUiState
 import com.srctool.graft.data.app.api.models.SavedStatus
 import com.srctool.graft.data.app.api.models.SavedWindow
@@ -21,6 +24,7 @@ import org.junit.jupiter.api.io.TempDir
 import java.io.IOException
 import java.nio.file.Files
 import java.nio.file.Path
+import java.nio.file.Paths
 import java.time.Instant
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -235,5 +239,57 @@ class AppDataModuleTest {
         state.update(commonDir) { it.copy(soloRefs = setOf("refs/heads/main")) }.getOrThrow()
         commonDir.resolve("graft").toFile().deleteRecursively()
         assertEquals(RepositoryUiState(), state.read(commonDir).getOrThrow().value)
+    }
+
+    @Test
+    fun `a state file from before ADR-27 reads with the graph's defaults`() = runBlocking<Unit> {
+        val commonDir = repo("r").resolve(".git")
+        val fixture = Paths.get(System.getProperty("graft.fixtures")).resolve("app/state-v1-before-adr27.json")
+        Files.createDirectories(commonDir.resolve("graft"))
+        Files.copy(fixture, commonDir.resolve("graft").resolve("state.json"))
+        val read = module().repositoryUiState.read(commonDir).getOrThrow()
+        assertEquals(SavedStatus.Current, read.status)
+        assertEquals(
+            RepositoryUiState(hiddenRefs = setOf("refs/heads/old"), pinnedRefs = setOf("refs/heads/main")),
+            read.value,
+        )
+        assertEquals(GraphViewState(), read.value.graph)
+    }
+
+    @Test
+    fun `the graph's choices and columns round-trip in ADR-27's names`() = runBlocking<Unit> {
+        val commonDir = repo("r").resolve(".git")
+        val state = module().repositoryUiState
+        val graph =
+            GraphViewState(
+                branches = GraphBranches.CURRENT,
+                hideRemotes = true,
+                firstParent = true,
+                authorKinds = setOf(GraphAuthorKind.PERSON, GraphAuthorKind.AI_ASSISTED),
+                commitGraphOffered = true,
+            )
+        val columns = mapOf("author" to 160f, "sha" to null)
+        state.update(commonDir) { it.copy(graph = graph, columns = columns) }.getOrThrow()
+
+        val text = Files.readString(commonDir.resolve("graft").resolve("state.json"))
+        assertTrue("\"branches\": \"current\"" in text, text)
+        assertTrue("\"aiAssisted\"" in text && "\"bot\"" !in text, text)
+        assertTrue("\"sha\": null" in text, text)
+        val read = module().repositoryUiState.read(commonDir).getOrThrow().value
+        assertEquals(graph, read.graph)
+        assertEquals(columns, read.columns)
+    }
+
+    @Test
+    fun `values a newer Graft wrote read as the defaults`() = runBlocking<Unit> {
+        val commonDir = repo("r").resolve(".git")
+        Files.createDirectories(commonDir.resolve("graft"))
+        Files.writeString(
+            commonDir.resolve("graft").resolve("state.json"),
+            """{"version": 1, "graph": {"branches": "tracked", "authorTypes": ["robot"], "zoom": 2}}""",
+        )
+        val graph = module().repositoryUiState.read(commonDir).getOrThrow().value.graph
+        assertEquals(GraphBranches.ALL, graph.branches)
+        assertEquals(GraphAuthorKind.entries.toSet(), graph.authorKinds)
     }
 }

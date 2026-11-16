@@ -16,3 +16,20 @@ dependencies {
     implementation(libs.sinew.viewmodel)
     testImplementation(libs.kotlinx.coroutines.test)
 }
+
+dependencies {
+    testImplementation(compose.desktop.currentOs)
+    testImplementation(libs.compose.ui.test)
+    testImplementation(libs.roborazzi.compose.desktop)
+}
+
+// Screenshot goldens, as in :module:core:ui: compared on Linux only, recorded again with `-PupdateGoldens`.
+tasks.withType<Test>().configureEach {
+    val linux = System.getProperty("os.name").startsWith("Linux")
+    val update = providers.gradleProperty("updateGoldens").isPresent
+    when {
+        update -> systemProperty("roborazzi.test.record", "true")
+        linux -> systemProperty("roborazzi.test.verify", "true")
+    }
+    inputs.files(fileTree("src/test/snapshots")).withPropertyName("goldens")
+}

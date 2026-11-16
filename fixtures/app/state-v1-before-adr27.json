@@ -1,0 +1,10 @@
+{
+    "version": 1,
+    "hiddenRefs": [
+        "refs/heads/old"
+    ],
+    "soloRefs": [],
+    "pinnedRefs": [
+        "refs/heads/main"
+    ]
+}
