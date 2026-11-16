@@ -181,23 +181,24 @@ class ComponentUiTest {
         snapshot("split-pane-focused")
     }
 
+    // One test per theme, so a missing or changed golden in one doesn't stop the other from rendering.
     @Test
-    fun `screenshot, dock layout`() {
-        for (mode in listOf(GraftThemeMode.LIGHT, GraftThemeMode.DARK)) {
-            ui(width = 640, height = 360) {
-                val left = ToolWindow("branches", "Branches", GraftIcon.BRANCH, DockSide.LEFT) { CamoText("main") }
-                val bottom =
-                    ToolWindow("log", "Git log", GraftIcon.LIST, DockSide.BOTTOM) { CamoText("git log --graph") }
-                val right =
-                    ToolWindow("details", "Details", GraftIcon.INFORMATION, DockSide.RIGHT) { CamoText("commit") }
-                val dock = DockLayoutState().apply {
-                    show("branches", DockSide.LEFT)
-                    show("log", DockSide.BOTTOM)
-                }
-                themed(mode) { DockLayout(dock, listOf(left, bottom, right)) { CamoText("graph") } }
-                snapshot("dock-layout-${mode.name.lowercase()}")
+    fun `screenshot, dock layout, light`() = dockScreenshot(GraftThemeMode.LIGHT)
+
+    @Test
+    fun `screenshot, dock layout, dark`() = dockScreenshot(GraftThemeMode.DARK)
+
+    private fun dockScreenshot(mode: GraftThemeMode) = ui(width = 640, height = 360) {
+        val left = ToolWindow("branches", "Branches", GraftIcon.BRANCH, DockSide.LEFT) { CamoText("main") }
+        val bottom = ToolWindow("log", "Git log", GraftIcon.LIST, DockSide.BOTTOM) { CamoText("git log --graph") }
+        val right = ToolWindow("details", "Details", GraftIcon.INFORMATION, DockSide.RIGHT) { CamoText("commit") }
+        val dock =
+            DockLayoutState().apply {
+                show("branches", DockSide.LEFT)
+                show("log", DockSide.BOTTOM)
             }
-        }
+        themed(mode) { DockLayout(dock, listOf(left, bottom, right)) { CamoText("graph") } }
+        snapshot("dock-layout-${mode.name.lowercase()}")
     }
 
     @Test
