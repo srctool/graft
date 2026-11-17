@@ -54,27 +54,46 @@ import com.srctool.graft.feature.graph.domain.api.usecases.GraphMatch
  * A laid-out row as [GraphCanvas] reads it: no copy of its edges, and passing lines asked of the layout. [wipAbove]
  * adds the top half of the line from the WIP row, which the layout doesn't know about, to HEAD's row at the top.
  */
-private class RowShape(private val row: GraphRow, private val graph: LaidOutGraph, private val wipAbove: Boolean) :
-    GraphRowShape {
+private class RowShape(
+    private val row: GraphRow,
+    private val graph: LaidOutGraph,
+    private val wipAbove: Boolean,
+    /** The lane of stashes made on this commit, whose line comes in from above; -1 when it has none. */
+    private val stashLane: Int = -1,
+) : GraphRowShape {
     override val lane: Int get() = row.lane
     override val color: Int get() = row.color
     override val marker: GraphMarker get() = GraphMarker.COMMIT
-    override val width: Int get() = row.width
-    override val edgeCount: Int get() = row.edgeCount + if (wipAbove) 1 else 0
+    override val width: Int get() = if (stashLane >= 0) maxOf(row.width, stashLane + 1) else row.width
+    private val extras = (if (wipAbove) 1 else 0) + (if (stashLane >= 0) 1 else 0)
+    override val edgeCount: Int get() = row.edgeCount + extras
 
-    private fun extra(index: Int) = wipAbove && index == row.edgeCount
+    /** 0 for the WIP line, 1 for the stash line, -1 for the layout's own edges. */
+    private fun extra(index: Int): Int {
+        val k = index - row.edgeCount
+        if (k < 0) return -1
+        return if (wipAbove && k == 0) 0 else 1
+    }
 
     override fun edgeKind(index: Int): LaneEdgeKind = when {
-        extra(index) -> LaneEdgeKind.TOP
+        extra(index) >= 0 -> LaneEdgeKind.TOP
         row.edge(index).kind == GraphEdge.Kind.TOP -> LaneEdgeKind.TOP
         else -> LaneEdgeKind.BOTTOM
     }
 
-    override fun edgeFrom(index: Int): Int = if (extra(index)) row.lane else row.edge(index).from
+    override fun edgeFrom(index: Int): Int = when (extra(index)) {
+        0 -> row.lane
+        1 -> stashLane
+        else -> row.edge(index).from
+    }
 
-    override fun edgeTo(index: Int): Int = if (extra(index)) row.lane else row.edge(index).to
+    override fun edgeTo(index: Int): Int = if (extra(index) >= 0) row.lane else row.edge(index).to
 
-    override fun edgeColor(index: Int): Int = if (extra(index)) row.color else row.edge(index).color
+    override fun edgeColor(index: Int): Int = when (extra(index)) {
+        0 -> row.color
+        1 -> STASH_COLOR
+        else -> row.edge(index).color
+    }
 
     override fun through(lane: Int): Int = graph.through(row.index, lane)
 }
@@ -101,6 +120,9 @@ private fun rowModifier(
 
 private const val DIMMED = 0.42f
 
+/** Stashes are drawn in the lane palette's gray, apart from the branches' colors; their hollow marker names them. */
+private const val STASH_COLOR = 7
+
 /** One commit's row: refs, lanes, message, author, date, SHA, in the table's columns. */
 @Composable
 internal fun CommitRow(
@@ -124,8 +146,11 @@ internal fun CommitRow(
         rowDescription(commit.id.short(), commit.subject, author.name, age, refs, commit.parents.size, match)
     val colors = Camouflage.colors
     val tokens = Graft.tokens
-    val wipAbove = index == 0 && state.wipFiles != null && commit.id == state.head
-    val shape = remember(row, graph, wipAbove) { RowShape(row, graph, wipAbove) }
+    val wipAbove =
+        index == 0 && state.wipFiles != null && commit.id == state.head && state.stashes.none { it.baseRow == 0 }
+    val hasStash = state.stashes.any { it.baseRow == index }
+    val stashLane = if (hasStash) row.width else -1
+    val shape = remember(row, graph, wipAbove, stashLane) { RowShape(row, graph, wipAbove, stashLane) }
     val selected = (state.selection as? Selection.Row)?.index == index
 
     Row(rowModifier(selected, dimmed, description, onSelect, onOpen), verticalAlignment = Alignment.CenterVertically) {
@@ -325,4 +350,95 @@ internal fun rowDescription(
     if (parents > 1) parts += graftText("graph.row.merge", "merge of {count} parents", "count" to parents)
     if (match) parts += graftText("graph.row.match", "matches search")
     return parts.joinToString(", ")
+}
+
+/**
+ * A stash's row, just above its base commit (Commit Graph: "a hollow node hanging off its base commit"): the lines
+ * passing the base commit's top pass here too, and the stash's own line, in a lane right of the base row, runs down
+ * and curves into the base commit.
+ */
+@Composable
+internal fun StashRow(
+    state: GraphState,
+    graph: LaidOutGraph,
+    placement: StashPlacement,
+    columns: TableColumnsState,
+    onSelect: () -> Unit,
+    onOpen: () -> Unit,
+) {
+    val entry = placement.entry
+    val base = graph[placement.baseRow]
+    val lane = base.width
+    val group = state.stashes.filter { it.baseRow == placement.baseRow }
+    val first = group.firstOrNull() == placement
+    val shape =
+        remember(placement, base, first) {
+            // What runs past the base commit's top runs past this row too.
+            val passing = HashMap<Int, Int>()
+            for (l in 0 until base.width) graph.through(base.index, l).takeIf { it >= 0 }?.let { passing[l] = it }
+            for (i in 0 until base.edgeCount) {
+                val e = base.edge(i)
+                if (e.kind == GraphEdge.Kind.TOP) passing[e.from] = e.color
+            }
+            val edges = buildList {
+                if (!first) add(LaneEdge(LaneEdgeKind.TOP, lane, lane, STASH_COLOR))
+                add(LaneEdge(LaneEdgeKind.BOTTOM, lane, lane, STASH_COLOR))
+            }
+            SimpleGraphRow(lane, STASH_COLOR, edges, passing, GraphMarker.STASH)
+        }
+    val age = age(entry.time, state.now.takeIf { it > 0 } ?: (System.currentTimeMillis() / 1000))
+    val description =
+        listOfNotNull(
+            graftText(
+                "graph.stash.label",
+                "Stash {index}, {message}",
+                "index" to entry.index,
+                "message" to entry.message,
+            ),
+            entry.branch?.let { graftText("graph.stash.branch", "made on {branch}", "branch" to it) },
+            longAge(age),
+        ).joinToString(", ")
+    val selected = (state.selection as? Selection.Stash)?.id == entry.id
+    val colors = Camouflage.colors
+    val tokens = Graft.tokens
+    val dimmed = state.search.active && entry.id !in state.search.matches
+    Row(rowModifier(selected, dimmed, description, onSelect, onOpen), verticalAlignment = Alignment.CenterVertically) {
+        for (column in columns.visibleColumns) {
+            TableCell(columns, column) {
+                when (column.id) {
+                    "refs" -> CamoText(
+                        "stash@{${entry.index}}",
+                        style = tokens.code.copy(fontSize = tokens.dense.fontSize),
+                        color = colors.onSurfaceVariant,
+                        maxLines = 1,
+                    )
+
+                    "graph" -> GraphCanvas(
+                        shape,
+                        Modifier.fillMaxWidth().fillMaxHeight(),
+                        background = if (selected) colors.surfaceContainerHighest else colors.surface,
+                    )
+
+                    "message" -> CamoText(
+                        entry.message,
+                        style = tokens.dense.copy(fontStyle = androidx.compose.ui.text.font.FontStyle.Italic),
+                        color = colors.onSurfaceVariant,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+
+                    "date" -> CamoTooltip(exactTime(entry.time)) {
+                        CamoText(shortAge(age), style = tokens.dense, color = colors.onSurfaceVariant, maxLines = 1)
+                    }
+
+                    "sha" -> CamoText(
+                        entry.id.short(),
+                        style = tokens.code.copy(fontSize = tokens.dense.fontSize),
+                        color = colors.onSurfaceVariant,
+                        maxLines = 1,
+                    )
+                }
+            }
+        }
+    }
 }

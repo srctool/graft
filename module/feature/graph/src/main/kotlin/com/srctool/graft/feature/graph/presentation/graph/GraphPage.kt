@@ -585,7 +585,6 @@ private fun GraphTable(
     focus: FocusRequester,
 ) {
     val list = rememberLazyListState()
-    val hasWip = state.wipFiles != null
     val interaction = remember { MutableInteractionSource() }
     val focused by interaction.collectIsFocusedAsState()
     val focusColor = Camouflage.colors.primary
@@ -607,13 +606,9 @@ private fun GraphTable(
         if (hit != null) onEvent(GraphEvent.Selected(Selection.Row(hit)))
     }
     // The selection stays in view.
-    LaunchedEffect(state.selection) {
-        val index =
-            when (val s = state.selection) {
-                Selection.None -> return@LaunchedEffect
-                Selection.Wip -> 0
-                is Selection.Row -> s.index + if (hasWip) 1 else 0
-            }
+    val table = state.table
+    LaunchedEffect(state.selection, table.size) {
+        val index = table.indexOf(state.selection) ?: return@LaunchedEffect
         val visible = list.layoutInfo.visibleItemsInfo
         val first = visible.firstOrNull()?.index ?: 0
         val last = visible.lastOrNull()?.index ?: 0
@@ -639,18 +634,36 @@ private fun GraphTable(
                 },
             state = list,
         ) {
-            if (hasWip) {
-                item(key = "wip") {
-                    WipRow(state, columns) { onEvent(GraphEvent.Selected(Selection.Wip)) }
-                }
-            }
             val graph = state.graph
-            if (graph != null) {
-                items(state.rowCount, key = { graph[it].commit.id.hex }) { index ->
-                    val select = { onEvent(GraphEvent.Selected(Selection.Row(index))) }
-                    CommitRow(state, graph, index, columns, onSelect = select) {
-                        select()
-                        onEvent(GraphEvent.OpenSelected)
+            // The WIP row, the commits, and each stash just above its base commit (TableLayout).
+            items(
+                table.size,
+                key = { t ->
+                    when (val e = table.entry(t)) {
+                        TableEntry.Wip -> "wip"
+                        is TableEntry.Stash -> "stash-" + e.placement.entry.id.hex
+                        is TableEntry.Commit -> graph?.get(e.row)?.commit?.id?.hex ?: "row-${e.row}"
+                    }
+                },
+            ) { t ->
+                when (val e = table.entry(t)) {
+                    TableEntry.Wip -> WipRow(state, columns) { onEvent(GraphEvent.Selected(Selection.Wip)) }
+
+                    is TableEntry.Stash -> {
+                        val select = { onEvent(GraphEvent.Selected(Selection.Stash(e.placement.entry.id))) }
+                        StashRow(state, graph ?: return@items, e.placement, columns, onSelect = select) {
+                            select()
+                            onEvent(GraphEvent.OpenSelected)
+                        }
+                    }
+
+                    is TableEntry.Commit -> {
+                        if (graph == null) return@items
+                        val select = { onEvent(GraphEvent.Selected(Selection.Row(e.row))) }
+                        CommitRow(state, graph, e.row, columns, onSelect = select) {
+                            select()
+                            onEvent(GraphEvent.OpenSelected)
+                        }
                     }
                 }
             }

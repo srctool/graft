@@ -7,13 +7,14 @@ import androidx.lifecycle.viewModelScope
 import com.srctool.graft.data.app.api.models.GraphAuthorKind
 import com.srctool.graft.data.app.api.models.GraphBranches
 import com.srctool.graft.data.app.api.models.RepositoryUiState
-import com.srctool.graft.data.app.api.repositories.RepositoryUiStateRepository
 import com.srctool.graft.data.git.api.models.AuthorType
 import com.srctool.graft.data.git.api.models.Head
 import com.srctool.graft.data.git.api.models.LogQuery
 import com.srctool.graft.data.git.api.models.ObjectId
 import com.srctool.graft.data.git.api.models.RefKind
+import com.srctool.graft.data.git.api.models.StashEntry
 import com.srctool.graft.data.git.api.repositories.CommitRepository
+import com.srctool.graft.data.git.api.repositories.StashRepository
 import com.srctool.graft.feature.graph.domain.api.models.GraphFilter
 import com.srctool.graft.feature.graph.domain.api.models.GraphLoad
 import com.srctool.graft.feature.graph.domain.api.models.GraphSearch
@@ -25,6 +26,8 @@ import com.srctool.graft.feature.graph.presentation.graph.GraphState.Phase
 import com.srctool.graft.presentation.session.RepoSnapshot
 import com.srctool.graft.presentation.session.RepositorySession
 import com.srctool.graft.presentation.session.SnapshotPart
+import com.srctool.graft.presentation.view.RepositoryViewState
+import com.srctool.graft.presentation.view.ViewSelection
 import com.srctool.sinew.models.Result
 import com.srctool.sinew.viewmodel.EventActionViewModel
 import kotlinx.coroutines.Job
@@ -45,12 +48,13 @@ internal class GraphViewModel(
     private val loadGraph: LoadGraphUseCase,
     private val searchGraph: SearchGraphUseCase,
     private val commits: CommitRepository,
-    private val uiState: RepositoryUiStateRepository,
+    private val stashes: StashRepository,
+    private val shared: RepositoryViewState,
     private val clock: () -> Long = System::currentTimeMillis,
     private val nanos: () -> Long = System::nanoTime,
 ) : EventActionViewModel<GraphState, GraphEvent, GraphAction, GraphEffect>(GraphState()) {
     private var opened = false
-    private var saved = RepositoryUiState()
+    private val saved: RepositoryUiState get() = shared.ui.value
     private var loadJob: Job? = null
     private var searchJob: Job? = null
 
@@ -60,8 +64,6 @@ internal class GraphViewModel(
 
     /** The merge Alt+→ last cycled from; Alt+→ on one of its parents keeps cycling. */
     private var cycleFrom = -1
-
-    private val commonDir: Path get() = session.location.commonDir
 
     override fun mapEventToAction(event: GraphEvent): GraphAction? {
         val state = currentState
@@ -181,6 +183,7 @@ internal class GraphViewModel(
                         search = search.copy(current = search.matchRows.indexOf(target)),
                     )
                 }
+                publish(Selection.Row(target))
                 cycleFrom = row
             }
 
@@ -209,10 +212,54 @@ internal class GraphViewModel(
 
     private suspend fun start() {
         // A missing or unreadable state.json means the defaults; the screen still opens.
-        (uiState.read(commonDir) as? Result.Success)?.data?.value?.let { saved = it }
-        setState { copy(view = saved.graph, columns = saved.columns, soloCount = saved.soloRefs.size) }
+        val loaded = shared.load()
+        setState { copy(view = loaded.graph, columns = loaded.columns, soloCount = loaded.soloRefs.size) }
         viewModelScope.launch {
             session.snapshot.collect { snapshot -> onSnapshot(snapshot) }
+        }
+        // The left panel hides and solos refs through the shared state: the graph walks what's shown.
+        viewModelScope.launch {
+            var walked = loaded.hiddenRefs to loaded.soloRefs
+            shared.ui.collect { ui ->
+                val now = ui.hiddenRefs to ui.soloRefs
+                if (now != walked) {
+                    walked = now
+                    if (loadedFor != null) reload()
+                }
+            }
+        }
+        // Another pane (the left panel, a parent link in the details) selects a commit: show it here.
+        viewModelScope.launch {
+            shared.selection.collect { selected -> follow(selected) }
+        }
+    }
+
+    /** A commit another pane selected that isn't laid out yet. */
+    private var pending: ObjectId? = null
+
+    private fun follow(selected: ViewSelection) {
+        val state = currentState
+        when (selected) {
+            ViewSelection.None -> if (state.selection != Selection.None) setState { copy(selection = Selection.None) }
+
+            ViewSelection.Wip -> if (state.selection != Selection.Wip) setState { copy(selection = Selection.Wip) }
+
+            is ViewSelection.Commit -> {
+                pending = null
+                if (commitAt(state, state.selection) == selected.id) return
+                if (state.stashes.any { it.entry.id == selected.id }) {
+                    setState { copy(selection = Selection.Stash(selected.id)) }
+                    return
+                }
+                // Not laid out yet (or filtered out): looked for again as rows arrive.
+                val row = moves(state)?.rowOf(selected.id) ?: run {
+                    pending = selected.id
+                    return
+                }
+                setState {
+                    copy(selection = Selection.Row(row), search = search.copy(current = search.matchRows.indexOf(row)))
+                }
+            }
         }
     }
 
@@ -268,7 +315,25 @@ internal class GraphViewModel(
                 firstParent = view.firstParent,
             ).prunedTo(latestRefs)
         val selectedId = commitAt(currentState, currentState.selection)
-        setState { copy(phase = Phase.Loading, error = null, now = clock() / 1000, soloCount = filter.soloRefs.size) }
+        setState {
+            copy(
+                phase = Phase.Loading,
+                error = null,
+                now = clock() / 1000,
+                soloCount = filter.soloRefs.size,
+                stashes = emptyList(),
+            )
+        }
+        stashList = emptyList()
+        stashScan = 0
+        stashRows.clear()
+        viewModelScope.launch {
+            // Without its stashes the graph still shows; a failed read leaves them out.
+            (stashes.list(repository) as? Result.Success)?.data?.let {
+                stashList = it
+                placeStashes()
+            }
+        }
         val started = nanos()
         loadJob =
             viewModelScope.launch {
@@ -300,10 +365,40 @@ internal class GraphViewModel(
                             reselected = true
                         }
                     }
+                    // A commit another pane selected before its row was laid out.
+                    pending?.let { wanted ->
+                        if (shared.selection.value == ViewSelection.Commit(wanted)) follow(ViewSelection.Commit(wanted))
+                    }
+                    placeStashes()
                     refreshMatches()
                     if (step !is GraphLoad.Failed) maybeOffer(started, step.graph.size)
                 }
             }
+    }
+
+    private var stashList: List<StashEntry> = emptyList()
+    private var stashScan = 0
+    private val stashRows = HashMap<ObjectId, Int>()
+
+    /**
+     * Puts each stash above its base commit's row once that row is laid out. Only rows not yet looked at are scanned,
+     * so a long load scans each row once.
+     */
+    private fun placeStashes() {
+        val state = currentState
+        val graph = state.graph ?: return
+        if (stashList.isEmpty()) return
+        val wanted = stashList.mapNotNullTo(HashSet()) { it.base }
+        while (stashScan < state.rowCount) {
+            val id = graph[stashScan].commit.id
+            if (id in wanted) stashRows.putIfAbsent(id, stashScan)
+            stashScan++
+        }
+        val placed =
+            stashList
+                .mapNotNull { entry -> entry.base?.let(stashRows::get)?.let { StashPlacement(entry, it) } }
+                .sortedWith(compareBy({ it.baseRow }, { it.entry.index }))
+        if (placed != state.stashes) setState { copy(stashes = placed) }
     }
 
     private fun isDefault(filter: GraphFilter): Boolean =
@@ -342,9 +437,7 @@ internal class GraphViewModel(
     }
 
     private suspend fun save(change: (RepositoryUiState) -> RepositoryUiState) {
-        saved = change(saved)
-        // A failed write keeps the choice for this session; the file is left as it was.
-        uiState.update(commonDir, change)
+        shared.update(change)
     }
 
     private fun search(query: String, kind: SearchKind) {
@@ -421,20 +514,27 @@ internal class GraphViewModel(
         cycleFrom = -1
         val row = (selection as? Selection.Row)?.index ?: -1
         setState { copy(selection = selection, search = search.copy(current = search.matchRows.indexOf(row))) }
+        publish(selection)
+    }
+
+    /** Tells the other panes what's selected here. */
+    private fun publish(selection: Selection) {
+        shared.selection.value =
+            when (selection) {
+                Selection.None -> ViewSelection.None
+                Selection.Wip -> ViewSelection.Wip
+                is Selection.Row -> commitAt(currentState, selection)?.let(ViewSelection::Commit) ?: ViewSelection.None
+                is Selection.Stash -> ViewSelection.Commit(selection.id)
+            }
     }
 
     private fun movedBy(state: GraphState, delta: Int): Selection {
-        val hasWip = state.wipFiles != null
-        val total = state.rowCount + if (hasWip) 1 else 0
+        val table = state.table
+        val total = table.size
         if (total == 0) return Selection.None
-        val current =
-            when (val s = state.selection) {
-                Selection.None -> if (delta > 0) -1 else total
-                Selection.Wip -> 0
-                is Selection.Row -> s.index + if (hasWip) 1 else 0
-            }
+        val current = table.indexOf(state.selection) ?: if (delta > 0) -1 else total
         val target = (current.toLong() + delta).coerceIn(0, total - 1L).toInt()
-        return if (hasWip && target == 0) Selection.Wip else Selection.Row(target - if (hasWip) 1 else 0)
+        return table.selectionAt(target)
     }
 
     private fun moves(state: GraphState): GraphMoves? {
@@ -449,6 +549,7 @@ internal class GraphViewModel(
     }
 
     private fun commitAt(state: GraphState, selection: Selection): ObjectId? {
+        if (selection is Selection.Stash) return selection.id
         val row = (selection as? Selection.Row)?.index ?: return null
         val graph: LaidOutGraph = state.graph ?: return null
         return if (row < state.rowCount) graph[row].commit.id else null

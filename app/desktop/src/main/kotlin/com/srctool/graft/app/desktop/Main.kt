@@ -23,8 +23,8 @@ import com.srctool.graft.core.ui.theme.GraftTheme
 import com.srctool.graft.core.watcher.NativeFileWatcher
 import com.srctool.graft.data.app.di.AppDataModule
 import com.srctool.graft.data.git.di.GitDataModule
-import com.srctool.graft.feature.graph.presentation.graph.GraphDestination
-import com.srctool.graft.feature.graph.presentation.graph.GraphRoute
+import com.srctool.graft.feature.graph.presentation.repository.RepositoryData
+import com.srctool.graft.feature.graph.presentation.repository.RepositoryScreen
 import com.srctool.sinew.models.Result
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
@@ -33,7 +33,7 @@ import kotlinx.coroutines.launch
 import java.nio.file.Paths
 
 fun main() {
-    // Until Task 20 brings Home and the app navigation, GRAFT_REPO opens the graph screen on that repository.
+    // Until Task 20 brings Home and the app navigation, GRAFT_REPO opens the repository screen on that repository.
     val repository = System.getenv("GRAFT_REPO")
     application {
         Window(
@@ -48,7 +48,7 @@ fun main() {
     }
 }
 
-/** Temporary (until Task 20): one repository's session and its graph, wired by hand. */
+/** Temporary (until Task 20): one repository's session and its screen, wired by hand. */
 @Composable
 private fun GraphWindow(repository: String) {
     val git = remember { GitDataModule(ProcessGitRunner(GitRunnerConfig())) }
@@ -67,6 +67,6 @@ private fun GraphWindow(repository: String) {
         session = opened
     }
     val current = session ?: return
-    val root = current.location.workTree ?: current.location.gitDir
-    GraphDestination(GraphRoute(root.toString()), current, git.commits, app.repositoryUiState)
+    val data = remember { RepositoryData(git.commits, git.stashes, git.diffs, app.repositoryUiState, app.settings) }
+    RepositoryScreen(current, data)
 }

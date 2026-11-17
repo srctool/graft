@@ -98,4 +98,29 @@ class GraphLogicTest {
         assertEquals(Age.Days(6), age(now - 6 * 86_400, now))
         assertEquals(Age.Date("Jan 8, 2027"), age(now - 7 * 86_400, now, ZoneOffset.UTC, Locale.US))
     }
+
+    @Test
+    fun `the table puts the WIP row first and each stash above its base row`() {
+        val a = StashPlacement(sampleStash, 1)
+        val b = StashPlacement(sampleStash.copy(index = 1, id = Sample.id(8)), 3)
+        val table = TableLayout(hasWip = true, stashes = listOf(a, b), rows = 5)
+        assertEquals(8, table.size)
+        assertEquals(
+            listOf(
+                TableEntry.Wip,
+                TableEntry.Commit(0),
+                TableEntry.Stash(a),
+                TableEntry.Commit(1),
+                TableEntry.Commit(2),
+                TableEntry.Stash(b),
+                TableEntry.Commit(3),
+                TableEntry.Commit(4),
+            ),
+            (0 until table.size).map(table::entry),
+        )
+        assertEquals(6, table.indexOf(Selection.Row(3)))
+        assertEquals(5, table.indexOf(Selection.Stash(Sample.id(8))))
+        assertEquals(Selection.Stash(sampleStash.id), table.selectionAt(2))
+        assertNull(TableLayout(hasWip = false, stashes = emptyList(), rows = 2).indexOf(Selection.Wip))
+    }
 }

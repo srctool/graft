@@ -123,6 +123,13 @@ class DiffRepositoryTest {
                 // ...and by its object id, from the file list, it reads fine.
                 val latin1 = assertIs<FileContent.Text>(contents.read(latin1File.newObject!!).getOrThrow())
                 assertEquals(DiffRepo.LATIN1_TEXT + "\n", latin1.text)
+                // The image diff reads a binary's bytes by object id; over the limit, or not a blob, it gets none.
+                val pic = ObjectId(sandbox.git(built.path, "rev-parse", "${built.change}:pic.bin").trim())
+                val bytes = contents.readBytes(pic).getOrThrow()
+                assertEquals(6, bytes?.size)
+                assertTrue(bytes!!.contains(0.toByte()))
+                assertEquals(null, contents.readBytes(pic, maxBytes = 2).getOrThrow())
+                assertEquals(null, contents.readBytes(ObjectId(built.change)).getOrThrow())
                 val message = contents.message(ObjectId(built.change)).getOrThrow()
                 assertTrue(message.startsWith("Change many things\n\nThe body explains why."), message)
             }

@@ -44,6 +44,11 @@ public interface FileContents : AutoCloseable {
     /** The file stored as object [id] (a [com.srctool.graft.data.git.api.models.ChangedFile]'s old or new object). */
     public suspend fun read(id: ObjectId, maxBytes: Long = DEFAULT_MAX_BYTES): Result<FileContent>
 
+    /**
+     * The raw bytes of blob [id], for the image diff: null when it's over [maxBytes] or isn't a blob (`GIT-R-CATF-…`).
+     */
+    public suspend fun readBytes(id: ObjectId, maxBytes: Long = DEFAULT_MAX_BYTES): Result<ByteArray?>
+
     /** Commit [id]'s full message, for rows the graph loaded with their subject only. */
     public suspend fun message(id: ObjectId): Result<String>
 

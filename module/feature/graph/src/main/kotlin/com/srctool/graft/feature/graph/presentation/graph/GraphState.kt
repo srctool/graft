@@ -33,12 +33,16 @@ internal data class GraphState(
     val selection: Selection = Selection.None,
     val search: SearchState = SearchState(),
     val commitGraph: CommitGraphOffer = CommitGraphOffer.Hidden,
+    /** The stashes whose base commit is laid out, by base row then index. */
+    val stashes: List<StashPlacement> = emptyList(),
     /** Saved column widths by id; null for a hidden column. */
     val columns: Map<String, Float?> = emptyMap(),
     /** The time "2 h ago" is measured from, in epoch seconds; set when a load starts. */
     val now: Long = 0,
 ) {
     enum class Phase { Idle, Loading, Loaded, Empty, Failed }
+
+    val table: TableLayout get() = TableLayout(wipFiles != null, stashes, rowCount)
 
     /** The graph loaded and the filters left nothing. */
     val filteredToNothing: Boolean
@@ -57,6 +61,9 @@ internal sealed interface Selection {
     data object Wip : Selection
 
     data class Row(val index: Int) : Selection
+
+    /** A stash's row, by its commit. */
+    data class Stash(val id: ObjectId) : Selection
 }
 
 /** What search looks in (Commit Graph, "Search"); a hash prefix is matched whatever the kind. */

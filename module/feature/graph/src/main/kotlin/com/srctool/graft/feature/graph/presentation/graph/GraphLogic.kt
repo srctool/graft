@@ -137,3 +137,61 @@ internal fun exactTime(
     .format(Instant.ofEpochSecond(epochSeconds).atZone(zone))
 
 private fun dateFormat(locale: Locale) = DateTimeFormatter.ofLocalizedDate(FormatStyle.MEDIUM).withLocale(locale)
+
+/** A stash shown on the graph: a row of its own just above [baseRow], its base commit's row. */
+internal data class StashPlacement(val entry: com.srctool.graft.data.git.api.models.StashEntry, val baseRow: Int)
+
+/** What a row of the table is. */
+internal sealed interface TableEntry {
+    data object Wip : TableEntry
+
+    data class Stash(val placement: StashPlacement) : TableEntry
+
+    data class Commit(val row: Int) : TableEntry
+}
+
+/**
+ * Where everything sits in the table: the WIP row first, then the commits, with each stash just above its base
+ * commit ([stashes] sorted by base row, then stash index). Stashes are few, so lookups walk them; commits are never
+ * listed, so a 500k-row graph costs nothing here.
+ */
+internal class TableLayout(
+    private val hasWip: Boolean,
+    private val stashes: List<StashPlacement>,
+    private val rows: Int,
+) {
+    private val wip = if (hasWip) 1 else 0
+
+    val size: Int get() = wip + stashes.size + rows
+
+    fun entry(index: Int): TableEntry {
+        if (hasWip && index == 0) return TableEntry.Wip
+        val t = index - wip
+        stashes.forEachIndexed { j, p ->
+            val at = p.baseRow + j
+            if (t == at) return TableEntry.Stash(p)
+            if (t < at) return TableEntry.Commit(t - j)
+        }
+        return TableEntry.Commit(t - stashes.size)
+    }
+
+    fun indexOf(selection: Selection): Int? = when (selection) {
+        Selection.None -> null
+
+        Selection.Wip -> if (hasWip) 0 else null
+
+        is Selection.Row -> wip + selection.index + stashes.count { it.baseRow <= selection.index }
+
+        is Selection.Stash ->
+            stashes.indexOfFirst { it.entry.id == selection.id }.takeIf { it >= 0 }?.let { j ->
+                wip + stashes[j].baseRow +
+                    j
+            }
+    }
+
+    fun selectionAt(index: Int): Selection = when (val e = entry(index)) {
+        TableEntry.Wip -> Selection.Wip
+        is TableEntry.Stash -> Selection.Stash(e.placement.entry.id)
+        is TableEntry.Commit -> Selection.Row(e.row)
+    }
+}
