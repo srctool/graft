@@ -7,27 +7,38 @@ import com.srctool.graft.data.git.api.models.LogScope
 import com.srctool.graft.data.git.api.models.ObjectId
 
 /**
- * The left panel's hide and solo choices (Commit Graph, "Left panel"), as the repository's `state.json` keeps them.
- * Refs are full names.
+ * What history the graph walks (Commit Graph, "Filter"): the left panel's hide and solo choices, as the repository's
+ * `state.json` keeps them, the graph bar's current-branch choice, and first parent. Refs are full names.
  */
-internal data class GraphFilter(val hiddenRefs: Set<String> = emptySet(), val soloRefs: Set<String> = emptySet()) {
+internal data class GraphFilter(
+    val hiddenRefs: Set<String> = emptySet(),
+    val soloRefs: Set<String> = emptySet(),
+    /** Only HEAD's history, when nothing is soloed. */
+    val currentBranch: Boolean = false,
+    /** Only each merge's first parent (`--first-parent`). */
+    val firstParent: Boolean = false,
+) {
     /**
-     * The refs git walks: the solo refs that aren't also hidden, or every ref but the hidden ones when nothing is
-     * soloed (or every soloed ref is hidden too).
+     * The refs git walks: the solo refs that aren't also hidden; else HEAD alone for [currentBranch]; else every ref
+     * but the hidden ones.
      */
     val scope: LogScope
         get() {
             val solo = soloRefs - hiddenRefs
-            return if (solo.isNotEmpty()) LogScope.Only(solo) else LogScope.All(hiddenRefs)
+            return when {
+                solo.isNotEmpty() -> LogScope.Only(solo)
+                currentBranch -> LogScope.Only(setOf("HEAD"))
+                else -> LogScope.All(hiddenRefs)
+            }
         }
 
     /**
      * Only the refs that still exist: a branch deleted outside Graft stays in `state.json`, and git fails a log that
      * names a ref it can't find.
      */
-    fun prunedTo(existing: Set<String>): GraphFilter = GraphFilter(
-        hiddenRefs intersect existing,
-        soloRefs intersect existing,
+    fun prunedTo(existing: Set<String>): GraphFilter = copy(
+        hiddenRefs = hiddenRefs intersect existing,
+        soloRefs = soloRefs intersect existing,
     )
 }
 

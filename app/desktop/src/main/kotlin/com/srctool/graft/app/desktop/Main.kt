@@ -3,47 +3,70 @@
 
 package com.srctool.graft.app.desktop
 
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Window
 import androidx.compose.ui.window.application
 import androidx.compose.ui.window.rememberWindowState
+import com.srctool.graft.app.desktop.session.GitRepositorySession
+import com.srctool.graft.core.configuration.AppFolders
 import com.srctool.graft.core.git.GitRunnerConfig
 import com.srctool.graft.core.git.ProcessGitRunner
+import com.srctool.graft.core.git.WriteQueue
+import com.srctool.graft.core.ui.theme.GraftTheme
+import com.srctool.graft.core.watcher.NativeFileWatcher
+import com.srctool.graft.data.app.di.AppDataModule
 import com.srctool.graft.data.git.di.GitDataModule
-import com.srctool.graft.feature.graph.benchmark.SpikeBenchmark
-import com.srctool.graft.feature.graph.presentation.spike.GraphSpikeDestination
-import com.srctool.graft.feature.graph.presentation.spike.GraphSpikeRoute
-import kotlin.system.exitProcess
+import com.srctool.graft.feature.graph.presentation.graph.GraphDestination
+import com.srctool.graft.feature.graph.presentation.graph.GraphRoute
+import com.srctool.sinew.models.Result
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.launch
+import java.nio.file.Paths
 
 fun main() {
-    val startNanos = System.nanoTime()
-    // G0 Task 8 spike: GRAFT_SPIKE_REPO opens the graph spike on that repository; removed in G1.
-    val spikeRepo = System.getenv("GRAFT_SPIKE_REPO")
+    // Until Task 20 brings Home and the app navigation, GRAFT_REPO opens the graph screen on that repository.
+    val repository = System.getenv("GRAFT_REPO")
     application {
         Window(
             onCloseRequest = ::exitApplication,
             title = "Graft",
             state = rememberWindowState(width = 1280.dp, height = 900.dp),
         ) {
-            if (spikeRepo != null) {
-                val data = GitDataModule(ProcessGitRunner(GitRunnerConfig()))
-                GraphSpikeDestination(
-                    route =
-                    GraphSpikeRoute(
-                        repository = spikeRepo,
-                        limit = System.getenv("GRAFT_SPIKE_LIMIT")?.toIntOrNull() ?: Int.MAX_VALUE,
-                    ),
-                    commits = data.commits,
-                    benchmark =
-                    SpikeBenchmark(
-                        startNanos = startNanos,
-                        scrollRows = System.getenv("GRAFT_SPIKE_SCROLL")?.toIntOrNull() ?: 0,
-                    ) { results ->
-                        println("GRAFT_SPIKE_RESULTS $results")
-                        if (System.getenv("GRAFT_SPIKE_EXIT") == "1") exitProcess(0)
-                    },
-                )
+            GraftTheme {
+                if (repository != null) GraphWindow(repository)
             }
         }
     }
+}
+
+/** Temporary (until Task 20): one repository's session and its graph, wired by hand. */
+@Composable
+private fun GraphWindow(repository: String) {
+    val git = remember { GitDataModule(ProcessGitRunner(GitRunnerConfig())) }
+    val app = remember { AppDataModule(AppFolders.current()) }
+    var session by remember { mutableStateOf<GitRepositorySession?>(null) }
+    val scope = rememberCoroutineScope()
+    LaunchedEffect(repository) {
+        val location = (git.access.locate(Paths.get(repository)) as? Result.Success)?.data ?: return@LaunchedEffect
+        val opened = GitRepositorySession(location, git.refs, git.access, NativeFileWatcher(), WriteQueue())
+        // A child of the window's scope: closing the window stops the watcher and git.
+        val sessionScope = CoroutineScope(scope.coroutineContext + SupervisorJob(scope.coroutineContext[Job]))
+        sessionScope.launch {
+            opened.init()
+            opened.listen(sessionScope)
+        }
+        session = opened
+    }
+    val current = session ?: return
+    val root = current.location.workTree ?: current.location.gitDir
+    GraphDestination(GraphRoute(root.toString()), current, git.commits, app.repositoryUiState)
 }

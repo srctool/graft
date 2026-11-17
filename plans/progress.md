@@ -211,3 +211,50 @@ Ruling: long lines wrap by default, which keeps side-by-side rows aligned; with 
 Ruling: the `>>` / `<<` gutter arrows, the connectors between panes and the color-blind-safe diff palette aren't built: G1 is read-only and the palette is a setting no screen offers yet — cost if wrong: added with the working-copy diff in G2.
 Ruling: `highlights` 1.2.0, the latest, was published 2026-11-03, only two weeks ago; its API was checked against the jar and its tests here pass — cost if wrong: a pin to 1.1.0.
 Ruling: the 7 new screenshots get their Linux goldens from the first CI run, as in Tasks 10 and 11 — cost if wrong: one red run.
+Task 12 (G1, #21): complete (reviewed and merged, PR #146; the 7 Linux goldens came from CI's renders).
+Task 13 (G1, #18): wireframe drafted in plans/G1.md (2026-11-16): states, keyboard path, screen-reader labels and the data additions it needs; waiting for the author's review before code.
+Task 13 (G1, #18): data layer started (2026-11-16): `CommitRepository.log(…, firstParent)`, `RepositorySummary.changedFiles` (a rename counted once), `CommitRepository.hasCommitGraph` / `writeCommitGraph` (`GIT-R-CGPH-…`, paths through `rev-parse --git-path`), with sandbox tests; the plan's commit-graph line moved from RepositoryAccessRepository to CommitRepository, where the log lives. Saving the graph's choices in `state.json` waits for ADR-27 (draft in `plans/adr-27-graph-view-state.md`), as the author asked.
+Task 13 (G1, #18): wireframe approved by the author (2026-11-16); ADR-27 (the graph's view choices in `state.json` v1, optional `graph` and `columns` objects) accepted by the author the same day, draft in `plans/adr-27-graph-view-state.md`, the notes theirs to edit.
+Task 13 (G1, #18): drafted (2026-11-16):
+- **Data:** `RepositoryUiState.graph` (`GraphViewState`: branches, hide remotes, first parent, author kinds, commit-graph offered) and `.columns`, stored under ADR-27's names. Unknown values from a newer Graft read as the defaults. A fixture of a pre-ADR-27 file pins that it still reads.
+- **Core:** `CommandOutput` in `:module:core:exception`, implemented by `GitException`, so a screen can show git's argv, exit code and stderr (Show output) without depending on `:module:core:git`.
+- **Domain:**
+  - `GraphFilter.currentBranch` (`LogScope.Only(HEAD)` unless something is soloed) and `.firstParent`, which reaches `git log`.
+  - `LaidOutGraph.people` for author names.
+- **Screen:** `presentation/graph`, with `GraphViewModel` (Sinew `EventActionViewModel`), state, events, actions, effects, `GraphNavigation.kt` (`GraphRoute`, `GraphDestination`), `GraphPage` / `GraphContent` and `GraphRows`, as the wireframe describes:
+  - Bar: the branch menu, Hide remotes, First parent, the Authors menu, and search with its kind menu, "3 of 12", Enter / Shift+Enter, Esc.
+  - Banners: D8's commit-graph offer (5 s or 100k rows, no commit-graph file, once per repository, written through the session's write queue, then a reload), and git errors with Retry and Show output.
+  - Table: `TableHeader` columns saved per repository, the WIP row (a ring joined to HEAD's lane), `RefChip`s (two, then `+n`), `GraphCanvas` over the laid-out rows without copying edges, the AI icon, `AuthorInitials`, relative dates with the exact time in a tooltip, and the short SHA.
+  - States: skeleton after 300 ms, empty repository, filtered to nothing with Show all branches, an error centered or above the kept rows, and the status line.
+  - Keys: ↑/↓, PageUp/PageDown, Home/End, Alt+↓/↑/→, `[`/`]`, Enter, Mod+C, Mod+F, Mod+Alt+Home, and speed search in JUMP mode.
+  - Each row is read as one sentence.
+  - Refs moving in the session reload the graph and keep the selected commit selected.
+- **Removed:** the spike screen, its `benchmark` package and `GraphLanes`. `:app:desktop` opens `GraphDestination` for `GRAFT_REPO` through the temporary edge until Task 20.
+- **Texts:** `graph.*` in English and Indonesian.
+- **Tests:**
+  - Data: 3 sandbox tests (first parent, changed files, commit-graph) and 3 `state.json` tests.
+  - Domain: 2 tests.
+  - Graph screen: 4 logic tests, 14 view-model tests over the real graph use cases with fake git, session and state.json, and 4 page tests (row labels, search label, the table's keys, Mod+F / Esc).
+  - 9 screenshots: loaded in light and dark, search with dimming, loading, empty, filtered, error, error after rows (dark), and the commit-graph offer. Checked by eye on macOS; the Linux goldens come from CI as before.
+  - A manual measurement test.
+  - `./gradlew check` passes.
+Task 13 measurements (2026-11-16).
+- **Setup:** the same machine and the same 1,506,906-commit treeless Linux clone as G0 Task 8. That clone now has a commit-graph file.
+- **Method:** `GRAFT_MEASURE_REPO=… ./gradlew :app:desktop:test --tests '*GraphMeasurementTest*'` with a 4 GB heap. The real `GraphDestination` runs in a Compose UI test, which renders offscreen. Git runs in the test sandbox on a shared bare clone, so there's no working-tree status.
+- **First screen (rows on screen):** 2.06 s. Git alone needs 1.19–2.73 s for its first 60 commits over every ref in the same run. The target is < 1 s at 500k.
+- **Full load:** 32.7 s. G0 took 21–31 s.
+- **Heap after full load:** 696 MB. G0 used 677 MB; the target is < 400 MB at 500k, where G0 measured 234 MB.
+- **Scrolling:** 40 rows a step, 2,500 steps, each step one rendered frame. Mean 14.0 ms, p95 21.7 ms, worst 115 ms. That's wall time per offscreen frame in a test, not display frames, so it doesn't compare directly with G0's `withFrameNanos` numbers.
+- **D10:** the first 60 commits of HEAD's history alone take 26 ms (both rounds), against 1,192–2,731 ms for every ref.
+Open for the author:
+- (1) D10: the numbers favor loading HEAD's history first, then the full graph (first screen about 1–2.5 s sooner on this repository). Building it means a second layout pass, or the two loads merged; it's not built in this task.
+- (2) The real screen's first screen and heap are at the spike's level, which is above the 500k targets on 1.5M commits. Measuring a 500k repository again, and the heap per row, wait for the author's call on the D10 approach.
+Ruling: the commit-graph check and write live on `CommitRepository`, where the log is, not on `RepositoryAccessRepository` as the wireframe first said (plan updated). Both run `rev-parse --git-path` and `commit-graph write --reachable --no-progress` (`GIT-R-CGPH-…`) — cost if wrong: one move.
+Ruling: features read error codes and messages through `:module:core:exception`, which exposes `sinew-exception` as `api` (Libraries lists it for core and data). The graph page uses `SinewException.code` and `displayMessage` from there rather than adding a dependency — cost if wrong: one line in the Libraries note.
+Ruling: the view model's actions read the state as it is when they run (filter toggles, selection moves, match steps, open and copy), not as it was when the event arrived. Two quick keys or toggles then add up instead of one undoing the other — cost if wrong: none.
+Ruling: the author filter and search dim the other rows to 42% rather than hiding them (the author's 2026-11-16 ruling). Leaving every author kind out means no author filter — cost if wrong: one more state.
+Ruling: the WIP row's line joins HEAD only when HEAD's commit is the first row (the layout doesn't know the WIP row). Otherwise the ring stands alone on HEAD's lane — cost if wrong: a line through the rows between them, added with the changes panel in G2.
+Ruling: Enter on the WIP row does nothing in G1 (the changes panel is G2), and Enter on a commit sends `OpenCommit` to the host, which Task 14 wires to the details panel — cost if wrong: none.
+Ruling: the measurement is a manual, env-gated test in `:app:desktop`, not a benchmark package in the feature. It runs git only inside the sandbox, on a shared clone, since the sandbox refuses a repository outside it — cost if wrong: offscreen frame times stand in for display frames; a run in the app window can follow if the author wants G0's exact method.
+Ruling: the graph screen's 9 screenshots get their Linux goldens from the first CI run, as before — cost if wrong: one red run.
+Ruling: CI's Windows check hung twice until the job was cancelled (on main after Task 10, and on Task 13's branch), without a log. Test timeouts now run on a separate thread, and each test task stops after 15 minutes, so a hang fails by name and the reports still upload — cost if wrong: a slow but healthy test task over 15 minutes would fail; none is near it (the slowest takes about 1 minute).

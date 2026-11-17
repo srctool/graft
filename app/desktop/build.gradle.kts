@@ -30,10 +30,19 @@ dependencies {
     implementation(libs.sinew.presentation)
 
     testImplementation(libs.kotlinx.coroutines.test)
+    // The graph measurement (G1 Task 13) drives the real screen against a sandboxed git.
+    testImplementation(testFixtures(projects.module.core.git))
+    testImplementation(compose.desktop.currentOs)
+    testImplementation(libs.compose.ui.test)
 }
 
 compose.desktop {
     application {
         mainClass = "com.srctool.graft.app.desktop.MainKt"
     }
+}
+
+// The graph measurement (GRAFT_MEASURE_REPO) runs with the app's default heap (a quarter of RAM), as G0 measured.
+tasks.withType<Test>().configureEach {
+    if (System.getenv("GRAFT_MEASURE_REPO") != null) maxHeapSize = "4g"
 }

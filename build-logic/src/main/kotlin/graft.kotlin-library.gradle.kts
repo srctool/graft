@@ -3,6 +3,8 @@
 
 // Plain Kotlin/JVM module: :module:core:* (except :module:core:ui), :module:data:*, :module:domain, :module:presentation, :app:cli.
 
+import java.time.Duration
+
 plugins {
     id("org.jetbrains.kotlin.jvm")
     id("graft.spotless")
@@ -48,6 +50,11 @@ tasks.withType<Test>().configureEach {
     }
     // A hung git process fails its test after two minutes instead of holding CI until the job times out.
     systemProperty("junit.jupiter.execution.timeout.default", "2m")
+    // On a separate thread, so a test that ignores interrupts (a stuck UI test on Windows) still fails, by name.
+    systemProperty("junit.jupiter.execution.timeout.thread.mode.default", "SEPARATE_THREAD")
+    // A test JVM that hangs outside any test (one that never exits) fails its task instead of the whole job, so CI
+    // still uploads the reports and logs that show where it stopped.
+    timeout.set(Duration.ofMinutes(15))
     testGit.orNull?.let { systemProperty("graft.test.git", it) }
     systemProperty("graft.fixtures", fixturesDir.asFile.absolutePath)
     if (recordFixtures.isPresent) systemProperty("graft.recordFixtures", "true")

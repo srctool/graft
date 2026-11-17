@@ -81,4 +81,16 @@ internal data class RepositoryStateRecord(
     val hiddenRefs: List<String> = emptyList(),
     val soloRefs: List<String> = emptyList(),
     val pinnedRefs: List<String> = emptyList(),
+    val graph: GraphViewRecord = GraphViewRecord(),
+    val columns: Map<String, Float?> = emptyMap(),
+)
+
+/** ADR-27's `graph` object. Values are strings so an unknown one from a newer Graft reads as the default. */
+@Serializable
+internal data class GraphViewRecord(
+    val branches: String = "all",
+    val hideRemotes: Boolean = false,
+    val firstParent: Boolean = false,
+    val authorTypes: List<String> = listOf("person", "aiAssisted", "bot"),
+    val commitGraphOffered: Boolean = false,
 )

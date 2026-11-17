@@ -98,11 +98,15 @@ class GitLoadGraphUseCaseTest {
 
 /** A repository whose log is [rows], for any path. */
 internal class FakeCommits(private val rows: Flow<CommitRow>) : CommitRepository {
-    override fun log(repository: Path, scope: LogScope): CommitLog = CommitLog(rows, People())
+    override fun log(repository: Path, scope: LogScope, firstParent: Boolean): CommitLog = CommitLog(rows, People())
 
     override suspend fun details(repository: Path, id: ObjectId): Result<CommitDetails> =
         error("not used by these tests")
 
     override fun search(repository: Path, query: LogQuery, scope: LogScope): CommitLog =
         error("not used by these tests")
+
+    override suspend fun hasCommitGraph(repository: Path): Result<Boolean> = error("not used by these tests")
+
+    override suspend fun writeCommitGraph(repository: Path): Result<Unit> = error("not used by these tests")
 }

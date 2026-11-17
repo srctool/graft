@@ -27,6 +27,8 @@ public data class RepositorySummary(
     val upstream: Upstream?,
     /** Staged, unstaged or untracked changes. */
     val dirty: Boolean,
+    /** How many paths have them: the graph's WIP row says "Uncommitted changes (4 files)". */
+    val changedFiles: Int = 0,
 )
 
 /** What HEAD points at. */
