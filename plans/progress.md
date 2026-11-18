@@ -393,5 +393,5 @@ Ruling: G1's two Settings pages are defined in the host, not contributed by feat
 Ruling: About's detail pane gives the license's name and a link, not its full text; the report carries names and URLs only — cost if wrong: bundle the texts of the handful of licenses used.
 Ruling: About has no build date, so builds stay reproducible; Settings has no **Show output**, because `:module:navigation` has no edge to `:module:core:exception` and a new edge needs an ADR — cost if wrong: one edge and one dialog.
 Ruling: the license report plugin isn't configuration-cache compatible, so Gradle configures again for builds that include `:app:desktop`'s resources (its `check` and `run`) — cost if wrong: a few seconds there; module-only builds still use the cache.
-Ruling: the 13 new screenshots get their Linux goldens from the first CI run, as before — cost if wrong: one red run.
+Ruling: the 13 new screenshots (and Home's six, which gained the Menu button) take their Linux goldens from the first CI run, as before — cost if wrong: one red run.
 
