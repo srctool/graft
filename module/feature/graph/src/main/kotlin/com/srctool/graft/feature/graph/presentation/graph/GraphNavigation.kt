@@ -10,12 +10,13 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.ViewModelStore
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
-import com.srctool.graft.data.app.api.repositories.RepositoryUiStateRepository
 import com.srctool.graft.data.git.api.repositories.CommitRepository
+import com.srctool.graft.data.git.api.repositories.StashRepository
 import com.srctool.graft.feature.graph.domain.implementation.usecases.GitLoadGraphUseCase
 import com.srctool.graft.feature.graph.domain.implementation.usecases.GitSearchGraphUseCase
 import com.srctool.graft.feature.graph.domain.implementation.usecases.LaneLayout
 import com.srctool.graft.presentation.session.RepositorySession
+import com.srctool.graft.presentation.view.RepositoryViewState
 import java.nio.file.Paths
 
 /*
@@ -36,7 +37,8 @@ public fun GraphDestination(
     route: GraphRoute,
     session: RepositorySession,
     commits: CommitRepository,
-    uiState: RepositoryUiStateRepository,
+    stashes: StashRepository,
+    view: RepositoryViewState,
     onOpenCommit: (String) -> Unit = {},
 ) {
     val store = remember(route) { ViewModelStore() }
@@ -52,7 +54,8 @@ public fun GraphDestination(
                             loadGraph = GitLoadGraphUseCase(commits, ::LaneLayout),
                             searchGraph = GitSearchGraphUseCase(commits),
                             commits = commits,
-                            uiState = uiState,
+                            stashes = stashes,
+                            shared = view,
                         )
                     }
                 }

@@ -25,6 +25,7 @@ import com.srctool.graft.data.git.api.models.LogScope
 import com.srctool.graft.data.git.di.GitDataModule
 import com.srctool.graft.feature.graph.presentation.graph.GraphDestination
 import com.srctool.graft.feature.graph.presentation.graph.GraphRoute
+import com.srctool.graft.presentation.view.RepositoryViewState
 import com.srctool.sinew.models.Result
 import com.srctool.sinew.models.getOrThrow
 import kotlinx.coroutines.CoroutineScope
@@ -139,7 +140,8 @@ class GraphMeasurementTest {
                         GraphRoute((location.workTree ?: location.gitDir).toString()),
                         session,
                         git.commits,
-                        ui,
+                        git.stashes,
+                        RepositoryViewState(location.commonDir, ui),
                     )
                 }
             }

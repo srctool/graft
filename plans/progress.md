@@ -258,3 +258,46 @@ Ruling: Enter on the WIP row does nothing in G1 (the changes panel is G2), and E
 Ruling: the measurement is a manual, env-gated test in `:app:desktop`, not a benchmark package in the feature. It runs git only inside the sandbox, on a shared clone, since the sandbox refuses a repository outside it — cost if wrong: offscreen frame times stand in for display frames; a run in the app window can follow if the author wants G0's exact method.
 Ruling: the graph screen's 9 screenshots get their Linux goldens from the first CI run, as before — cost if wrong: one red run.
 Ruling: CI's Windows check hung twice until the job was cancelled (on main after Task 10, and on Task 13's branch), without a log. Test timeouts now run on a separate thread, and each test task stops after 15 minutes, so a hang fails by name and the reports still upload — cost if wrong: a slow but healthy test task over 15 minutes would fail; none is near it (the slowest takes about 1 minute).
+Task 14 (G1, #22): wireframes drafted in plans/G1.md (2026-11-17): left panel, commit details (S5), diff viewer (S6), with states, keyboard paths and screen-reader labels, plus four questions for the author (shared state between the three screens, stashes on the graph, image diff, the temporary repository screen); waiting for review before code.
+Task 14 (G1, #22): wireframes approved by the author (2026-11-17), all four questions on their first option: a shared RepositoryViewState in :module:presentation; stashes on the graph now; image diff now; the temporary repository screen in :module:feature:graph.
+Task 14 (G1, #22): drafted (2026-11-17):
+- **Data:** `FileContents.readBytes(id, maxBytes)`: a blob's bytes for the image diff; null over the limit or for a non-blob.
+- **Presentation:** `RepositoryViewState`, one per repository tab. It holds the saved choices as a `StateFlow`, with `load` once and `update` as the one writer to `state.json`; the selection (`ViewSelection`: none, WIP, a commit); and the center (`CenterView`: the graph, or a commit's file). `:module:presentation` exposes `:module:data:app` as `api` for it.
+- **Graph:**
+  - Reads and writes its choices through the shared state.
+  - Reloads when the left panel hides or solos a ref; pinning doesn't reload.
+  - Publishes its selection and follows one from another pane, including a commit not laid out yet.
+  - **Stashes:** the stash list is read whenever refs move. Each stash is placed just above its base commit (`TableLayout` puts the WIP row, stashes and commits in order without listing the commits). It's drawn as a hollow node in the gray lane right of the base row, its line curving into the base commit. The keys move through stash rows too.
+- **Left panel** (`presentation/branches`):
+  - Local, Remote, Tags and Stashes with counts. `/` folders, a node per remote, pinned refs first, HEAD bold.
+  - Hide, solo and pin: buttons on the focused or hovered row, plus a context menu (Shift+F10 or the menu key) with Copy name. Hiding a soloed ref ends its solo and the other way round.
+  - Speed search keeps matches and their folders.
+  - ↑/↓, ←/→ fold or go to parent / child, Enter selects the commit.
+  - Loading skeleton, refs failure with Retry, "No tags." style empty rows. Each row is read as one sentence.
+- **Commit details (S5, `presentation/details`):**
+  - Follows the selection, showing nothing, the WIP row, or the commit.
+  - Subject, hash with copy, parents as links that select the parent, author, and the committer when different. The signature as icon plus words, any state but "not signed".
+  - The body, selectable, and the trailers.
+  - Files as a tree (single-folder chains joined: `src/main/kotlin/login`) or a list, with status letters in colored boxes and +/− counts. Enter or a double-click opens the diff. Arrows, folding and speed search work in the list.
+  - Loading, failed (Retry, Show output) and empty-commit states.
+- **Diff screen (S6, `presentation/diff`):**
+  - A breadcrumb back to the graph (Esc, Alt+←), "‹ 3 of 12 ›" over the commit's files (Alt+Shift+←/→), and Unified / Side by side (Mod+Alt+D) plus Ignore whitespace, both saved to `settings.json` as the existing settings.
+  - F7 changes counted ("changes 2/5").
+  - States: binary sizes, with images side by side for png, jpg, gif, bmp, webp and ico under the inline limit; over the limit with **Show anyway**; renamed without changes; mode only; submodule moved; failed with Retry and Show output.
+  - Files are read through one `FileContents` process, closed with the view model.
+- **Repository screen:** `RepositoryScreen` docks the panel left and the details right around the graph, with the diff over it when the center shows one. `:app:desktop` opens it for `GRAFT_REPO`.
+- **Texts:** `branches.*`, `details.*`, `diff.*` and the stash labels, in English and Indonesian.
+- **Tests:**
+  - `readBytes` against a sandbox repository; `RepositoryViewState`.
+  - Graph view model: shared state, selection both ways, stashes.
+  - Table layout and branch tree logic.
+  - 10 view-model tests for the three screens, linked through the shared state.
+  - 3 page tests for labels and keys.
+  - 12 screenshots: panel light, dark and failed; details light, dark, WIP and failed; diff unified light, side by side dark, image, too large; graph with a stash. Checked by eye on macOS; the Linux goldens come from CI.
+  - `./gradlew check` passes.
+Ruling: the files' tree-or-list choice isn't saved, though the wireframe said "per app". No setting holds it, and adding one changes `settings.json`'s format (Storage Formats, rule 6) — cost if wrong: one optional field and a ruling or ADR when the author wants it kept.
+Ruling: a stash row is drawn by the screen, not by the lane layout: stashes aren't in `git log` (they're excluded on purpose), so each sits in its own row above its base commit, in a lane right of that row, in the palette's gray. Stashes can't be hidden from the graph in G1 — cost if wrong: a wide graph's stash lane can cross other lines between the stash and its base.
+Ruling: the inline-limit check reads each side's object up to the limit before diffing (a text file under the limit is read once more than needed) — cost if wrong: a little time per file opened; the diff itself is git's.
+Ruling: the image diff draws what Skia decodes (png, jpg, gif, bmp, webp, ico) side by side at natural size up to 420 px; other binaries show their sizes only — cost if wrong: SVG, a text format, still shows as a text diff.
+Ruling: the repository screen keeps the graph composed under the diff, so its view model, selection and scroll survive a trip to a diff — cost if wrong: the graph's memory stays in use while a diff is open, as it does in the app anyway.
+Ruling: the 12 new screenshots get their Linux goldens from the first CI run, as before — cost if wrong: one red run.

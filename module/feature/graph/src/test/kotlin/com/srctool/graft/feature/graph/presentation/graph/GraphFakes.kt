@@ -91,6 +91,26 @@ internal object Sample {
         loaded = setOf(SnapshotPart.REFS, SnapshotPart.STATUS),
     )
 
+    /** [row]'s full details, as `CommitRepository.details` reads them. */
+    fun details(row: CommitRow): CommitDetails {
+        val author = people[row.authorIndex]
+        val signature = com.srctool.graft.data.git.api.models.Signature(author.name, author.email, row.authorTime, 0)
+        return CommitDetails(
+            id = row.id,
+            parents = row.parents,
+            author = signature,
+            committer = signature,
+            message =
+            row.subject +
+                "\n\nThe login timed out after 30 s on slow networks.\nRaise it to 60 s.\n\nCo-authored-by: Ann Lee <ann@example.invalid>",
+            trailers = listOf(
+                com.srctool.graft.data.git.api.models.Trailer("Co-authored-by", "Ann Lee <ann@example.invalid>"),
+            ),
+            signature = com.srctool.graft.data.git.api.models.SignatureStatus.GOOD,
+            files = sampleFiles,
+        )
+    }
+
     fun peopleIndex(): People = People().also { p -> people.forEach { p.intern(it) } }
 
     /** [rows] laid out as the graph use case would, for page tests that draw a state directly. */
@@ -151,7 +171,15 @@ internal class FakeCommitRepository(var rows: List<CommitRow> = Sample.rows) : C
     override fun search(repository: Path, query: LogQuery, scope: LogScope): CommitLog =
         CommitLog(rows.filter { query.message != null && query.message!! in it.subject }.asFlow(), Sample.peopleIndex())
 
-    override suspend fun details(repository: Path, id: ObjectId): Result<CommitDetails> = error("not used")
+    var detailsFailure: Throwable? = null
+
+    override suspend fun details(repository: Path, id: ObjectId): Result<CommitDetails> {
+        detailsFailure?.let {
+            return Result.Failure(it as? com.srctool.sinew.models.SinewException ?: FakeFailure(it.message ?: ""))
+        }
+        val row = rows.firstOrNull { it.id == id } ?: return Result.Failure(FakeFailure("no commit $id"))
+        return Result.Success(Sample.details(row))
+    }
 
     override suspend fun hasCommitGraph(repository: Path): Result<Boolean> = Result.Success(hasGraph)
 
@@ -174,3 +202,93 @@ internal class FakeUiState(var value: RepositoryUiState = RepositoryUiState()) :
         return Result.Success(value)
     }
 }
+
+/** The repository's stashes; empty unless a test adds some. */
+internal class FakeStashes(var entries: List<com.srctool.graft.data.git.api.models.StashEntry> = emptyList()) :
+    com.srctool.graft.data.git.api.repositories.StashRepository {
+    override suspend fun list(repository: Path): Result<List<com.srctool.graft.data.git.api.models.StashEntry>> =
+        Result.Success(entries)
+}
+
+/** A stash made on "Fix login timeout" (row 1 of [Sample.rows]). */
+internal val sampleStash =
+    com.srctool.graft.data.git.api.models.StashEntry(
+        index = 0,
+        id = Sample.id(9),
+        base = Sample.id(4),
+        branch = "main",
+        message = "WIP on main: 4444444 Fix login timeout",
+        time = Sample.now - 3_600,
+    )
+
+/** A failure the fakes report, with a code like the data layer's. */
+internal class FakeFailure(text: String) :
+    com.srctool.sinew.models.SinewException("GIT", com.srctool.sinew.models.ExceptionLayer.Repository, "DETL"),
+    com.srctool.graft.core.exception.CommandOutput {
+    override val typeCode: String = "EXIT"
+    override val errorMessage = com.srctool.sinew.models.ErrorMessage.Local(
+        "test.failed",
+        emptyMap(),
+        "Git couldn't read it.",
+    )
+    override val argv: List<String> = listOf("git", "show")
+    override val exitCode: Int? = 128
+    override val stderr: String = "fatal: $text"
+}
+
+/** Every changed file kind the details and diff screens show. */
+internal val sampleFiles: List<com.srctool.graft.data.git.api.models.ChangedFile> =
+    listOf(
+        changed(
+            com.srctool.graft.data.git.api.models.FileStatus.MODIFIED,
+            "src/main/kotlin/login/Login.kt",
+            add = 12,
+            del = 3,
+        ),
+        changed(
+            com.srctool.graft.data.git.api.models.FileStatus.RENAMED,
+            "src/main/kotlin/login/Retry.kt",
+            old = "src/main/kotlin/login/Old.kt",
+            add = 1,
+            del = 1,
+        ),
+        changed(
+            com.srctool.graft.data.git.api.models.FileStatus.ADDED,
+            "src/main/kotlin/login/Backoff.kt",
+            add = 40,
+            del = 0,
+        ),
+        changed(com.srctool.graft.data.git.api.models.FileStatus.MODIFIED, "docs/logo.png", add = null, del = null),
+        changed(com.srctool.graft.data.git.api.models.FileStatus.DELETED, "README.old", add = 0, del = 7),
+    )
+
+private fun changed(
+    status: com.srctool.graft.data.git.api.models.FileStatus,
+    path: String,
+    old: String? = null,
+    add: Int?,
+    del: Int?,
+) = com.srctool.graft.data.git.api.models.ChangedFile(
+    status,
+    path,
+    old,
+    similarity = if (old != null) 90 else null,
+    oldMode = if (status == com.srctool.graft.data.git.api.models.FileStatus.ADDED) "000000" else "100644",
+    newMode = if (status == com.srctool.graft.data.git.api.models.FileStatus.DELETED) "000000" else "100644",
+    additions = add,
+    deletions = del,
+    oldObject = if (status ==
+        com.srctool.graft.data.git.api.models.FileStatus.ADDED
+    ) {
+        null
+    } else {
+        ObjectId("e".repeat(40))
+    },
+    newObject = if (status ==
+        com.srctool.graft.data.git.api.models.FileStatus.DELETED
+    ) {
+        null
+    } else {
+        ObjectId("f".repeat(40))
+    },
+)

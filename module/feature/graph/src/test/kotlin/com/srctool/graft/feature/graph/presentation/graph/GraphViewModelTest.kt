@@ -17,6 +17,8 @@ import com.srctool.graft.feature.graph.domain.implementation.usecases.GitLoadGra
 import com.srctool.graft.feature.graph.domain.implementation.usecases.GitSearchGraphUseCase
 import com.srctool.graft.feature.graph.domain.implementation.usecases.LaneLayout
 import com.srctool.graft.feature.graph.presentation.graph.GraphState.Phase
+import com.srctool.graft.presentation.view.RepositoryViewState
+import com.srctool.graft.presentation.view.ViewSelection
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.toList
@@ -44,6 +46,8 @@ class GraphViewModelTest {
     private val session = FakeSession()
     private val commits = FakeCommitRepository()
     private val ui = FakeUiState()
+    private val stashes = FakeStashes()
+    private val shared by lazy { RepositoryViewState(Sample.location.commonDir, ui) }
 
     /** Each read of the clock moves it on by this much: zero is a fast load, SLOW_NANOS a slow one. */
     private var tick = 0L
@@ -68,7 +72,8 @@ class GraphViewModelTest {
                     loadGraph = GitLoadGraphUseCase(commits, ::LaneLayout, dispatcher),
                     searchGraph = GitSearchGraphUseCase(commits, dispatcher),
                     commits = commits,
-                    uiState = ui,
+                    stashes = stashes,
+                    shared = shared,
                     clock = { Sample.now * 1000 },
                     nanos = { nanos.also { nanos += tick } },
                 )
@@ -323,4 +328,47 @@ class GraphViewModelTest {
 
     @Suppress("unused")
     private suspend fun drain(vm: GraphViewModel) = vm.effects.toList()
+
+    @Test
+    fun `hiding or soloing in the left panel reloads the graph over what's shown`() = runTest(dispatcher) {
+        opened()
+        shared.update { it.copy(soloRefs = setOf("refs/heads/feature/login")) }
+        advanceUntilIdle()
+        assertEquals(LogScope.Only(setOf("refs/heads/feature/login")), commits.scopes.last())
+        val loads = commits.scopes.size
+        shared.update { it.copy(pinnedRefs = setOf("refs/heads/main")) }
+        advanceUntilIdle()
+        assertEquals(loads, commits.scopes.size, "pinning only reorders the panel")
+    }
+
+    @Test
+    fun `the selection is shared with the other panes, both ways`() = runTest(dispatcher) {
+        val vm = opened()
+        vm.onEvent(GraphEvent.Selected(Selection.Row(1)))
+        advanceUntilIdle()
+        assertEquals(ViewSelection.Commit(Sample.id(4)), shared.selection.value)
+        vm.onEvent(GraphEvent.Selected(Selection.Wip))
+        advanceUntilIdle()
+        assertEquals(ViewSelection.Wip, shared.selection.value)
+
+        // The left panel picks v1.0's commit.
+        shared.selection.value = ViewSelection.Commit(Sample.id(2))
+        advanceUntilIdle()
+        assertEquals(3, vm.selectedRow())
+    }
+
+    @Test
+    fun `a stash sits just above its base commit, and the keys move through it`() = runTest(dispatcher) {
+        stashes.entries = listOf(sampleStash)
+        val vm = opened()
+        assertEquals(listOf(StashPlacement(sampleStash, 1)), vm.state.value.stashes)
+        vm.onEvent(GraphEvent.Selected(Selection.Row(0)))
+        vm.onEvent(GraphEvent.MovedBy(1))
+        advanceUntilIdle()
+        assertEquals(Selection.Stash(sampleStash.id), vm.state.value.selection)
+        assertEquals(ViewSelection.Commit(sampleStash.id), shared.selection.value, "the details show the stash")
+        vm.onEvent(GraphEvent.MovedBy(1))
+        advanceUntilIdle()
+        assertEquals(1, vm.selectedRow())
+    }
 }

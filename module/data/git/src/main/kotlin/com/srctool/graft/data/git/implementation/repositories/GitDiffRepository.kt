@@ -89,6 +89,9 @@ private class GitFileContents(private val reader: GitObjectReader) : FileContent
             }
         }
 
+    override suspend fun readBytes(id: ObjectId, maxBytes: Long): Result<ByteArray?> =
+        reader.read(id.hex, maxBytes).map { obj -> (obj as? GitObject.Found)?.takeIf { it.type == "blob" }?.bytes }
+
     override suspend fun message(id: ObjectId): Result<String> = reader.read(id.hex, Long.MAX_VALUE).map { obj ->
         val raw = (obj as? GitObject.Found)?.takeIf { it.type == "commit" }?.bytes ?: return@map ""
         // A commit object is headers, a blank line, then the message.
