@@ -73,10 +73,13 @@ class HomePageTest {
         page(ready)
         onNodeWithContentDescription("Repositories, 3").assertExists()
         onNode(
-            hasContentDescription("graft, /work/graft, branch main, uncommitted changes, 1 ahead", substring = true),
+            hasContentDescription(
+                "graft, ${path("graft")}, branch main, uncommitted changes, 1 ahead",
+                substring = true,
+            ),
         ).assertExists()
-        onNode(hasContentDescription("api, /work/api, branch main, 3 behind", substring = true)).assertExists()
-        onNode(hasContentDescription("old-thing, /work/old-thing, missing", substring = true)).assertExists()
+        onNode(hasContentDescription("api, ${path("api")}, branch main, 3 behind", substring = true)).assertExists()
+        onNode(hasContentDescription("old-thing, ${path("old-thing")}, missing", substring = true)).assertExists()
     }
 
     @Test

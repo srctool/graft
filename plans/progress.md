@@ -368,10 +368,10 @@ Task 17 (G1, #15): drafted (2026-11-18):
 - **Assets:** 20 `.gitignore` templates from github/gitignore (CC0-1.0, commit b71db92) and 10 license texts from spdx/license-list-data (commit ab9b090), verbatim, with `SOURCES.txt` and the CC0 text; `NOTICE` credits them. `macOS.gitignore` keeps its two lone CRs (`Icon\r`), which git needs.
 - **Temporary host:** `TemporaryHost` in `:module:navigation` shows Home first; opening a repository swaps to the repository screen, Mod+T returns to Home; Open all opens the first until tabs arrive in Task 20. Koin: `homeFeatureKoin`, `navigationKoin`; `KoinWiringTest` resolves the three new view models, with and without a starting folder.
 - **Texts:** `home.*`, `clone.*`, `init.*` in English and Indonesian; a count in a label never takes a plural (`Add selected (2)`).
-- **Tests:** domain (14), view models (home, clone and init), data (16), labels and keys, 13 screenshots (Home light, dark, workspace overview, empty, scan and not-a-repository dialogs; Clone idle, options in dark, running; Init light and a repository in dark). `./gradlew check` passes.
+- **Tests:** domain (14), view models (home, clone and init), data (16), labels and keys, 11 screenshots (Home light, dark, workspace overview, empty, scan and not-a-repository dialogs; Clone idle, options in dark, running; Init light and a repository in dark). `./gradlew check` passes.
 Ruling: no new module edge: the temporary host lives in `:module:navigation`, which already depends on the home feature, and the app passes the repository screen in as a lambda — cost if wrong: Task 20's tabs move the host.
 Ruling: Clone's default folder is the user's home; the profile's clone folder arrives in G3 — cost if wrong: one default to change.
 Ruling: Home has its own small "2 h ago" helper rather than importing the graph feature's, because features never import each other — cost if wrong: two helpers to merge into `:module:core:ui` later.
 Ruling: the copyright holder field is asked for MIT, BSD and ISC only; the other licenses' texts carry no holder — cost if wrong: a field more.
 Ruling: spdx/license-list-data states no license I could confirm (its README doesn't say CC0); the license texts themselves are the standard ones — cost if wrong: swap the source for choosealicense.com's templates (MIT).
-Ruling: the 13 new screenshots get their Linux goldens from the first CI run, as before — cost if wrong: one red run.
+Ruling: the 11 new screenshots get their Linux goldens from the first CI run, as before — cost if wrong: one red run.

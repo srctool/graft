@@ -190,7 +190,7 @@ class RepositoryAccessRepositoryTest {
         Files.writeString(tree.resolve(".gitignore"), "build/\n")
         // A file Init didn't write, and one whose name looks like a pattern: neither is staged.
         Files.writeString(tree.resolve("notes.txt"), "mine\n")
-        Files.writeString(tree.resolve("*.md"), "not a pattern\n")
+        Files.writeString(tree.resolve("[a-z].md"), "not a pattern\n")
         access.initialCommit(tree, listOf("README.md", ".gitignore"), "Initial commit").getOrThrow()
         assertEquals(
             listOf(".gitignore", "README.md"),

@@ -117,7 +117,7 @@ class HomeViewModelTest {
         assertEquals(listOf("api", "app"), vm.state.value.rows.map { it.name })
         send(vm, HomeEvent.Moved(1), HomeEvent.Moved(1), HomeEvent.Moved(1))
         assertEquals(path("app").toString(), vm.state.value.focus)
-        send(vm, HomeEvent.QueryTyped("/work/old"))
+        send(vm, HomeEvent.QueryTyped(path("old").toString()))
         assertEquals(listOf("old-thing"), vm.state.value.rows.map { it.name })
     }
 
@@ -148,7 +148,7 @@ class HomeViewModelTest {
         send(vm, HomeEvent.OpenFolder(path("plain")))
         assertEquals(HomeDialog.NotARepository(path("plain")), vm.state.value.dialog)
         send(vm, HomeEvent.OpenFolder(path("gone")))
-        assertEquals(HomeDialog.Problem(null, "missing:/work/gone"), vm.state.value.dialog)
+        assertEquals(HomeDialog.Problem(null, "missing:${path("gone")}"), vm.state.value.dialog)
 
         val effects = mutableListOf<HomeEffect>()
         val collector = launch { vm.effects.collect { effects += it } }
