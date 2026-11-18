@@ -48,4 +48,10 @@ public interface CommitRepository {
      * it through the repository session's write queue, and only when the author asked (`GIT-R-CGPH-…`).
      */
     public suspend fun writeCommitGraph(repository: Path): Result<Unit>
+
+    /**
+     * The commit [revision] names: a branch, a tag, `HEAD~3`, a hash or a unique prefix. Null when git can't resolve it
+     * to a commit (Compare's pickers) (`GIT-R-RSLV-…`).
+     */
+    public suspend fun resolve(repository: Path, revision: String): Result<ObjectId?>
 }

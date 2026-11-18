@@ -4,6 +4,7 @@
 package com.srctool.graft.data.git.implementation.source.local
 
 import com.srctool.graft.core.git.GitCommand
+import com.srctool.graft.data.git.api.models.ObjectId
 
 /**
  * Where git keeps the commit-graph file and the chain of split ones, as paths it resolves itself
@@ -31,4 +32,25 @@ internal class CommitGraphWriteCommand : GitCommand<Unit>() {
     override val args = listOf("commit-graph", "write", "--reachable", "--no-progress")
 
     override fun parse(stdout: ByteArray) = Unit
+}
+
+/**
+ * `rev-parse --verify --quiet --end-of-options <revision>^{commit}`: the commit a revision the user typed names (a
+ * branch, a tag, `HEAD~3`, a hash prefix), or null when git can't resolve it to one (exit 1). `--end-of-options` keeps
+ * text starting with `-` from being read as an option.
+ */
+internal class ResolveCommitCommand(revision: String) : GitCommand<ObjectId?>() {
+    override val function = "RSLV"
+    override val args = listOf("rev-parse", "--verify", "--quiet", "--end-of-options", "$revision^{commit}")
+    override val successExitCodes = setOf(0, 1)
+
+    override fun parse(stdout: ByteArray): ObjectId? {
+        val text = GitText.decode(stdout).trim()
+        if (text.isEmpty()) return null
+        return try {
+            ObjectId(text)
+        } catch (e: IllegalArgumentException) {
+            throw com.srctool.graft.core.git.GitParseException(e.message ?: "bad object id")
+        }
+    }
 }

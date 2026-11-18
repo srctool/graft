@@ -12,6 +12,8 @@ internal data class BranchesState(
     /** Why the refs couldn't be read, with its code. */
     val error: Throwable? = null,
     val query: String = "",
+    /** The default branch, for "Compare with main"; a full ref name. */
+    val defaultBranch: String? = null,
     /** The row whose context menu is open (Shift+F10 or the menu key). */
     val menuFor: String? = null,
 ) {

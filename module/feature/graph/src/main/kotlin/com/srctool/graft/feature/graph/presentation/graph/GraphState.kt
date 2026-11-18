@@ -31,6 +31,8 @@ internal data class GraphState(
     /** Changed files when the working tree is dirty: the WIP row; null when it's clean (or bare). */
     val wipFiles: Int? = null,
     val selection: Selection = Selection.None,
+    /** A second commit marked with Mod+click, to compare with the selected one (Task 15). */
+    val marked: ObjectId? = null,
     val search: SearchState = SearchState(),
     val commitGraph: CommitGraphOffer = CommitGraphOffer.Hidden,
     /** The stashes whose base commit is laid out, by base row then index. */

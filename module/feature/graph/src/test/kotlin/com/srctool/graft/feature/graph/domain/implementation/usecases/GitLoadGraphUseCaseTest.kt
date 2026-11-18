@@ -109,4 +109,7 @@ internal class FakeCommits(private val rows: Flow<CommitRow>) : CommitRepository
     override suspend fun hasCommitGraph(repository: Path): Result<Boolean> = error("not used by these tests")
 
     override suspend fun writeCommitGraph(repository: Path): Result<Unit> = error("not used by these tests")
+
+    override suspend fun resolve(repository: Path, revision: String): Result<ObjectId?> =
+        error("not used by these tests")
 }

@@ -268,6 +268,9 @@ private class RecordingCommits(rows: List<CommitRow>, private val flow: Flow<Com
 
     override suspend fun writeCommitGraph(repository: Path): Result<Unit> = error("not used by these tests")
 
+    override suspend fun resolve(repository: Path, revision: String): Result<ObjectId?> =
+        error("not used by these tests")
+
     override suspend fun details(repository: Path, id: ObjectId): Result<CommitDetails> = error("not used")
 }
 

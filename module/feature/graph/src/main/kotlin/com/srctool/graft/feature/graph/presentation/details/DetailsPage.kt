@@ -261,6 +261,32 @@ private fun Header(state: DetailsState, details: CommitDetails, onEvent: (Detail
     val colors = Camouflage.colors
     val tokens = Graft.tokens
     val density = tokens.density
+    val marked = state.marked
+    if (marked != null && marked != details.id) {
+        // Two commits picked in the graph: the other one is marked (Mod+click).
+        Row(
+            Modifier.fillMaxWidth().background(colors.primaryContainer).padding(horizontal = 12.dp, vertical = 6.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            CamoText(
+                graftText(
+                    "details.twoSelected",
+                    "2 commits selected: {a} and {b}",
+                    "a" to details.id.short(),
+                    "b" to marked.short(),
+                ),
+                modifier = Modifier.weight(1f),
+                style = tokens.dense,
+                color = colors.onPrimaryContainer,
+            )
+            CamoButton(
+                graftText("details.compare", "Compare"),
+                onClick = { onEvent(DetailsEvent.CompareMarked) },
+                modifier = Modifier.height(density.control),
+            )
+        }
+    }
     Column(Modifier.fillMaxWidth().padding(12.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
         CamoText(
             details.subject,

@@ -301,3 +301,33 @@ Ruling: the inline-limit check reads each side's object up to the limit before d
 Ruling: the image diff draws what Skia decodes (png, jpg, gif, bmp, webp, ico) side by side at natural size up to 420 px; other binaries show their sizes only — cost if wrong: SVG, a text format, still shows as a text diff.
 Ruling: the repository screen keeps the graph composed under the diff, so its view model, selection and scroll survive a trip to a diff — cost if wrong: the graph's memory stays in use while a diff is open, as it does in the app anyway.
 Ruling: the 12 new screenshots get their Linux goldens from the first CI run, as before — cost if wrong: one red run.
+Task 15 (G1, #23): wireframe drafted in plans/G1.md (2026-11-18): Compare (S7) with its states, keyboard path and screen-reader labels, plus three questions for the author (how Compare opens, including a second graph selection; the diff target shared type; long commit lists); waiting for review before code.
+Task 14 (G1, #22): complete (reviewed and merged, PR #148; the 12 Linux goldens came from CI's renders).
+Task 15 (G1, #23): wireframe approved by the author (2026-11-18), all three proposals: Mod+click / Mod+Space marks a second commit and Mod+D compares; the diff's center view becomes any target with a view to go back to; commit lists stop at 1,000 rows each.
+Task 15 (G1, #23): drafted (2026-11-18):
+- **Data:** `CommitRepository.resolve(repo, revision)`: `rev-parse --verify --quiet --end-of-options <rev>^{commit}` (`GIT-R-RSLV-…`), null when git can't resolve it. Text starting with `-` is never read as an option.
+- **Shared state:** `CenterView.Compare(a, b)`, and `CenterView.Diff(target: DiffTarget, path, back)` in place of a commit (the diff screen's breadcrumb names the target and goes back to Compare or the graph). `RepositoryViewState.marked` holds the second commit.
+- **Entry points:**
+  - **Graph:** Mod+click or Mod+Space marks a commit (accent bar and shade; "marked to compare" in its label). Mod+D opens Compare with the selected commit as A and the marked one as B.
+  - **Details:** a "2 commits selected" bar with **Compare**.
+  - **Left panel:** the context menu has **Compare with main** (the default branch: `origin/HEAD`'s target, else `main`, else `master`) and **Compare with its upstream**.
+- **Compare (S7, `presentation/compare`):**
+  - Pickers in the command palette's style: Local, Remote and Tags with speed search, plus a typed revision once git resolves it. ⇄ swaps A and B.
+  - Everything is resolved to commit ids first, so only ids reach the compare commands.
+  - Summary "B is n ahead and m behind A · merge base x". With no shared history, the direct difference only.
+  - The merge preview (left out when B is 0 ahead), conflicts listed up to 5, then +n.
+  - Changes B introduces (`A...B`, the default) or the direct difference (`A B`).
+  - Both commit lists, up to 1,000 rows each with "…and n more". Selecting one shows it in the details.
+  - Files as a tree or a list; Enter opens a diff that leads back to Compare, which stays composed under it.
+  - States: picking, loading, not found, the same commit, failed with Retry and Show output. Esc and Alt+← go back to the graph. Each row is read as one sentence.
+- **Texts:** `compare.*` and the new labels, in English and Indonesian.
+- **Tests:**
+  - `resolve` against a sandbox repository: an annotated tag, a hash prefix, a missing name, an option-looking text.
+  - 9 view-model tests: Compare's states, the pickers, swap, the diff target and back view, Mod+click and Mod+D, the details button, the panel's Compare, the default branch.
+  - 2 page tests for labels and keys.
+  - 4 screenshots: Compare light, with conflicts in dark, picking, not found. Checked by eye on macOS; the Linux goldens come from CI.
+  - `./gradlew check` passes.
+Ruling: with two commits picked, A is the selected commit and B the marked one (Mod+click), in the graph and in the details alike: you click the base first, then mark what to compare with it — cost if wrong: a swap with ⇄ in Compare.
+Ruling: Compare's section headers aren't upper-cased like the left panel's, since they hold branch names and UX Writing keeps names as git has them — cost if wrong: none.
+Ruling: Compare's commit lists show short hash, subject, initials and age, without graph lanes (the wireframe's rows "as in the graph, without the lanes") — cost if wrong: lanes would need a layout per list.
+Ruling: the 4 new screenshots get their Linux goldens from the first CI run, as before — cost if wrong: one red run.

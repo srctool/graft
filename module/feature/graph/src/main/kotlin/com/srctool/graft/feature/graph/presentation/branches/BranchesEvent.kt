@@ -33,4 +33,7 @@ internal sealed interface BranchesEvent {
     data class CopyName(val name: String) : BranchesEvent
 
     data object Retry : BranchesEvent
+
+    /** "Compare with main" or "Compare with its upstream": Compare with [base] as A and [compare] as B. */
+    data class CompareWith(val base: String, val compare: String) : BranchesEvent
 }

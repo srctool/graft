@@ -188,3 +188,15 @@ internal fun parentOf(rows: List<PanelRow>, index: Int): Int? {
     val depth = rows.getOrNull(index)?.depth ?: return null
     return (index - 1 downTo 0).firstOrNull { rows[it].depth < depth }
 }
+
+/**
+ * The repository's default branch, which "Compare with main" compares against (Task 15): what `origin/HEAD` points to,
+ * else a local `main`, else a local `master`. A full ref name, or null when there's none of these.
+ */
+internal fun defaultBranch(refs: List<Ref>): String? {
+    val names = refs.mapTo(HashSet()) { it.name }
+    refs.firstOrNull {
+        it.name == "refs/remotes/origin/HEAD"
+    }?.symbolicTarget?.takeIf { it in names }?.let { return it }
+    return listOf("refs/heads/main", "refs/heads/master").firstOrNull { it in names }
+}

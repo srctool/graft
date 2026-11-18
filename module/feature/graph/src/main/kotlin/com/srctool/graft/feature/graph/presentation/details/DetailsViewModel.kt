@@ -5,6 +5,7 @@ package com.srctool.graft.feature.graph.presentation.details
 
 import androidx.lifecycle.viewModelScope
 import com.srctool.graft.data.git.api.models.CommitDetails
+import com.srctool.graft.data.git.api.models.DiffTarget
 import com.srctool.graft.data.git.api.models.ObjectId
 import com.srctool.graft.data.git.api.repositories.CommitRepository
 import com.srctool.graft.presentation.session.RepositorySession
@@ -60,6 +61,8 @@ internal class DetailsViewModel(
 
         DetailsEvent.CopyHash -> DetailsAction.Copy
 
+        DetailsEvent.CompareMarked -> DetailsAction.Compare
+
         DetailsEvent.Retry -> DetailsAction.Reload
 
         is DetailsEvent.OutputShown -> DetailsAction.Local { it.copy(outputShown = event.shown) }
@@ -89,10 +92,17 @@ internal class DetailsViewModel(
             DetailsAction.Copy -> currentState.details?.let { emitEffect(DetailsEffect.CopyToClipboard(it.id.hex)) }
 
             DetailsAction.Reload -> shown?.let { load(it) }
+
+            DetailsAction.Compare -> {
+                val a = currentState.details?.id ?: return
+                val b = currentState.marked ?: return
+                if (a != b) shared.center.value = CenterView.Compare(a.hex, b.hex)
+            }
         }
     }
 
     private fun start() {
+        viewModelScope.launch { shared.marked.collect { id -> setState { copy(marked = id) } } }
         viewModelScope.launch {
             combine(shared.selection, session.snapshot) { selection, snapshot ->
                 selection to snapshot
@@ -101,7 +111,7 @@ internal class DetailsViewModel(
                     ViewSelection.None -> {
                         loadJob?.cancel()
                         shown = null
-                        setState { DetailsState(tree = tree) }
+                        setState { DetailsState(tree = tree, marked = marked) }
                     }
 
                     ViewSelection.Wip -> {
@@ -164,7 +174,7 @@ internal class DetailsViewModel(
 
             is FileRow.File -> {
                 val commit = currentState.details?.id ?: return
-                shared.center.value = CenterView.Diff(commit, row.file.path)
+                shared.center.value = CenterView.Diff(DiffTarget.Commit(commit), row.file.path)
             }
         }
     }

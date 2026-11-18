@@ -55,4 +55,22 @@ class GraphSupportTest {
         Files.createDirectories(repo.resolve("sub"))
         assertTrue(commits.hasCommitGraph(repo.resolve("sub")).getOrThrow())
     }
+
+    @Test
+    fun `a typed revision resolves to its commit, and an option-looking one to nothing`(sandbox: GitSandbox) =
+        runBlocking {
+            val repo =
+                sandbox.repo("revs") {
+                    commit("one") { file("a.txt", "1\n") }
+                    commit("two") { file("a.txt", "2\n") }
+                }
+            sandbox.git(repo, "tag", "-a", "-m", "release", "v1", "HEAD~1")
+            val commits = GitDataModule(sandbox.runner()).commits
+            val first = sandbox.git(repo, "rev-parse", "HEAD~1").trim()
+            assertEquals(first, commits.resolve(repo, "HEAD~1").getOrThrow()?.hex)
+            assertEquals(first, commits.resolve(repo, "v1").getOrThrow()?.hex, "an annotated tag peels to its commit")
+            assertEquals(first, commits.resolve(repo, first.take(8)).getOrThrow()?.hex)
+            assertEquals(null, commits.resolve(repo, "no-such-branch").getOrThrow())
+            assertEquals(null, commits.resolve(repo, "--output=/tmp/x").getOrThrow())
+        }
 }

@@ -52,7 +52,11 @@ internal sealed interface DiffBody {
 internal class ImagePair(val old: ByteArray?, val new: ByteArray?)
 
 internal data class DiffScreenState(
-    val commit: ObjectId? = null,
+    /** What the files are a diff of: a commit, or Compare's `A...B` or `A B`. */
+    val target: DiffTarget? = null,
+    /** Where the breadcrumb goes back to: the graph, or Compare. */
+    val back: CenterView = CenterView.Graph,
+    /** The commit's subject, for a commit's diff. */
     val subject: String = "",
     val files: List<ChangedFile> = emptyList(),
     val index: Int = -1,
@@ -62,6 +66,9 @@ internal data class DiffScreenState(
     val outputShown: Boolean = false,
 ) {
     val file: ChangedFile? get() = files.getOrNull(index)
+
+    /** The commit, for a commit's diff. */
+    val commit: ObjectId? get() = (target as? DiffTarget.Commit)?.id
 }
 
 internal sealed interface DiffScreenEvent {
@@ -147,13 +154,13 @@ internal class DiffScreenViewModel(
         when (action) {
             DiffScreenAction.Start -> start()
 
-            DiffScreenAction.Back -> shared.center.value = CenterView.Graph
+            DiffScreenAction.Back -> shared.center.value = currentState.back
 
             is DiffScreenAction.Step -> {
                 val s = currentState
                 val next = s.files.getOrNull(s.index + action.by) ?: return
-                val commit = s.commit ?: return
-                shared.center.value = CenterView.Diff(commit, next.path)
+                val target = s.target ?: return
+                shared.center.value = CenterView.Diff(target, next.path, s.back)
             }
 
             is DiffScreenAction.Mode -> {
@@ -224,16 +231,16 @@ internal class DiffScreenViewModel(
 
     private fun show(center: CenterView.Diff) {
         if (center == shown) return
-        // The commit whose files are loaded, not the last file shown: a reload forgets that, and keeps the files.
-        val sameCommit = currentState.commit == center.commit && currentState.files.isNotEmpty()
+        // The target whose files are loaded, not the last file shown: a reload forgets that, and keeps the files.
+        val sameCommit = currentState.target == center.target && currentState.files.isNotEmpty()
         shown = center
         if (!sameCommit) anyway = false
         loadJob?.cancel()
-        setState { copy(body = DiffBody.Loading, outputShown = false) }
+        setState { copy(body = DiffBody.Loading, outputShown = false, back = center.back) }
         loadJob =
             viewModelScope.launch {
                 contentsOpen = true
-                val target = DiffTarget.Commit(center.commit)
+                val target = center.target
                 val options = DiffOptions(ignoreWhitespace = currentState.ignoreWhitespace)
                 if (!sameCommit) {
                     val files =
@@ -243,7 +250,7 @@ internal class DiffScreenViewModel(
                             is Result.Failure -> {
                                 setState {
                                     copy(
-                                        commit = center.commit,
+                                        target = target,
                                         files = emptyList(),
                                         index = -1,
                                         body = DiffBody.Failed(r.error),
@@ -252,12 +259,11 @@ internal class DiffScreenViewModel(
                                 return@launch
                             }
                         }
-                    val subject = (
-                        contents.message(
-                            center.commit,
-                        ) as? Result.Success
-                        )?.data?.substringBefore('\n').orEmpty()
-                    setState { copy(commit = center.commit, subject = subject, files = files) }
+                    val subject =
+                        (target as? DiffTarget.Commit)?.let { (contents.message(it.id) as? Result.Success)?.data }
+                            ?.substringBefore('\n')
+                            .orEmpty()
+                    setState { copy(target = target, subject = subject, files = files) }
                 }
                 val index = currentState.files.indexOfFirst { it.path == center.path }
                 setState { copy(index = index) }

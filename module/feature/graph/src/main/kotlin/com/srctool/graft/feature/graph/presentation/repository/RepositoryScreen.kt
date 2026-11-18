@@ -21,10 +21,13 @@ import com.srctool.graft.core.ui.theme.GraftIcon
 import com.srctool.graft.data.app.api.repositories.RepositoryUiStateRepository
 import com.srctool.graft.data.app.api.repositories.SettingsRepository
 import com.srctool.graft.data.git.api.repositories.CommitRepository
+import com.srctool.graft.data.git.api.repositories.CompareRepository
 import com.srctool.graft.data.git.api.repositories.DiffRepository
 import com.srctool.graft.data.git.api.repositories.StashRepository
 import com.srctool.graft.feature.graph.presentation.branches.BranchesDestination
 import com.srctool.graft.feature.graph.presentation.branches.BranchesRoute
+import com.srctool.graft.feature.graph.presentation.compare.CompareDestination
+import com.srctool.graft.feature.graph.presentation.compare.CompareRoute
 import com.srctool.graft.feature.graph.presentation.details.DetailsDestination
 import com.srctool.graft.feature.graph.presentation.details.DetailsRoute
 import com.srctool.graft.feature.graph.presentation.diff.DiffDestination
@@ -38,6 +41,7 @@ import com.srctool.graft.presentation.view.RepositoryViewState
 /** What one repository tab's screens need from the data layer. */
 public class RepositoryData(
     public val commits: CommitRepository,
+    public val compare: CompareRepository,
     public val stashes: StashRepository,
     public val diffs: DiffRepository,
     public val uiState: RepositoryUiStateRepository,
@@ -74,6 +78,13 @@ public fun RepositoryScreen(session: RepositorySession, data: RepositoryData) {
     DockLayout(dock, windows) {
         Box(Modifier.fillMaxSize()) {
             GraphDestination(GraphRoute(folder), session, data.commits, data.stashes, shared)
+            // Compare stays composed under a diff opened from it, so going back keeps its lists.
+            val compareShown = center is CenterView.Compare || (center as? CenterView.Diff)?.back is CenterView.Compare
+            if (compareShown) {
+                Box(Modifier.fillMaxSize().background(Camouflage.colors.surface)) {
+                    CompareDestination(CompareRoute(folder), session, shared, data.compare, data.commits, data.diffs)
+                }
+            }
             if (center is CenterView.Diff) {
                 Box(Modifier.fillMaxSize().background(Camouflage.colors.surface)) {
                     DiffDestination(DiffRoute(folder), shared, data.diffs, data.settings)

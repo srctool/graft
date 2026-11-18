@@ -63,7 +63,9 @@ import com.srctool.graft.core.ui.l10n.graftText
 import com.srctool.graft.core.ui.theme.Graft
 import com.srctool.graft.core.ui.theme.GraftIcon
 import com.srctool.graft.core.ui.theme.graftIcon
+import com.srctool.graft.data.git.api.models.DiffTarget
 import com.srctool.graft.feature.graph.presentation.details.StatusBadge
+import com.srctool.graft.presentation.view.CenterView
 import com.srctool.sinew.exception.displayMessage
 import com.srctool.sinew.models.SinewException
 
@@ -176,7 +178,12 @@ private fun Breadcrumb(state: DiffScreenState, onEvent: (DiffScreenEvent) -> Uni
     val colors = Camouflage.colors
     val tokens = Graft.tokens
     val density = tokens.density
-    val back = graftText("diff.back", "Back to the graph")
+    val back =
+        if (state.back is CenterView.Compare) {
+            graftText("diff.backCompare", "Back to Compare")
+        } else {
+            graftText("diff.back", "Back to the graph")
+        }
     Row(
         Modifier
             .fillMaxWidth()
@@ -186,8 +193,9 @@ private fun Breadcrumb(state: DiffScreenState, onEvent: (DiffScreenEvent) -> Uni
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(4.dp),
     ) {
+        val toCompare = state.back is CenterView.Compare
         CamoButton(
-            graftText("diff.graph", "Graph"),
+            if (toCompare) graftText("diff.compare", "Compare") else graftText("diff.graph", "Graph"),
             onClick = { onEvent(DiffScreenEvent.Back) },
             modifier = Modifier.height(density.control).semantics { contentDescription = back },
             appearance = Appearance.Ghost,
@@ -199,11 +207,21 @@ private fun Breadcrumb(state: DiffScreenState, onEvent: (DiffScreenEvent) -> Uni
                 )
             },
         )
-        val commit = state.commit
-        if (commit != null) {
+        val what =
+            when (val target = state.target) {
+                is DiffTarget.Commit -> "${target.id.short()} ${state.subject}"
+
+                // Compare's diffs: git's own notation names them.
+                is DiffTarget.Since -> "${shortRev(target.base)}...${shortRev(target.tip)}"
+
+                is DiffTarget.Between -> "${shortRev(target.from)} ${shortRev(target.to)}"
+
+                null -> null
+            }
+        if (what != null) {
             CamoText("›", style = tokens.dense, color = colors.onSurfaceVariant)
             CamoText(
-                "${commit.short()} ${state.subject}",
+                what,
                 style = tokens.dense,
                 color = colors.onSurfaceVariant,
                 maxLines = 1,
@@ -436,4 +454,13 @@ private fun OutputDialog(error: Throwable?, onEvent: (DiffScreenEvent) -> Unit) 
             BasicText(output.stderr, style = Graft.tokens.code.copy(color = Camouflage.colors.onSurface))
         }
     }
+}
+
+/** A revision as the breadcrumb shows it: a ref without its namespace, a commit id as 7 characters. */
+internal fun shortRev(rev: String): String = when {
+    rev.startsWith("refs/heads/") -> rev.removePrefix("refs/heads/")
+    rev.startsWith("refs/remotes/") -> rev.removePrefix("refs/remotes/")
+    rev.startsWith("refs/tags/") -> rev.removePrefix("refs/tags/")
+    rev.length >= 40 && rev.all { it in '0'..'9' || it in 'a'..'f' } -> rev.take(7)
+    else -> rev
 }

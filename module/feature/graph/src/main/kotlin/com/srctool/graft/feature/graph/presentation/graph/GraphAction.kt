@@ -27,6 +27,11 @@ internal sealed interface GraphAction {
     /** A key that moves the selection: [pick] reads the state as it is when this runs, so repeats add up. */
     class SelectBy(val pick: (GraphState) -> Selection?) : GraphAction
 
+    /** Marks [selection]'s commit (or the selected one, when null), or unmarks it. */
+    data class Mark(val selection: Selection?) : GraphAction
+
+    data object CompareMarked : GraphAction
+
     /** Alt+→: the selected merge's next other parent. */
     data object OtherParent : GraphAction
 

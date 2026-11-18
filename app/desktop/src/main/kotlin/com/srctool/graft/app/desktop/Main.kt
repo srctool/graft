@@ -67,6 +67,9 @@ private fun GraphWindow(repository: String) {
         session = opened
     }
     val current = session ?: return
-    val data = remember { RepositoryData(git.commits, git.stashes, git.diffs, app.repositoryUiState, app.settings) }
+    val data =
+        remember {
+            RepositoryData(git.commits, git.compare, git.stashes, git.diffs, app.repositoryUiState, app.settings)
+        }
     RepositoryScreen(current, data)
 }

@@ -26,6 +26,7 @@ import com.srctool.graft.feature.graph.presentation.graph.GraphState.Phase
 import com.srctool.graft.presentation.session.RepoSnapshot
 import com.srctool.graft.presentation.session.RepositorySession
 import com.srctool.graft.presentation.session.SnapshotPart
+import com.srctool.graft.presentation.view.CenterView
 import com.srctool.graft.presentation.view.RepositoryViewState
 import com.srctool.graft.presentation.view.ViewSelection
 import com.srctool.sinew.models.Result
@@ -124,6 +125,12 @@ internal class GraphViewModel(
 
             GraphEvent.OpenSelected -> GraphAction.Open
 
+            is GraphEvent.Marked -> GraphAction.Mark(event.selection)
+
+            GraphEvent.MarkSelected -> GraphAction.Mark(null)
+
+            GraphEvent.CompareMarked -> GraphAction.CompareMarked
+
             GraphEvent.CopyHash -> GraphAction.CopyHash
 
             is GraphEvent.OutputShown -> GraphAction.ShowOutput(event.shown)
@@ -194,6 +201,18 @@ internal class GraphViewModel(
                 emitEffect(GraphEffect.OpenCommit(it))
             }
 
+            is GraphAction.Mark -> {
+                val id = commitAt(currentState, action.selection ?: currentState.selection) ?: return
+                shared.marked.value = if (shared.marked.value == id) null else id
+            }
+
+            GraphAction.CompareMarked -> {
+                // A is the selected commit (picked first), B the marked one (Task 15 wireframe, question 1).
+                val a = commitAt(currentState, currentState.selection) ?: return
+                val b = shared.marked.value ?: return
+                if (a != b) shared.center.value = CenterView.Compare(a.hex, b.hex)
+            }
+
             GraphAction.WriteCommitGraph -> writeCommitGraph()
 
             GraphAction.DeclineCommitGraph -> {
@@ -228,6 +247,7 @@ internal class GraphViewModel(
                 }
             }
         }
+        viewModelScope.launch { shared.marked.collect { id -> setState { copy(marked = id) } } }
         // Another pane (the left panel, a parent link in the details) selects a commit: show it here.
         viewModelScope.launch {
             shared.selection.collect { selected -> follow(selected) }

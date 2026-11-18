@@ -19,6 +19,8 @@ internal data class DetailsState(
     val rows: List<FileRow> = emptyList(),
     /** The focused file or folder row. */
     val focus: String? = null,
+    /** A second commit marked in the graph: the panel offers to compare it with this one. */
+    val marked: com.srctool.graft.data.git.api.models.ObjectId? = null,
     /** "now" for relative times, in epoch seconds. */
     val now: Long = 0,
 ) {
@@ -47,6 +49,9 @@ internal sealed interface DetailsEvent {
 
     data object CopyHash : DetailsEvent
 
+    /** Compare with the selected commit as A and the marked one as B. */
+    data object CompareMarked : DetailsEvent
+
     data object Retry : DetailsEvent
 
     data class OutputShown(val shown: Boolean) : DetailsEvent
@@ -66,6 +71,8 @@ internal sealed interface DetailsAction {
     data class Parent(val index: Int) : DetailsAction
 
     data object Copy : DetailsAction
+
+    data object Compare : DetailsAction
 
     data object Reload : DetailsAction
 }
