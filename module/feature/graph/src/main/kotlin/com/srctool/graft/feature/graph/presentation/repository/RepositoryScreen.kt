@@ -29,6 +29,8 @@ import com.srctool.graft.feature.graph.presentation.diff.DiffDestination
 import com.srctool.graft.feature.graph.presentation.diff.DiffRoute
 import com.srctool.graft.feature.graph.presentation.graph.GraphDestination
 import com.srctool.graft.feature.graph.presentation.graph.GraphRoute
+import com.srctool.graft.feature.graph.presentation.operations.OperationsDestination
+import com.srctool.graft.feature.graph.presentation.operations.OperationsRoute
 import com.srctool.graft.presentation.session.RepositorySession
 import com.srctool.graft.presentation.view.CenterView
 import com.srctool.graft.presentation.view.RepositoryViewState
@@ -61,6 +63,15 @@ public fun RepositoryScreen(session: RepositorySession) {
             ToolWindow(DETAILS, graftText("details.title", "Details"), GraftIcon.INFORMATION, DockSide.RIGHT) {
                 DetailsDestination(DetailsRoute(folder), session, shared)
             },
+            // Closed until opened from its stripe icon (Task 16 wireframe).
+            ToolWindow(
+                OPERATIONS,
+                graftText("operations.title", "Operations"),
+                GraftIcon.RECENTLY_VIEWED,
+                DockSide.BOTTOM,
+            ) {
+                OperationsDestination(OperationsRoute(folder), session, shared)
+            },
         )
     DockLayout(dock, windows) {
         Box(Modifier.fillMaxSize()) {
@@ -83,3 +94,4 @@ public fun RepositoryScreen(session: RepositorySession) {
 
 private const val BRANCHES = "branches"
 private const val DETAILS = "details"
+private const val OPERATIONS = "operations"
