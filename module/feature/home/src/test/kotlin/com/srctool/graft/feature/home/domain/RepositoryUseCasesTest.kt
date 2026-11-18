@@ -16,17 +16,25 @@ import com.srctool.graft.data.git.api.models.CloneRequest
 import com.srctool.graft.data.git.api.models.RepositoryLocation
 import com.srctool.graft.data.git.api.models.RepositorySummary
 import com.srctool.graft.data.git.api.repositories.RepositoryAccessRepository
+import com.srctool.graft.feature.home.domain.api.models.InitFile
+import com.srctool.graft.feature.home.domain.api.models.InitOptions
+import com.srctool.graft.feature.home.domain.api.models.InitOutcome
+import com.srctool.graft.feature.home.domain.api.models.InitStep
 import com.srctool.graft.feature.home.domain.api.models.OpenOutcome
 import com.srctool.graft.feature.home.domain.api.models.ScannedRepository
+import com.srctool.graft.feature.home.domain.implementation.usecases.BundledInitTemplates
 import com.srctool.graft.feature.home.domain.implementation.usecases.GitCloneRepositoryUseCase
 import com.srctool.graft.feature.home.domain.implementation.usecases.GitInitRepositoryUseCase
 import com.srctool.graft.feature.home.domain.implementation.usecases.GitOpenRepositoryUseCase
+import com.srctool.graft.feature.home.domain.implementation.usecases.GitRepositorySummaryUseCase
 import com.srctool.graft.feature.home.domain.implementation.usecases.GitScanFolderUseCase
 import com.srctool.sinew.models.ErrorMessage
 import com.srctool.sinew.models.ExceptionLayer
 import com.srctool.sinew.models.Result
 import com.srctool.sinew.models.SinewException
 import com.srctool.sinew.models.getOrThrow
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.toList
@@ -40,6 +48,7 @@ import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 import kotlin.test.assertIs
 import kotlin.test.assertNull
+import kotlin.test.assertTrue
 
 class RepositoryUseCasesTest {
     @TempDir
@@ -147,6 +156,107 @@ class RepositoryUseCasesTest {
         assertEquals(listOf(target), known.opened)
     }
 
+    private val bundled = BundledInitTemplates
+
+    @Test
+    fun `create writes the chosen files, then makes the first commit from exactly those`() = runTest {
+        val folder = temp.resolve("made")
+        val options =
+            InitOptions(
+                folder,
+                "main",
+                gitignore = "Kotlin",
+                license = "MIT",
+                holder = "Dwiki",
+                readme = true,
+                firstCommit = true,
+                year = 2026,
+            )
+        val outcome = GitInitRepositoryUseCase(access, known).create(options)
+        assertIs<InitOutcome.Created>(outcome)
+        assertEquals(bundled.gitignore("Kotlin"), Files.readString(folder.resolve(".gitignore")))
+        val license = Files.readString(folder.resolve("LICENSE"))
+        assertTrue(license.startsWith("MIT License\n\nCopyright (c) 2026 Dwiki"), license.take(80))
+        assertEquals("# made\n", Files.readString(folder.resolve("README.md")))
+        assertEquals(
+            listOf(Triple(folder, listOf(".gitignore", "LICENSE", "README.md"), "Initial commit")),
+            access.commits,
+        )
+        assertEquals(listOf(folder), known.opened)
+    }
+
+    @Test
+    fun `create without files makes no commit, and never overwrites a file that's there`() = runTest {
+        val folder = Files.createDirectories(temp.resolve("existing"))
+        Files.writeString(folder.resolve("README.md"), "mine\n")
+        val none = GitInitRepositoryUseCase(access, known).create(InitOptions(folder, firstCommit = true))
+        assertIs<InitOutcome.Created>(none)
+        assertTrue(access.commits.isEmpty(), "nothing was written, so there's nothing to commit")
+
+        val partial = GitInitRepositoryUseCase(
+            access,
+            known,
+        ).create(InitOptions(folder, readme = true, firstCommit = true))
+        val step = assertIs<InitOutcome.Partial>(partial)
+        assertEquals(InitStep.Writing(InitFile.README), step.step)
+        assertEquals("mine\n", Files.readString(folder.resolve("README.md")))
+        assertTrue(access.commits.isEmpty())
+    }
+
+    @Test
+    fun `a failed commit leaves the repository and its files, and a failed init is a failure`() = runTest {
+        access.commitFails = true
+        val folder = temp.resolve("commit-fails")
+        val partial = GitInitRepositoryUseCase(
+            access,
+            known,
+        ).create(InitOptions(folder, readme = true, firstCommit = true))
+        assertEquals(InitStep.Committing, assertIs<InitOutcome.Partial>(partial).step)
+        assertTrue(Files.exists(folder.resolve("README.md")))
+        assertEquals(listOf(folder), known.opened, "the repository exists, so it's listed")
+
+        access.initFails = true
+        val failed = GitInitRepositoryUseCase(access, known).create(InitOptions(temp.resolve("nope")))
+        assertIs<InitOutcome.Failed>(failed)
+    }
+
+    @Test
+    fun `every bundled template is where the lists say, and nothing bundled is left out`() {
+        val root = Paths.get(BundledInitTemplates::class.java.classLoader.getResource("graft/home")!!.toURI())
+        val files = { dir: String ->
+            Files.list(root.resolve(dir)).use { s -> s.map { it.fileName.toString() }.toList().sorted() }
+        }
+        assertEquals(bundled.gitignores.map { "$it.gitignore" }.sorted(), files("gitignore"))
+        assertEquals(bundled.licenses.map { "${it.id}.txt" }.sorted(), files("licenses"))
+        // No Windows line endings. The macOS template's two lone CRs stay: `Icon[\r]` is how it names the "Icon\r" file.
+        bundled.gitignores.forEach {
+            assertTrue(bundled.gitignore(it)!!.isNotBlank() && "\r\n" !in bundled.gitignore(it)!!, it)
+        }
+        assertEquals(2, bundled.gitignore("macOS")!!.count { it == '\r' })
+        assertNull(bundled.gitignore("../../etc/passwd"))
+        assertNull(bundled.license("Not-A-License", 2026, "x"))
+    }
+
+    @Test
+    fun `licenses fill in their year and holder, and leave the others as they are`() {
+        assertTrue(bundled.license("BSD-3-Clause", 2026, "Ann")!!.startsWith("Copyright (c) 2026 Ann"))
+        assertTrue(bundled.license("ISC", 2026, "Ann")!!.contains("Copyright 2026 Ann"))
+        assertTrue(bundled.license("GPL-3.0-or-later", 2026, "Ann")!!.contains("GNU GENERAL PUBLIC LICENSE"))
+        bundled.licenses.forEach { l ->
+            val text = bundled.license(l.id, 2026, "Ann")!!
+            assertEquals(l.needsHolder, "Ann" in text, l.id)
+            assertTrue("<year>" !in text && "<owner>" !in text && "<copyright holders>" !in text, l.id)
+        }
+    }
+
+    @Test
+    fun `summaries run four at a time however many rows ask`() = runTest {
+        access.summaryDelayMs = 50
+        val summaries = GitRepositorySummaryUseCase(access)
+        (1..12).map { async { summaries.summarize(temp.resolve("r$it")) } }.awaitAll()
+        assertEquals(4, access.mostSummariesAtOnce.get())
+    }
+
     @Test
     fun `init records the new repository`() = runTest {
         val folder = temp.resolve("new")
@@ -169,6 +279,12 @@ private class FakeAccess : RepositoryAccessRepository {
     val errors = HashMap<Path, SinewException>()
     val trusted = ArrayList<String>()
     val inits = ArrayList<Pair<Path, String>>()
+    val commits = ArrayList<Triple<Path, List<String>, String>>()
+    var commitFails = false
+    var initFails = false
+    var summaryDelayMs = 0L
+    private val running = java.util.concurrent.atomic.AtomicInteger()
+    val mostSummariesAtOnce = java.util.concurrent.atomic.AtomicInteger()
     var trustFails = false
     var cloneSteps: List<CloneProgress> = emptyList()
     var cloneFails = false
@@ -184,11 +300,26 @@ private class FakeAccess : RepositoryAccessRepository {
         return Result.Failure(errors[folder] ?: FakeGitError(GraftCodes.Types.NOT_FOUND))
     }
 
-    override suspend fun summary(workTree: Path): Result<RepositorySummary> = error("not used")
+    override suspend fun summary(workTree: Path): Result<RepositorySummary> {
+        val now = running.incrementAndGet()
+        mostSummariesAtOnce.accumulateAndGet(now, ::maxOf)
+        kotlinx.coroutines.delay(summaryDelayMs)
+        running.decrementAndGet()
+        return Result.Success(
+            RepositorySummary(com.srctool.graft.data.git.api.models.Head.Branch("main", null), null, false),
+        )
+    }
 
     override suspend fun init(folder: Path, defaultBranch: String): Result<RepositoryLocation> {
         inits.add(folder to defaultBranch)
+        if (initFails) return Result.Failure(FakeGitError(GraftCodes.Types.EXIT))
+        Files.createDirectories(folder)
         return Result.Success(RepositoryLocation(folder, folder.resolve(".git"), folder.resolve(".git")))
+    }
+
+    override suspend fun initialCommit(workTree: Path, paths: List<String>, message: String): Result<Unit> {
+        commits.add(Triple(workTree, paths, message))
+        return if (commitFails) Result.Failure(FakeGitError(GraftCodes.Types.EXIT)) else Result.Success(Unit)
     }
 
     override fun clone(request: CloneRequest): Flow<CloneProgress> = flow {

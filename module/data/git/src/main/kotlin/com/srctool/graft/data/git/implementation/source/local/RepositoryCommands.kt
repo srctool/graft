@@ -206,3 +206,25 @@ internal class TrustCommand(folder: String) : GitCommand<Unit>() {
 
     override fun parse(stdout: ByteArray) = Unit
 }
+
+/** `git add -- <paths>` for Init's first commit: exactly the files Init wrote, named literally, never a pattern. */
+internal class StagePathsCommand(paths: List<String>) : GitCommand<Unit>() {
+    init {
+        require(paths.isNotEmpty()) { "nothing to stage" }
+    }
+
+    override val function = "STAG"
+    override val mutates = true
+    override val args = listOf("add", "--") + paths.map { ":(literal)$it" }
+
+    override fun parse(stdout: ByteArray) = Unit
+}
+
+/** `git commit -m <message>` for Init's first commit. The message is one argument, never a shell string. */
+internal class FirstCommitCommand(message: String) : GitCommand<Unit>() {
+    override val function = "CMIT"
+    override val mutates = true
+    override val args = listOf("commit", "--quiet", "-m", message)
+
+    override fun parse(stdout: ByteArray) = Unit
+}

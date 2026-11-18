@@ -11,12 +11,19 @@ import com.srctool.graft.data.app.api.repositories.WorkspaceRepository
 import com.srctool.graft.data.git.api.models.CloneProgress
 import com.srctool.graft.data.git.api.models.CloneRequest
 import com.srctool.graft.data.git.api.models.RepositoryLocation
+import com.srctool.graft.data.git.api.models.RepositorySummary
 import com.srctool.graft.data.git.api.repositories.RepositoryAccessRepository
+import com.srctool.graft.feature.home.domain.api.models.InitFile
+import com.srctool.graft.feature.home.domain.api.models.InitOptions
+import com.srctool.graft.feature.home.domain.api.models.InitOutcome
+import com.srctool.graft.feature.home.domain.api.models.InitStep
 import com.srctool.graft.feature.home.domain.api.models.OpenOutcome
 import com.srctool.graft.feature.home.domain.api.models.ScannedRepository
 import com.srctool.graft.feature.home.domain.api.usecases.CloneRepositoryUseCase
 import com.srctool.graft.feature.home.domain.api.usecases.InitRepositoryUseCase
+import com.srctool.graft.feature.home.domain.api.usecases.InitTemplates
 import com.srctool.graft.feature.home.domain.api.usecases.OpenRepositoryUseCase
+import com.srctool.graft.feature.home.domain.api.usecases.RepositorySummaryUseCase
 import com.srctool.graft.feature.home.domain.api.usecases.ScanFolderUseCase
 import com.srctool.sinew.models.Result
 import com.srctool.sinew.models.SinewException
@@ -24,10 +31,13 @@ import com.srctool.sinew.models.map
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.onEach
+import kotlinx.coroutines.sync.Semaphore
+import kotlinx.coroutines.sync.withPermit
 import kotlinx.coroutines.withContext
 import java.io.IOException
 import java.nio.file.Files
 import java.nio.file.Path
+import java.nio.file.StandardOpenOption
 
 /** The repository's root as a tab opens it: the working tree, or the git folder of a bare repository. */
 private val RepositoryLocation.root: Path get() = workTree ?: gitDir
@@ -111,10 +121,56 @@ internal class GitCloneRepositoryUseCase(
 internal class GitInitRepositoryUseCase(
     private val access: RepositoryAccessRepository,
     private val known: KnownRepositoryRepository,
+    private val templates: InitTemplates = BundledInitTemplates,
 ) : InitRepositoryUseCase {
     override suspend fun init(folder: Path, defaultBranch: String): Result<RepositoryLocation> =
         access.init(folder, defaultBranch).map { location ->
             known.opened(location.root)
             location
         }
+
+    override suspend fun create(options: InitOptions): InitOutcome {
+        val location =
+            when (val r = init(options.folder, options.defaultBranch)) {
+                is Result.Success -> r.data
+                is Result.Failure -> return InitOutcome.Failed(r.error)
+            }
+        val root = location.workTree ?: return InitOutcome.Created(location)
+        val written = ArrayList<String>()
+        for (file in options.files) {
+            val text =
+                when (file) {
+                    InitFile.GITIGNORE -> templates.gitignore(options.gitignore.orEmpty())
+                    InitFile.LICENSE -> templates.license(options.license.orEmpty(), options.year, options.holder)
+                    InitFile.README -> "# ${root.fileName}\n"
+                }
+                    ?: return InitOutcome.Partial(
+                        location,
+                        InitStep.Writing(file),
+                        IllegalStateException("${file.fileName} has no template"),
+                    )
+            try {
+                // CREATE_NEW: a file that's already there is never overwritten.
+                withContext(Dispatchers.IO) {
+                    Files.writeString(root.resolve(file.fileName), text, Charsets.UTF_8, StandardOpenOption.CREATE_NEW)
+                }
+                written += file.fileName
+            } catch (e: IOException) {
+                return InitOutcome.Partial(location, InitStep.Writing(file), e)
+            }
+        }
+        if (options.firstCommit && written.isNotEmpty()) {
+            val committed = access.initialCommit(root, written, "Initial commit")
+            if (committed is Result.Failure) return InitOutcome.Partial(location, InitStep.Committing, committed.error)
+        }
+        return InitOutcome.Created(location)
+    }
+}
+
+internal class GitRepositorySummaryUseCase(private val access: RepositoryAccessRepository, limit: Int = 4) :
+    RepositorySummaryUseCase {
+    private val permits = Semaphore(limit)
+
+    override suspend fun summarize(workTree: Path): Result<RepositorySummary> =
+        permits.withPermit { access.summary(workTree) }
 }

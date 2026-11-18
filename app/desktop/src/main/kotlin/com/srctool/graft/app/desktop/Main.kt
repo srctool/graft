@@ -22,6 +22,7 @@ import com.srctool.graft.core.watcher.FileWatcher
 import com.srctool.graft.data.git.api.repositories.RefRepository
 import com.srctool.graft.data.git.api.repositories.RepositoryAccessRepository
 import com.srctool.graft.feature.graph.presentation.repository.RepositoryScreen
+import com.srctool.graft.navigation.TemporaryHost
 import com.srctool.sinew.models.Result
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
@@ -43,7 +44,12 @@ fun main() {
             state = rememberWindowState(width = 1280.dp, height = 900.dp),
         ) {
             GraftTheme {
-                if (repository != null) GraphWindow(repository)
+                if (repository != null) {
+                    GraphWindow(repository)
+                } else {
+                    // Home first (G1 Task 17); Task 20's main window replaces this host.
+                    TemporaryHost { root -> GraphWindow(root.toString()) }
+                }
             }
         }
     }

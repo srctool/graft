@@ -27,8 +27,17 @@ public interface RepositoryAccessRepository {
     public suspend fun init(folder: Path, defaultBranch: String = "main"): Result<RepositoryLocation>
 
     /**
+     * Init's first commit: stages exactly [paths] (relative to [workTree], taken literally) and commits them with
+     * [message] (`GIT-R-STAG-…`, `GIT-R-CMIT-…`). The author is the identity git reads for the repository, so a missing
+     * one fails with git's own message. A brand-new repository has no other writer, so this doesn't use a session's
+     * write queue.
+     */
+    public suspend fun initialCommit(workTree: Path, paths: List<String>, message: String): Result<Unit>
+
+    /**
      * Clones as the flow is collected: git's progress, then [CloneProgress.Finished]. A failure is thrown to the
-     * collector as `GitException` (`GIT-R-CLON-…`); cancelling stops git. Graft's environment applies, so git never
+     * collector as `GitException` (`GIT-R-CLON-…`); cancelling stops git and everything it started, and removes the
+     * folder this clone created (a folder that was there before is left as it was). Graft's environment applies, so git never
      * prompts: a credential helper may answer, nothing else.
      */
     public fun clone(request: CloneRequest): Flow<CloneProgress>

@@ -20,6 +20,9 @@ dependencies {
     implementation(projects.module.data.git)
     implementation(projects.module.data.app)
     implementation(projects.module.data.hosting)
+    // ADR-28: navigation re-exports the Koin modules of the features it hosts.
+    api(platform(libs.koin.bom))
+    api(libs.koin.core)
     implementation(libs.navigation3.ui)
     implementation(libs.lifecycle.viewmodel.navigation3)
 }

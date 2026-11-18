@@ -13,6 +13,7 @@ import com.srctool.graft.core.watcher.NativeFileWatcher
 import com.srctool.graft.data.app.di.appDataKoin
 import com.srctool.graft.data.git.di.gitDataKoin
 import com.srctool.graft.feature.graph.di.graphFeatureKoin
+import com.srctool.graft.navigation.navigationKoin
 import org.koin.core.module.Module
 import org.koin.dsl.module
 
@@ -26,4 +27,4 @@ internal val appKoin: Module =
     }
 
 /** Every Koin module the desktop app starts with: its own, the data modules', the features'. */
-internal val desktopModules: List<Module> = listOf(appKoin, gitDataKoin, appDataKoin, graphFeatureKoin)
+internal val desktopModules: List<Module> = listOf(appKoin, gitDataKoin, appDataKoin, graphFeatureKoin, navigationKoin)
