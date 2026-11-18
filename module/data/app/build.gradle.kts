@@ -7,6 +7,10 @@ plugins {
 }
 
 dependencies {
+    // ADR-28: the di package's Koin module.
+    api(platform(libs.koin.bom))
+    api(libs.koin.core)
+    testImplementation(libs.koin.test)
     // The api returns Sinew's Result and stores its models as JSON through core:preference's versioned files.
     api(platform(libs.sinew.bom))
     api(libs.sinew.models)

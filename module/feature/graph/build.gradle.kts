@@ -14,6 +14,11 @@ dependencies {
     implementation(projects.module.core.exception)
     implementation(platform(libs.sinew.bom))
     implementation(libs.sinew.viewmodel)
+    // ADR-28: the di package's Koin module, and view models through koinViewModel.
+    implementation(platform(libs.koin.bom))
+    implementation(libs.koin.compose)
+    implementation(libs.koin.compose.viewmodel)
+    testImplementation(libs.koin.test)
     testImplementation(libs.kotlinx.coroutines.test)
 }
 

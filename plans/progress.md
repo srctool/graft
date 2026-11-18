@@ -331,3 +331,15 @@ Ruling: with two commits picked, A is the selected commit and B the marked one (
 Ruling: Compare's section headers aren't upper-cased like the left panel's, since they hold branch names and UX Writing keeps names as git has them — cost if wrong: none.
 Ruling: Compare's commit lists show short hash, subject, initials and age, without graph lanes (the wireframe's rows "as in the graph, without the lanes") — cost if wrong: lanes would need a layout per list.
 Ruling: the 4 new screenshots get their Linux goldens from the first CI run, as before — cost if wrong: one red run.
+ADR-28 (Koin for dependency injection) drafted in plans/adr-28-koin.md (2026-11-18), at the author's request to use DI, to land in PR #149: Koin 4.2.2, constructor injection kept, Koin modules in data and feature `di` packages, view models through koinViewModel with per-tab objects as parameters, verify() tests; waiting for the author's review before any Koin code (Libraries lists no DI framework today).
+ADR-28 (Koin): accepted by the author (2026-11-18); the notes (Decisions, Architecture's DI row and feature layout, Libraries) are the author's to edit.
+ADR-28: built in PR #149 (2026-11-18):
+- **Libraries:** `koin-bom` 4.2.2 with `koin-core`, `koin-compose`, `koin-compose-viewmodel` and `koin-test`.
+- **Data:** `gitDataKoin` and `appDataKoin` in the data modules' `di` packages, binding every `api` interface through the existing `GitDataModule` / `AppDataModule`. Tests and the CLI still wire by hand.
+- **Feature:** `graphFeatureKoin` in the graph feature's new `di` package: the four use cases as `factory`, and the five view models as `viewModel` with their per-tab objects as parameters (folder, session, shared state).
+- **Destinations** get their view models through `koinViewModel` in a store of their own (`rememberDestinationOwner`). The repository screen drops `RepositoryData`.
+- **`:app:desktop`:** `appKoin` (runner, folders, write queue, file watcher), and `startKoin { modules(desktopModules) }` in `main`. The measurement test starts the same modules with the sandbox's runner.
+- **Tests:** `KoinWiringTest` resolves every repository and every view model with its destination's parameters, against temp folders and a sandboxed runner. The graph screen ran through Koin end to end via the measurement test on a scratch repository. `./gradlew check` passes.
+Ruling: the ADR's `verify()` became a resolution test (`KoinWiringTest`), which builds each binding and view model with the real parameters rather than checking constructor types. It also catches a definition whose lambda asks for the wrong type — cost if wrong: none; `verify()` can be added beside it.
+Ruling: Koin is started globally in `main` (`startKoin`), not with the `KoinApplication` composable, so the app services and the window share one container — cost if wrong: Task 20 moves it if the host needs a scoped container.
+Ruling: the data modules expose `koin-core` as `api` (their `di` packages return Koin `Module`s); the CLI doesn't start Koin yet — cost if wrong: koin-core on the CLI's classpath, unused until it switches.

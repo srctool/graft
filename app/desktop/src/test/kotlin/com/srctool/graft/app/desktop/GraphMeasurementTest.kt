@@ -11,6 +11,7 @@ import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.performScrollToIndex
 import androidx.compose.ui.test.runDesktopComposeUiTest
 import com.srctool.graft.app.desktop.session.GitRepositorySession
+import com.srctool.graft.core.git.GitRunner
 import com.srctool.graft.core.git.WriteQueue
 import com.srctool.graft.core.git.testing.GitSandbox
 import com.srctool.graft.core.ui.theme.GraftTheme
@@ -23,6 +24,8 @@ import com.srctool.graft.data.app.api.models.SavedStatus
 import com.srctool.graft.data.app.api.repositories.RepositoryUiStateRepository
 import com.srctool.graft.data.git.api.models.LogScope
 import com.srctool.graft.data.git.di.GitDataModule
+import com.srctool.graft.data.git.di.gitDataKoin
+import com.srctool.graft.feature.graph.di.graphFeatureKoin
 import com.srctool.graft.feature.graph.presentation.graph.GraphDestination
 import com.srctool.graft.feature.graph.presentation.graph.GraphRoute
 import com.srctool.graft.presentation.view.RepositoryViewState
@@ -39,6 +42,9 @@ import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.Assumptions.assumeTrue
+import org.koin.core.context.startKoin
+import org.koin.core.context.stopKoin
+import org.koin.dsl.module
 import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.Paths
@@ -132,6 +138,8 @@ class GraphMeasurementTest {
             }
         }
 
+        // The app's Koin wiring (ADR-28), with the sandbox's runner in place of the app's own.
+        startKoin { modules(module { single<GitRunner> { sandbox.runner() } }, gitDataKoin, graphFeatureKoin) }
         runDesktopComposeUiTest(1280, 900, testTimeout = 30.minutes) {
             val opened = System.nanoTime()
             setContent {
@@ -139,8 +147,6 @@ class GraphMeasurementTest {
                     GraphDestination(
                         GraphRoute((location.workTree ?: location.gitDir).toString()),
                         session,
-                        git.commits,
-                        git.stashes,
                         RepositoryViewState(location.commonDir, ui),
                     )
                 }
@@ -166,5 +172,6 @@ class GraphMeasurementTest {
             report("scroll.stepMaxMs", "%.2f".format(times.last() / 1e6))
         }
         scope.cancel()
+        stopKoin()
     }
 }

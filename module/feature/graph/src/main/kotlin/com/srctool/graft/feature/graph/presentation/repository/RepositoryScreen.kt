@@ -19,11 +19,6 @@ import com.srctool.graft.core.ui.components.ToolWindow
 import com.srctool.graft.core.ui.l10n.graftText
 import com.srctool.graft.core.ui.theme.GraftIcon
 import com.srctool.graft.data.app.api.repositories.RepositoryUiStateRepository
-import com.srctool.graft.data.app.api.repositories.SettingsRepository
-import com.srctool.graft.data.git.api.repositories.CommitRepository
-import com.srctool.graft.data.git.api.repositories.CompareRepository
-import com.srctool.graft.data.git.api.repositories.DiffRepository
-import com.srctool.graft.data.git.api.repositories.StashRepository
 import com.srctool.graft.feature.graph.presentation.branches.BranchesDestination
 import com.srctool.graft.feature.graph.presentation.branches.BranchesRoute
 import com.srctool.graft.feature.graph.presentation.compare.CompareDestination
@@ -37,16 +32,7 @@ import com.srctool.graft.feature.graph.presentation.graph.GraphRoute
 import com.srctool.graft.presentation.session.RepositorySession
 import com.srctool.graft.presentation.view.CenterView
 import com.srctool.graft.presentation.view.RepositoryViewState
-
-/** What one repository tab's screens need from the data layer. */
-public class RepositoryData(
-    public val commits: CommitRepository,
-    public val compare: CompareRepository,
-    public val stashes: StashRepository,
-    public val diffs: DiffRepository,
-    public val uiState: RepositoryUiStateRepository,
-    public val settings: SettingsRepository,
-)
+import org.koin.compose.koinInject
 
 /**
  * Temporary (G1 Task 14, question 4): one repository's left panel, graph or diff, and commit details in a
@@ -54,10 +40,11 @@ public class RepositoryData(
  * keeps the screens. The graph stays composed under a diff, so going back keeps its selection and scroll.
  */
 @Composable
-public fun RepositoryScreen(session: RepositorySession, data: RepositoryData) {
+public fun RepositoryScreen(session: RepositorySession) {
     val location = session.location
     val folder = (location.workTree ?: location.gitDir).toString()
-    val shared = remember(location) { RepositoryViewState(location.commonDir, data.uiState) }
+    val uiState = koinInject<RepositoryUiStateRepository>()
+    val shared = remember(location) { RepositoryViewState(location.commonDir, uiState) }
     val dock =
         remember(location) {
             DockLayoutState().apply {
@@ -69,25 +56,25 @@ public fun RepositoryScreen(session: RepositorySession, data: RepositoryData) {
     val windows =
         listOf(
             ToolWindow(BRANCHES, graftText("branches.title", "Branches"), GraftIcon.BRANCH, DockSide.LEFT) {
-                BranchesDestination(BranchesRoute(folder), session, shared, data.stashes)
+                BranchesDestination(BranchesRoute(folder), session, shared)
             },
             ToolWindow(DETAILS, graftText("details.title", "Details"), GraftIcon.INFORMATION, DockSide.RIGHT) {
-                DetailsDestination(DetailsRoute(folder), session, shared, data.commits)
+                DetailsDestination(DetailsRoute(folder), session, shared)
             },
         )
     DockLayout(dock, windows) {
         Box(Modifier.fillMaxSize()) {
-            GraphDestination(GraphRoute(folder), session, data.commits, data.stashes, shared)
+            GraphDestination(GraphRoute(folder), session, shared)
             // Compare stays composed under a diff opened from it, so going back keeps its lists.
             val compareShown = center is CenterView.Compare || (center as? CenterView.Diff)?.back is CenterView.Compare
             if (compareShown) {
                 Box(Modifier.fillMaxSize().background(Camouflage.colors.surface)) {
-                    CompareDestination(CompareRoute(folder), session, shared, data.compare, data.commits, data.diffs)
+                    CompareDestination(CompareRoute(folder), session, shared)
                 }
             }
             if (center is CenterView.Diff) {
                 Box(Modifier.fillMaxSize().background(Camouflage.colors.surface)) {
-                    DiffDestination(DiffRoute(folder), shared, data.diffs, data.settings)
+                    DiffDestination(DiffRoute(folder), shared)
                 }
             }
         }
