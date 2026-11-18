@@ -17,6 +17,7 @@ dependencies {
     implementation(libs.compose.compiler.gradle.plugin)
     implementation(libs.compose.gradle.plugin)
     implementation(libs.spotless.gradle.plugin)
+    implementation(libs.license.report.gradle.plugin)
 
     testImplementation(kotlin("test"))
     testImplementation(platform(libs.junit.bom))

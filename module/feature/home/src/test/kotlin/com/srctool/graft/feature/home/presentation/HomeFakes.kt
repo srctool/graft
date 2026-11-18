@@ -4,21 +4,26 @@
 package com.srctool.graft.feature.home.presentation
 
 import com.srctool.graft.core.exception.CommandOutput
+import com.srctool.graft.data.app.api.models.AppSettings
 import com.srctool.graft.data.app.api.models.KnownRepository
 import com.srctool.graft.data.app.api.models.Saved
 import com.srctool.graft.data.app.api.models.SavedStatus
 import com.srctool.graft.data.app.api.models.Workspace
 import com.srctool.graft.data.app.api.repositories.KnownRepositoryRepository
+import com.srctool.graft.data.app.api.repositories.SettingsRepository
 import com.srctool.graft.data.app.api.repositories.WorkspaceRepository
 import com.srctool.graft.data.git.api.models.CloneProgress
 import com.srctool.graft.data.git.api.models.CloneRequest
 import com.srctool.graft.data.git.api.models.ConfigValue
+import com.srctool.graft.data.git.api.models.GitInstall
+import com.srctool.graft.data.git.api.models.GitInstallStatus
 import com.srctool.graft.data.git.api.models.GlobalIdentity
 import com.srctool.graft.data.git.api.models.Head
 import com.srctool.graft.data.git.api.models.IdentityWrite
 import com.srctool.graft.data.git.api.models.RepositoryLocation
 import com.srctool.graft.data.git.api.models.RepositorySummary
 import com.srctool.graft.data.git.api.models.Upstream
+import com.srctool.graft.data.git.api.repositories.GitInstallRepository
 import com.srctool.graft.data.git.api.repositories.IdentityRepository
 import com.srctool.graft.feature.home.domain.api.models.InitOptions
 import com.srctool.graft.feature.home.domain.api.models.InitOutcome
@@ -227,5 +232,38 @@ internal class FakeIdentity(var name: String? = "Dwiki Riyadi", var email: Strin
         ),
     )
 
-    override suspend fun write(name: String, email: String): Result<IdentityWrite> = error("not used")
+    var failure: SinewException? = null
+    val writes = ArrayList<Pair<String, String>>()
+
+    override suspend fun write(name: String, email: String): Result<IdentityWrite> {
+        failure?.let { return Result.Failure(it) }
+        writes += name to email
+        this.name = name
+        this.email = email
+        val read = (read() as Result.Success).data
+        return Result.Success(IdentityWrite(listOf("user.name", "user.email"), read))
+    }
+}
+
+internal class FakeSettings(
+    var value: AppSettings = AppSettings(onboarded = true),
+    var failure: SinewException? = null,
+) : SettingsRepository {
+    override suspend fun read(): Result<Saved<AppSettings>> = Result.Success(Saved(value, SavedStatus.Current))
+
+    override suspend fun update(change: (AppSettings) -> AppSettings): Result<AppSettings> {
+        failure?.let { return Result.Failure(it) }
+        value = change(value)
+        return Result.Success(value)
+    }
+}
+
+internal class FakeInstall(var status: GitInstallStatus = GitInstallStatus.Ready(GitInstall("2.54.0", null))) :
+    GitInstallRepository {
+    var checks = 0
+
+    override suspend fun check(): GitInstallStatus {
+        checks++
+        return status
+    }
 }

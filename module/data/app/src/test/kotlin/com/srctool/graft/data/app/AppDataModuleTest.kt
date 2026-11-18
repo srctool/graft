@@ -83,6 +83,29 @@ class AppDataModuleTest {
     }
 
     @Test
+    fun `a file from before the welcome steps reads as not onboarded, and the flag is kept once set`() =
+        runBlocking<Unit> {
+            val file = Files.createDirectories(folders.data).resolve("settings.json")
+            Files.writeString(file, """{"version":1,"theme":"dark"}""")
+            val settings = module().settings
+            assertEquals(false, settings.read().getOrThrow().value.onboarded)
+            settings.update { it.copy(onboarded = true) }.getOrThrow()
+            val again = module().settings.read().getOrThrow().value
+            assertEquals(true, again.onboarded)
+            assertEquals(ThemeChoice.DARK, again.theme)
+        }
+
+    @Test
+    fun `every read and update is published to changes, so the window can follow`() = runBlocking<Unit> {
+        val settings = module().settings
+        assertEquals(null, settings.changes.value)
+        settings.read().getOrThrow()
+        assertEquals(AppSettings(), settings.changes.value)
+        settings.update { it.copy(theme = ThemeChoice.DARK) }.getOrThrow()
+        assertEquals(ThemeChoice.DARK, settings.changes.value?.theme)
+    }
+
+    @Test
     fun `corrupt settings are set aside and the defaults used`() = runBlocking<Unit> {
         val file = Files.createDirectories(folders.data).resolve("settings.json")
         Files.writeString(file, "{ not json")

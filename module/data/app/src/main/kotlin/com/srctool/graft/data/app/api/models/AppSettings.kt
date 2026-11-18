@@ -18,6 +18,8 @@ public data class AppSettings(
     val ignoreWhitespace: Boolean = false,
     /** Bigger files aren't diffed inline (Settings Reference: 2 MB). */
     val inlineDiffLimitBytes: Long = 2L * 1024 * 1024,
+    /** The welcome steps were finished or skipped; they open by themselves only until then (Onboarding). */
+    val onboarded: Boolean = false,
 )
 
 @Serializable

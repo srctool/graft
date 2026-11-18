@@ -7,6 +7,7 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.ViewModelStore
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
+import com.srctool.graft.data.app.api.models.AppSettings
 import com.srctool.graft.data.app.api.models.KnownRepository
 import com.srctool.graft.data.app.api.models.SavedStatus
 import com.srctool.graft.data.app.api.models.Workspace
@@ -45,6 +46,7 @@ class HomeViewModelTest {
     private val old = KnownRepository(path("old-thing"), lastOpened = 1_000, pinned = true, missing = true)
     private val known = FakeKnown(listOf(app, api, old))
     private val workspaces = FakeWorkspaces(listOf(Workspace("acme", "Acme", listOf(path("app"), path("old-thing")))))
+    private val settings = FakeSettings()
     private val open = FakeOpen(known = known)
     private val scan = FakeScan(workspaces = workspaces)
     private val summaries = FakeSummaries(
@@ -68,7 +70,7 @@ class HomeViewModelTest {
             ViewModelProvider.create(
                 store,
                 viewModelFactory {
-                    initializer { HomeViewModel(open, scan, summaries, known, workspaces) { 100_000_000 } }
+                    initializer { HomeViewModel(open, scan, summaries, known, workspaces, settings) { 100_000_000 } }
                 },
             )[HomeViewModel::class]
         vm.onEvent(HomeEvent.Opened)
@@ -108,6 +110,20 @@ class HomeViewModelTest {
             3,
             (vm.state.value.summaries.getValue(path("api")) as SummaryState.Loaded).summary.upstream?.behind,
         )
+    }
+
+    @Test
+    fun `the welcome steps open by themselves until the first run is done`() = runTest(dispatcher) {
+        assertEquals(HomeDialog.None, opened().state.value.dialog)
+        // A new window: a new view model.
+        store.clear()
+        settings.value = AppSettings(onboarded = false)
+        val fresh = opened()
+        assertEquals(HomeDialog.Welcome, fresh.state.value.dialog)
+        // Welcome… from the menu opens them again, whatever the saved flag says.
+        settings.value = AppSettings(onboarded = true)
+        send(fresh, HomeEvent.DialogClosed, HomeEvent.DialogSet(HomeDialog.Welcome))
+        assertEquals(HomeDialog.Welcome, fresh.state.value.dialog)
     }
 
     @Test

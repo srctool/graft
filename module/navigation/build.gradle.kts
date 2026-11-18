@@ -23,6 +23,30 @@ dependencies {
     // ADR-28: navigation re-exports the Koin modules of the features it hosts.
     api(platform(libs.koin.bom))
     api(libs.koin.core)
+    // The Settings and About hosts (D1): their view models, and About's license report.
+    implementation(platform(libs.sinew.bom))
+    implementation(libs.sinew.viewmodel)
+    implementation(libs.koin.compose)
+    implementation(libs.koin.compose.viewmodel)
+    implementation(libs.kotlinx.serialization.json)
     implementation(libs.navigation3.ui)
     implementation(libs.lifecycle.viewmodel.navigation3)
+}
+
+dependencies {
+    testImplementation(libs.kotlinx.coroutines.test)
+    testImplementation(compose.desktop.currentOs)
+    testImplementation(libs.compose.ui.test)
+    testImplementation(libs.roborazzi.compose.desktop)
+}
+
+// Screenshot goldens, as in :module:feature:graph: compared on Linux only, recorded again with `-PupdateGoldens`.
+tasks.withType<Test>().configureEach {
+    val linux = System.getProperty("os.name").startsWith("Linux")
+    val update = providers.gradleProperty("updateGoldens").isPresent
+    when {
+        update -> systemProperty("roborazzi.test.record", "true")
+        linux -> systemProperty("roborazzi.test.verify", "true")
+    }
+    inputs.files(fileTree("src/test/snapshots")).withPropertyName("goldens")
 }

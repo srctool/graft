@@ -65,6 +65,8 @@ import com.srctool.camouflage.core.dialog.CamoDialog
 import com.srctool.camouflage.core.dialog.CamoDialogFrame
 import com.srctool.camouflage.core.icon.CamoIcon
 import com.srctool.camouflage.core.iconbutton.CamoIconButton
+import com.srctool.camouflage.core.menu.CamoMenuAnchor
+import com.srctool.camouflage.core.menu.CamoMenuItem
 import com.srctool.camouflage.core.provider.Camouflage
 import com.srctool.camouflage.core.search.CamoSearchField
 import com.srctool.camouflage.core.skeleton.CamoSkeleton
@@ -81,6 +83,7 @@ import com.srctool.graft.core.ui.theme.graftIcon
 import com.srctool.graft.data.git.api.models.Head
 import com.srctool.graft.feature.home.presentation.clone.CloneDialog
 import com.srctool.graft.feature.home.presentation.initrepo.InitDialog
+import com.srctool.graft.feature.home.presentation.onboarding.OnboardingDialog
 import com.srctool.graft.feature.home.presentation.rememberDestinationOwner
 import com.srctool.sinew.exception.displayMessage
 import com.srctool.sinew.models.SinewException
@@ -94,29 +97,56 @@ import java.nio.file.Path
  * a workspace's. A folder dropped on the window opens like one chosen with **Open…**.
  */
 @Composable
-internal fun HomePage(viewModel: HomeViewModel, onOpen: (Path) -> Unit, onOpenAll: (List<Path>) -> Unit) {
+internal fun HomePage(
+    viewModel: HomeViewModel,
+    onOpen: (Path) -> Unit,
+    onOpenAll: (List<Path>) -> Unit,
+    onSettings: () -> Unit,
+    onAbout: () -> Unit,
+    welcomeRequested: Boolean,
+    onWelcomeHandled: () -> Unit,
+) {
     val state by viewModel.state.collectAsState()
     LaunchedEffect(viewModel) { viewModel.onEvent(HomeEvent.Opened) }
+    // The host asks for the welcome steps again (Settings > Onboarding); it's told once they're on screen.
+    LaunchedEffect(welcomeRequested) {
+        if (welcomeRequested) {
+            viewModel.onEvent(HomeEvent.DialogSet(HomeDialog.Welcome))
+            onWelcomeHandled()
+        }
+    }
     ObserveEffects(viewModel.effects) { effect ->
         when (effect) {
             is HomeEffect.Open -> onOpen(effect.root)
             is HomeEffect.OpenAll -> onOpenAll(effect.roots)
         }
     }
-    HomeContent(state, viewModel::onEvent)
+    HomeContent(state, viewModel::onEvent, onSettings, onAbout)
 }
 
 /** The Home destination: its view model from Koin, in a store of its own. */
 @Composable
-public fun HomeDestination(onOpen: (Path) -> Unit, onOpenAll: (List<Path>) -> Unit) {
+public fun HomeDestination(
+    onOpen: (Path) -> Unit,
+    onOpenAll: (List<Path>) -> Unit,
+    onSettings: () -> Unit,
+    onAbout: () -> Unit,
+    welcomeRequested: Boolean = false,
+    onWelcomeHandled: () -> Unit = {},
+) {
     val viewModel = koinViewModel<HomeViewModel>(viewModelStoreOwner = rememberDestinationOwner("home"))
-    HomePage(viewModel, onOpen, onOpenAll)
+    HomePage(viewModel, onOpen, onOpenAll, onSettings, onAbout, welcomeRequested, onWelcomeHandled)
 }
 
 /** Home without its view model, for screenshot tests. */
 @OptIn(ExperimentalFoundationApi::class, ExperimentalComposeUiApi::class)
 @Composable
-internal fun HomeContent(state: HomeState, onEvent: (HomeEvent) -> Unit) {
+internal fun HomeContent(
+    state: HomeState,
+    onEvent: (HomeEvent) -> Unit,
+    onSettings: () -> Unit = {},
+    onAbout: () -> Unit = {},
+) {
     val colors = Camouflage.colors
     val picker = LocalFolderPicker.current
     val openTitle = graftText("home.open.title", "Choose a repository's folder")
@@ -154,7 +184,7 @@ internal fun HomeContent(state: HomeState, onEvent: (HomeEvent) -> Unit) {
                 true
             },
     ) {
-        TopBar(state, onEvent)
+        TopBar(state, onEvent, onSettings, onAbout)
         if (state.readOnly) {
             CamoBanner(
                 graftText(
@@ -181,7 +211,7 @@ internal fun HomeContent(state: HomeState, onEvent: (HomeEvent) -> Unit) {
 }
 
 @Composable
-private fun TopBar(state: HomeState, onEvent: (HomeEvent) -> Unit) {
+private fun TopBar(state: HomeState, onEvent: (HomeEvent) -> Unit, onSettings: () -> Unit, onAbout: () -> Unit) {
     val picker = LocalFolderPicker.current
     val density = Graft.tokens.density
     val openTitle = graftText("home.open.title", "Choose a repository's folder")
@@ -222,6 +252,23 @@ private fun TopBar(state: HomeState, onEvent: (HomeEvent) -> Unit) {
             appearance = Appearance.Outline,
             enabled = write,
         )
+        val menu =
+            listOf(
+                CamoMenuItem(graftText("home.menu.settings", "Settings…"), onClick = onSettings),
+                CamoMenuItem(
+                    graftText("home.menu.welcome", "Welcome…"),
+                    onClick = { onEvent(HomeEvent.DialogSet(HomeDialog.Welcome)) },
+                ),
+                CamoMenuItem(graftText("home.menu.about", "About Graft"), onClick = onAbout),
+            )
+        CamoMenuAnchor(items = menu) { open ->
+            CamoButton(
+                graftText("home.menu", "Menu") + "  ▾",
+                onClick = open,
+                modifier = Modifier.height(density.control),
+                appearance = Appearance.Ghost,
+            )
+        }
     }
 }
 
@@ -761,6 +808,18 @@ private fun Dialogs(state: HomeState, onEvent: (HomeEvent) -> Unit) {
     val close = { onEvent(HomeEvent.DialogClosed) }
     when (val d = state.dialog) {
         HomeDialog.None -> Unit
+
+        HomeDialog.Welcome -> {
+            val picker = LocalFolderPicker.current
+            val openTitle = graftText("home.open.title", "Choose a repository's folder")
+            val scanTitle = graftText("home.scan.pick", "Choose a folder to scan for repositories")
+            OnboardingDialog(
+                onClose = close,
+                onOpenClone = { onEvent(HomeEvent.DialogSet(HomeDialog.Clone())) },
+                onOpenFolder = { picker.pick(openTitle, null)?.let { onEvent(HomeEvent.OpenFolder(it)) } },
+                onScan = { picker.pick(scanTitle, null)?.let { onEvent(HomeEvent.ScanFolderChosen(it)) } },
+            )
+        }
 
         is HomeDialog.Clone -> CloneDialog(d.folder, onCloned = { onEvent(HomeEvent.Created(it)) }, onClose = close)
 

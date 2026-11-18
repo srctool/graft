@@ -17,6 +17,7 @@ import com.srctool.graft.data.git.api.models.RepositoryLocation
 import com.srctool.graft.data.git.api.repositories.CommitRepository
 import com.srctool.graft.data.git.api.repositories.CompareRepository
 import com.srctool.graft.data.git.api.repositories.DiffRepository
+import com.srctool.graft.data.git.api.repositories.GitInstallRepository
 import com.srctool.graft.data.git.api.repositories.IdentityRepository
 import com.srctool.graft.data.git.api.repositories.RefRepository
 import com.srctool.graft.data.git.api.repositories.ReflogRepository
@@ -39,6 +40,7 @@ import java.nio.file.Path
 import kotlin.reflect.KClass
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertTrue
 
 /**
  * The desktop app's Koin wiring (ADR-28) resolves: every repository the data modules bind, and every view model the
@@ -82,7 +84,7 @@ class KoinWiringTest {
                 CompareRepository::class, ReflogRepository::class, StashRepository::class, RemoteRepository::class,
                 IdentityRepository::class, SettingsRepository::class, KnownRepositoryRepository::class,
                 WindowStateRepository::class, WorkspaceRepository::class, FolderScanRepository::class,
-                RepositoryUiStateRepository::class,
+                RepositoryUiStateRepository::class, GitInstallRepository::class,
             )
         types.forEach { koin.get<Any>(it) }
         // One instance each, shared by every screen.
@@ -118,6 +120,10 @@ class KoinWiringTest {
         val base = "com.srctool.graft.feature.home.presentation"
         val home = Class.forName("$base.home.HomeViewModel").kotlin
         assertEquals("HomeViewModel", koin.get<Any>(home)::class.simpleName)
+        assertEquals(
+            "OnboardingViewModel",
+            koin.get<Any>(Class.forName("$base.onboarding.OnboardingViewModel").kotlin)::class.simpleName,
+        )
         for (name in listOf("$base.clone.CloneViewModel", "$base.initrepo.InitViewModel")) {
             val type = Class.forName(name).kotlin
             val bare = koin.get<Any>(type)
@@ -125,5 +131,21 @@ class KoinWiringTest {
             assertEquals(type, bare::class)
             assertEquals(type, seeded::class)
         }
+    }
+
+    @Test
+    fun `the settings and about hosts resolve with their sources`() {
+        val koin = koin()
+        val base = "com.srctool.graft.navigation"
+        assertEquals(
+            "SettingsViewModel",
+            koin.get<Any>(Class.forName("$base.settings.SettingsViewModel").kotlin)::class.simpleName,
+        )
+        val about = koin.get<Any>(Class.forName("$base.about.AboutViewModel").kotlin)
+        assertEquals("AboutViewModel", about::class.simpleName)
+        // The app's own build carries a license report (the plugin's output) and its version.
+        val licenses = koin.get<Any>(Class.forName("$base.about.LicenseSource").kotlin)
+        val load = licenses::class.java.getMethod("load")
+        assertTrue((load.invoke(licenses) as List<*>).size > 10)
     }
 }
