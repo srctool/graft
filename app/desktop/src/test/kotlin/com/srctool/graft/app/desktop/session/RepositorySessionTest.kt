@@ -267,6 +267,9 @@ private class FakeAccess : RepositoryAccessRepository {
 
     override suspend fun init(folder: Path, defaultBranch: String): Result<RepositoryLocation> = error("not used")
 
+    override suspend fun initialCommit(workTree: Path, paths: List<String>, message: String): Result<Unit> =
+        error("not used")
+
     override fun clone(request: CloneRequest): Flow<CloneProgress> = error("not used")
 
     override suspend fun trust(folder: String): Result<Unit> = error("not used")

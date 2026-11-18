@@ -55,3 +55,10 @@ diff in the diff viewer, licensed under the Apache License, Version 2.0.
 
 Highlights (dev.snipme:highlights), syntax highlighting in the diff viewer,
 licensed under the Apache License, Version 2.0.
+
+.gitignore templates for Init: verbatim copies from github/gitignore, CC0-1.0
+(module/feature/home/src/main/resources/graft/home/gitignore-LICENSE-CC0.txt).
+License texts for Init's LICENSE choice: the standard text of each license from
+the SPDX License List (spdx/license-list-data), reproduced verbatim as
+templates. The sources and commits are in
+module/feature/home/src/main/resources/graft/home/SOURCES.txt.

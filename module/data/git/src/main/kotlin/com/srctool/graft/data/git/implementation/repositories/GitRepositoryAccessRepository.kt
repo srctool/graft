@@ -12,15 +12,18 @@ import com.srctool.graft.data.git.api.models.RepositoryLocation
 import com.srctool.graft.data.git.api.models.RepositorySummary
 import com.srctool.graft.data.git.api.repositories.RepositoryAccessRepository
 import com.srctool.graft.data.git.implementation.source.local.CloneCommand
+import com.srctool.graft.data.git.implementation.source.local.FirstCommitCommand
 import com.srctool.graft.data.git.implementation.source.local.InitCommand
 import com.srctool.graft.data.git.implementation.source.local.LocateCommand
 import com.srctool.graft.data.git.implementation.source.local.Located
+import com.srctool.graft.data.git.implementation.source.local.StagePathsCommand
 import com.srctool.graft.data.git.implementation.source.local.StatusSummaryCommand
 import com.srctool.graft.data.git.implementation.source.local.TopLevelCommand
 import com.srctool.graft.data.git.implementation.source.local.TrustCommand
 import com.srctool.sinew.models.Result
 import com.srctool.sinew.models.getOrThrow
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.emitAll
@@ -71,9 +74,25 @@ internal class GitRepositoryAccessRepository(private val runner: GitRunner) : Re
         val target = request.directory.toAbsolutePath().normalize()
         val parent = target.parent ?: target
         withContext(Dispatchers.IO) { Files.createDirectories(parent) }
-        // Git repeats a phase's line for every percent; the UI only needs the changes.
-        emitAll(runner.stream(CloneCommand(request.copy(directory = target)), parent).distinctUntilChanged())
-        emit(CloneProgress.Finished(locate(target).getOrThrow()))
+        val existed = withContext(Dispatchers.IO) { Files.exists(target) }
+        try {
+            // Git repeats a phase's line for every percent; the UI only needs the changes.
+            emitAll(runner.stream(CloneCommand(request.copy(directory = target)), parent).distinctUntilChanged())
+            emit(CloneProgress.Finished(locate(target).getOrThrow()))
+        } catch (e: Throwable) {
+            // A cancelled or failed clone leaves nothing behind that it created: git removes its own junk when it can,
+            // but a killed git can't. A folder that was there before (an empty one the user made) stays.
+            if (!existed) withContext(NonCancellable + Dispatchers.IO) { target.toFile().deleteRecursively() }
+            throw e
+        }
+    }
+
+    override suspend fun initialCommit(workTree: Path, paths: List<String>, message: String): Result<Unit> {
+        val dir = workTree.toAbsolutePath().normalize()
+        return when (val r = runner.run(StagePathsCommand(paths), dir)) {
+            is Result.Success -> runner.run(FirstCommitCommand(message), dir)
+            is Result.Failure -> r
+        }
     }
 
     override fun untrustedFolder(error: Throwable): String? =

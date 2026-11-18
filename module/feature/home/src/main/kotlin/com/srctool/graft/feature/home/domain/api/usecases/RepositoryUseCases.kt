@@ -7,6 +7,9 @@ import com.srctool.graft.data.app.api.models.Workspace
 import com.srctool.graft.data.git.api.models.CloneProgress
 import com.srctool.graft.data.git.api.models.CloneRequest
 import com.srctool.graft.data.git.api.models.RepositoryLocation
+import com.srctool.graft.data.git.api.models.RepositorySummary
+import com.srctool.graft.feature.home.domain.api.models.InitOptions
+import com.srctool.graft.feature.home.domain.api.models.InitOutcome
 import com.srctool.graft.feature.home.domain.api.models.OpenOutcome
 import com.srctool.graft.feature.home.domain.api.models.ScannedRepository
 import com.srctool.sinew.models.Result
@@ -50,4 +53,20 @@ internal interface CloneRepositoryUseCase {
 internal interface InitRepositoryUseCase {
     /** `git init` in [folder] on [defaultBranch], then the new repository is in Home's recent list. */
     suspend fun init(folder: Path, defaultBranch: String = "main"): Result<RepositoryLocation>
+
+    /**
+     * Init (S3) as the dialog asks for it: \`git init\`, then the chosen files, then the first commit. Never throws and
+     * never undoes \`git init\`: a step that fails after it comes back as [InitOutcome.Partial] with the repository,
+     * since it exists and is listed.
+     */
+    suspend fun create(options: InitOptions): InitOutcome
+}
+
+/** What Home shows beside each repository: its branch, whether it has changes, and ahead/behind. */
+internal interface RepositorySummaryUseCase {
+    /**
+     * The summary of the repository at [workTree] (\`GIT-R-STAT-…\`). At most four run at once, however many rows ask,
+     * so a list of hundreds doesn't start hundreds of git processes.
+     */
+    suspend fun summarize(workTree: Path): Result<RepositorySummary>
 }

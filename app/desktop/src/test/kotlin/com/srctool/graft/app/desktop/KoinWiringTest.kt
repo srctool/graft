@@ -111,4 +111,19 @@ class KoinWiringTest {
         val diff = koin.get<Any>(diffType, parameters = { parametersOf(folder, shared) })
         assertEquals("DiffScreenViewModel", diff::class.simpleName)
     }
+
+    @Test
+    fun `the home view models resolve, with and without a folder to start from`() {
+        val koin = koin()
+        val base = "com.srctool.graft.feature.home.presentation"
+        val home = Class.forName("$base.home.HomeViewModel").kotlin
+        assertEquals("HomeViewModel", koin.get<Any>(home)::class.simpleName)
+        for (name in listOf("$base.clone.CloneViewModel", "$base.initrepo.InitViewModel")) {
+            val type = Class.forName(name).kotlin
+            val bare = koin.get<Any>(type)
+            val seeded = koin.get<Any>(type, parameters = { parametersOf(temp) })
+            assertEquals(type, bare::class)
+            assertEquals(type, seeded::class)
+        }
+    }
 }

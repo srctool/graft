@@ -1,0 +1,10 @@
+Templates bundled for Init (G1 Task 17). Verbatim copies; nothing is fetched at run time.
+
+gitignore/*.gitignore
+  github/gitignore at b71db924d35085e481ad7c7ad8a7435b8d8b3016 (https://github.com/github/gitignore), CC0-1.0:
+  gitignore-LICENSE-CC0.txt is its license file.
+
+licenses/*.txt
+  The standard text of each license, from the SPDX License List at
+  spdx/license-list-data ab9b0904b43db6f4b67431efd8821feb821f1c8b (text/<id>.txt).
+  Placeholders (<year>, <owner>, <copyright holders>) are filled in by Init.
