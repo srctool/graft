@@ -17,6 +17,7 @@ import com.srctool.graft.feature.graph.presentation.compare.CompareViewModel
 import com.srctool.graft.feature.graph.presentation.details.DetailsViewModel
 import com.srctool.graft.feature.graph.presentation.diff.DiffScreenViewModel
 import com.srctool.graft.feature.graph.presentation.graph.GraphViewModel
+import com.srctool.graft.feature.graph.presentation.operations.OperationsViewModel
 import org.koin.core.module.Module
 import org.koin.core.module.dsl.viewModel
 import org.koin.dsl.module
@@ -38,4 +39,5 @@ public val graphFeatureKoin: Module =
         viewModel { p -> DetailsViewModel(p.get(), p.get(), p.get(), get()) }
         viewModel { p -> CompareViewModel(p.get(), p.get(), p.get(), get(), get(), get(), get()) }
         viewModel { p -> DiffScreenViewModel(p.get(), p.get(), get(), get()) }
+        viewModel { p -> OperationsViewModel(p.get(), p.get(), p.get(), get()) }
     }

@@ -101,6 +101,7 @@ class KoinWiringTest {
                 "presentation.branches.BranchesViewModel",
                 "presentation.details.DetailsViewModel",
                 "presentation.compare.CompareViewModel",
+                "presentation.operations.OperationsViewModel",
             ).map { "com.srctool.graft.feature.graph.$it" }
         for (name in names) {
             val viewModel = koin.get<Any>(Class.forName(name).kotlin, parameters = { withSession })

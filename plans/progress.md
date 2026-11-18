@@ -343,3 +343,16 @@ ADR-28: built in PR #149 (2026-11-18):
 Ruling: the ADR's `verify()` became a resolution test (`KoinWiringTest`), which builds each binding and view model with the real parameters rather than checking constructor types. It also catches a definition whose lambda asks for the wrong type — cost if wrong: none; `verify()` can be added beside it.
 Ruling: Koin is started globally in `main` (`startKoin`), not with the `KoinApplication` composable, so the app services and the window share one container — cost if wrong: Task 20 moves it if the host needs a scoped container.
 Ruling: the data modules expose `koin-core` as `api` (their `di` packages return Koin `Module`s); the CLI doesn't start Koin yet — cost if wrong: koin-core on the CLI's classpath, unused until it switches.
+Task 16 (G1, #24): wireframe drafted in plans/G1.md (2026-11-18): the reflog timeline (S8) as the Operations bottom tool window, with paging, a refs filter, states, keyboard path and screen-reader labels, plus two questions for the author (the Source column before G3; a move's diff through Compare); waiting for review before code.
+Task 15 (G1, #23): complete (reviewed and merged, PR #149 with ADR-28's Koin wiring; the 4 Linux goldens came from CI's renders).
+Task 16 (G1, #24): wireframe approved by the author (2026-11-18), both proposals: no Source column until G3's op log; a move's diff through Compare.
+Task 16 (G1, #24): drafted (2026-11-18):
+- **`presentation/operations`:** the reflog timeline (S8) in a bottom tool window, **Operations**, docked in the repository screen and closed until its stripe icon opens it. Its view model comes from Koin like the others.
+- **Rows:** pages of 200 from `ReflogTimelineUseCase`, the next page loading near the end. Each row shows when (relative, exact time in a tooltip), the refs that moved together as chips, old → new ("created" without an old value), and git's message with the new commit's subject in a tooltip. Moves that may drop commits (`mayDropCommits`: reset, rebase, forced update, `pull --force`) get the arrow in the warning color and "may have dropped commits" in their label.
+- **Refs filter:** all, HEAD or one local branch; the timeline reopens over that ref. When the session's refs move, the first page reloads with the selected move kept.
+- **Actions:** selecting a move selects its new commit (details, graph). **Compare before and after** (Mod+D, context menu; disabled for a creation) opens Compare with old and new. **Copy hash** is Mod+C.
+- **States:** loading skeleton, "No ref moves recorded yet.", the reflog-off banner over whatever was kept, failed with Retry and Show output, and the end line "That's everything git kept."
+- **Texts:** `operations.*` in English and Indonesian.
+- **Tests:** the dropped-commits rule, 3 view-model tests (paging and filter; select, compare and copy; reload keeping the selection), labels and keys, 3 screenshots (light, dark with the reflog off, empty). `KoinWiringTest` covers the new view model. `./gradlew check` passes.
+Ruling: the timeline's columns are fixed widths rather than `TableColumnsState`: it's a tool window with four short columns and nothing to save per repository yet — cost if wrong: resizable columns when the op log joins in G3.
+Ruling: the 3 new screenshots get their Linux goldens from the first CI run, as before — cost if wrong: one red run.
