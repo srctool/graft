@@ -49,6 +49,15 @@ internal sealed interface GraphEvent {
 
     data object OpenSelected : GraphEvent
 
+    /** Mod+click on a row: marks its commit to compare with the selected one, or unmarks it. */
+    data class Marked(val selection: Selection) : GraphEvent
+
+    /** Mod+Space: marks or unmarks the selected commit. */
+    data object MarkSelected : GraphEvent
+
+    /** Mod+D: Compare with the selected commit as A and the marked one as B. */
+    data object CompareMarked : GraphEvent
+
     data object CopyHash : GraphEvent
 
     data object Retry : GraphEvent

@@ -102,7 +102,7 @@ class ScreensPageTest {
 
     private val diffState =
         DiffScreenState(
-            commit = Sample.id(5),
+            target = com.srctool.graft.data.git.api.models.DiffTarget.Commit(Sample.id(5)),
             subject = "Fix login timeout",
             files = sampleFiles,
             index = 0,

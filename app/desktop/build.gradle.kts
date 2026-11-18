@@ -28,6 +28,11 @@ dependencies {
     runtimeOnly(libs.kotlinx.coroutines.swing)
     implementation(platform(libs.sinew.bom))
     implementation(libs.sinew.presentation)
+    // ADR-28: the app starts Koin with every module.
+    implementation(platform(libs.koin.bom))
+    implementation(libs.koin.core)
+    implementation(libs.koin.compose)
+    testImplementation(libs.koin.test)
 
     testImplementation(libs.kotlinx.coroutines.test)
     // The graph measurement (G1 Task 13) drives the real screen against a sandboxed git.

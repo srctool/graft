@@ -5,6 +5,7 @@ package com.srctool.graft.presentation.view
 
 import com.srctool.graft.data.app.api.models.RepositoryUiState
 import com.srctool.graft.data.app.api.repositories.RepositoryUiStateRepository
+import com.srctool.graft.data.git.api.models.DiffTarget
 import com.srctool.graft.data.git.api.models.ObjectId
 import com.srctool.sinew.models.Result
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -23,12 +24,18 @@ sealed interface ViewSelection {
     data class Commit(val id: ObjectId) : ViewSelection
 }
 
-/** What a repository tab's center shows: the graph, or one file's diff in a commit (with a breadcrumb back). */
+/** What a repository tab's center shows: the graph, Compare, or one file's diff (with a breadcrumb back). */
 sealed interface CenterView {
     data object Graph : CenterView
 
-    /** [path] as [commit] changed it; the files of the commit are stepped through in the diff screen. */
-    data class Diff(val commit: ObjectId, val path: String) : CenterView
+    /**
+     * Compare (S7): [a] is the base, [b] what's compared with it; each a full ref name or a commit id, never text as
+     * typed. [b] is null while it's being picked.
+     */
+    data class Compare(val a: String, val b: String?) : CenterView
+
+    /** [path] as [target] changes it; the diff screen steps through the target's files and goes [back] when closed. */
+    data class Diff(val target: DiffTarget, val path: String, val back: CenterView = Graph) : CenterView
 }
 
 /**
@@ -49,6 +56,9 @@ class RepositoryViewState(private val commonDir: Path, private val store: Reposi
     val selection: MutableStateFlow<ViewSelection> = MutableStateFlow(ViewSelection.None)
 
     val center: MutableStateFlow<CenterView> = MutableStateFlow(CenterView.Graph)
+
+    /** A second commit marked in the graph (Mod+click), to compare with the selected one. */
+    val marked: MutableStateFlow<ObjectId?> = MutableStateFlow(null)
 
     /** Reads `state.json` once; later calls return what's already loaded. A missing or unreadable file is the defaults. */
     suspend fun load(): RepositoryUiState = writes.withLock {

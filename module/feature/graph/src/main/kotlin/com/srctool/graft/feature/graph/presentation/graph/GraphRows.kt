@@ -15,8 +15,14 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.input.pointer.PointerEventType
+import androidx.compose.ui.input.pointer.isCtrlPressed
+import androidx.compose.ui.input.pointer.isMetaPressed
+import androidx.compose.ui.input.pointer.onPointerEvent
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
@@ -98,6 +104,7 @@ private class RowShape(
     override fun through(lane: Int): Int = graph.through(row.index, lane)
 }
 
+@OptIn(ExperimentalComposeUiApi::class)
 @Composable
 private fun rowModifier(
     selected: Boolean,
@@ -105,14 +112,33 @@ private fun rowModifier(
     description: String,
     onSelect: () -> Unit,
     onOpen: () -> Unit,
+    marked: Boolean = false,
+    onMark: (() -> Unit)? = null,
 ): Modifier {
     val colors = Camouflage.colors
+    val accent = colors.primary
+    // Mod+click marks a second commit (Task 15); the tap detector doesn't see modifiers, so the press records them.
+    val modPress = remember { booleanArrayOf(false) }
     return Modifier
         .fillMaxWidth()
         .height(Graft.tokens.density.graphRow)
-        .background(if (selected) colors.surfaceContainerHighest else colors.surface)
-        .pointerInput(onSelect, onOpen) { detectTapGestures(onTap = { onSelect() }, onDoubleTap = { onOpen() }) }
-        .clearAndSetSemantics {
+        .background(
+            when {
+                selected -> colors.surfaceContainerHighest
+                marked -> colors.surfaceContainerHigh
+                else -> colors.surface
+            },
+        ).drawBehind {
+            // The marked commit's bar, so it's told apart without the background's shade.
+            if (marked) drawRect(accent, size = androidx.compose.ui.geometry.Size(3.dp.toPx(), size.height))
+        }.onPointerEvent(PointerEventType.Press) { e ->
+            modPress[0] = e.keyboardModifiers.isMetaPressed || e.keyboardModifiers.isCtrlPressed
+        }.pointerInput(onSelect, onOpen, onMark) {
+            detectTapGestures(
+                onTap = { if (modPress[0] && onMark != null) onMark() else onSelect() },
+                onDoubleTap = { onOpen() },
+            )
+        }.clearAndSetSemantics {
             contentDescription = description
             this.selected = selected
         }.alpha(if (dimmed) DIMMED else 1f)
@@ -132,6 +158,7 @@ internal fun CommitRow(
     columns: TableColumnsState,
     onSelect: () -> Unit,
     onOpen: () -> Unit,
+    onMark: (() -> Unit)? = null,
 ) {
     val row = graph[index]
     val commit = row.commit
@@ -142,8 +169,10 @@ internal fun CommitRow(
     val dimmed =
         (state.search.active && !match) || (state.view.authorKinds.size < GraphAuthorKind.entries.size && !authorShown)
     val age = age(commit.authorTime, state.now.takeIf { it > 0 } ?: (System.currentTimeMillis() / 1000))
+    val marked = commit.id == state.marked
     val description =
-        rowDescription(commit.id.short(), commit.subject, author.name, age, refs, commit.parents.size, match)
+        rowDescription(commit.id.short(), commit.subject, author.name, age, refs, commit.parents.size, match) +
+            if (marked) ", " + graftText("graph.row.marked", "marked to compare") else ""
     val colors = Camouflage.colors
     val tokens = Graft.tokens
     val wipAbove =
@@ -153,7 +182,10 @@ internal fun CommitRow(
     val shape = remember(row, graph, wipAbove, stashLane) { RowShape(row, graph, wipAbove, stashLane) }
     val selected = (state.selection as? Selection.Row)?.index == index
 
-    Row(rowModifier(selected, dimmed, description, onSelect, onOpen), verticalAlignment = Alignment.CenterVertically) {
+    Row(
+        rowModifier(selected, dimmed, description, onSelect, onOpen, marked, onMark),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
         for (column in columns.visibleColumns) {
             TableCell(columns, column) {
                 when (column.id) {

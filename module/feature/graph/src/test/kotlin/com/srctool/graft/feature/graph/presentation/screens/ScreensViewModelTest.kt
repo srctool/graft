@@ -182,7 +182,13 @@ class ScreensViewModelTest {
         advanceUntilIdle()
         vm.onEvent(DetailsEvent.Activated("file:src/main/kotlin/login/Login.kt"))
         advanceUntilIdle()
-        assertEquals(CenterView.Diff(Sample.id(5), "src/main/kotlin/login/Login.kt"), shared.center.value)
+        assertEquals(
+            CenterView.Diff(
+                com.srctool.graft.data.git.api.models.DiffTarget.Commit(Sample.id(5)),
+                "src/main/kotlin/login/Login.kt",
+            ),
+            shared.center.value,
+        )
         vm.onEvent(DetailsEvent.ParentChosen(1))
         advanceUntilIdle()
         assertEquals(ViewSelection.Commit(Sample.id(3)), shared.selection.value)
@@ -217,7 +223,11 @@ class ScreensViewModelTest {
         settings.value = AppSettings(diffStyle = DiffStyle.SIDE_BY_SIDE)
         val vm = diff()
         assertEquals(DiffMode.SIDE_BY_SIDE, vm.state.value.mode)
-        shared.center.value = CenterView.Diff(Sample.id(5), "src/main/kotlin/login/Login.kt")
+        shared.center.value =
+            CenterView.Diff(
+                com.srctool.graft.data.git.api.models.DiffTarget.Commit(Sample.id(5)),
+                "src/main/kotlin/login/Login.kt",
+            )
         advanceUntilIdle()
         val text = assertIs<DiffBody.Text>(vm.state.value.body)
         assertEquals("@@ -10,3 +10,3 @@ class Login", text.document.hunks.single().header)
@@ -238,7 +248,11 @@ class ScreensViewModelTest {
     @Test
     fun `mode and whitespace are app settings, and whitespace reaches git`() = runTest(dispatcher) {
         val vm = diff()
-        shared.center.value = CenterView.Diff(Sample.id(5), "src/main/kotlin/login/Login.kt")
+        shared.center.value =
+            CenterView.Diff(
+                com.srctool.graft.data.git.api.models.DiffTarget.Commit(Sample.id(5)),
+                "src/main/kotlin/login/Login.kt",
+            )
         advanceUntilIdle()
         vm.onEvent(DiffScreenEvent.ModeToggled)
         vm.onEvent(DiffScreenEvent.WhitespaceToggled)
@@ -252,14 +266,19 @@ class ScreensViewModelTest {
     fun `binary files show their sizes and images, big files wait for Show anyway`() = runTest(dispatcher) {
         diffs.image = byteArrayOf(1, 2, 3)
         val vm = diff()
-        shared.center.value = CenterView.Diff(Sample.id(5), "docs/logo.png")
+        shared.center.value =
+            CenterView.Diff(com.srctool.graft.data.git.api.models.DiffTarget.Commit(Sample.id(5)), "docs/logo.png")
         advanceUntilIdle()
         val binary = assertIs<DiffBody.Binary>(vm.state.value.body)
         assertEquals(100L, binary.newSize)
         assertTrue(binary.images != null)
 
         diffs.sizes = mapOf(sampleFiles[0].newObject!! to 5_000_000L)
-        shared.center.value = CenterView.Diff(Sample.id(5), "src/main/kotlin/login/Login.kt")
+        shared.center.value =
+            CenterView.Diff(
+                com.srctool.graft.data.git.api.models.DiffTarget.Commit(Sample.id(5)),
+                "src/main/kotlin/login/Login.kt",
+            )
         advanceUntilIdle()
         assertEquals(DiffBody.TooLarge(5_000_000L), vm.state.value.body)
         vm.onEvent(DiffScreenEvent.ShowAnyway)
@@ -272,7 +291,11 @@ class ScreensViewModelTest {
         diffs.files =
             sampleFiles.map { if (it.status == FileStatus.RENAMED) it.copy(additions = 0, deletions = 0) else it }
         val vm = diff()
-        shared.center.value = CenterView.Diff(Sample.id(5), "src/main/kotlin/login/Retry.kt")
+        shared.center.value =
+            CenterView.Diff(
+                com.srctool.graft.data.git.api.models.DiffTarget.Commit(Sample.id(5)),
+                "src/main/kotlin/login/Retry.kt",
+            )
         advanceUntilIdle()
         assertEquals(DiffBody.Renamed("src/main/kotlin/login/Old.kt"), vm.state.value.body)
         assertNull(vm.state.value.body.let { (it as? DiffBody.Failed)?.error })

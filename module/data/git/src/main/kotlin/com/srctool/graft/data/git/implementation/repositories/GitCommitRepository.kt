@@ -16,6 +16,7 @@ import com.srctool.graft.data.git.implementation.source.local.CommitGraphPathsCo
 import com.srctool.graft.data.git.implementation.source.local.CommitGraphWriteCommand
 import com.srctool.graft.data.git.implementation.source.local.DetailsCommand
 import com.srctool.graft.data.git.implementation.source.local.LogCommand
+import com.srctool.graft.data.git.implementation.source.local.ResolveCommitCommand
 import com.srctool.graft.data.git.implementation.source.local.logRevisions
 import com.srctool.graft.data.git.implementation.source.local.revisions
 import com.srctool.sinew.models.Result
@@ -50,4 +51,7 @@ internal class GitCommitRepository(private val runner: GitRunner) : CommitReposi
 
     override suspend fun writeCommitGraph(repository: Path): Result<Unit> =
         runner.run(CommitGraphWriteCommand(), repository)
+
+    override suspend fun resolve(repository: Path, revision: String): Result<ObjectId?> =
+        runner.run(ResolveCommitCommand(revision), repository)
 }

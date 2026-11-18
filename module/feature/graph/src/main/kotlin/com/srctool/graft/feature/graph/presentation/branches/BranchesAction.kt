@@ -25,4 +25,6 @@ internal sealed interface BranchesAction {
     data class Copy(val text: String) : BranchesAction
 
     data object Retry : BranchesAction
+
+    data class Compare(val base: String, val compare: String) : BranchesAction
 }

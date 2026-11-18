@@ -14,25 +14,26 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Window
 import androidx.compose.ui.window.application
 import androidx.compose.ui.window.rememberWindowState
+import com.srctool.graft.app.desktop.di.desktopModules
 import com.srctool.graft.app.desktop.session.GitRepositorySession
-import com.srctool.graft.core.configuration.AppFolders
-import com.srctool.graft.core.git.GitRunnerConfig
-import com.srctool.graft.core.git.ProcessGitRunner
 import com.srctool.graft.core.git.WriteQueue
 import com.srctool.graft.core.ui.theme.GraftTheme
-import com.srctool.graft.core.watcher.NativeFileWatcher
-import com.srctool.graft.data.app.di.AppDataModule
-import com.srctool.graft.data.git.di.GitDataModule
-import com.srctool.graft.feature.graph.presentation.repository.RepositoryData
+import com.srctool.graft.core.watcher.FileWatcher
+import com.srctool.graft.data.git.api.repositories.RefRepository
+import com.srctool.graft.data.git.api.repositories.RepositoryAccessRepository
 import com.srctool.graft.feature.graph.presentation.repository.RepositoryScreen
 import com.srctool.sinew.models.Result
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
+import org.koin.compose.koinInject
+import org.koin.core.context.startKoin
 import java.nio.file.Paths
 
 fun main() {
+    // ADR-28: everything the screens need is wired once, here.
+    startKoin { modules(desktopModules) }
     // Until Task 20 brings Home and the app navigation, GRAFT_REPO opens the repository screen on that repository.
     val repository = System.getenv("GRAFT_REPO")
     application {
@@ -51,13 +52,15 @@ fun main() {
 /** Temporary (until Task 20): one repository's session and its screen, wired by hand. */
 @Composable
 private fun GraphWindow(repository: String) {
-    val git = remember { GitDataModule(ProcessGitRunner(GitRunnerConfig())) }
-    val app = remember { AppDataModule(AppFolders.current()) }
+    val access = koinInject<RepositoryAccessRepository>()
+    val refs = koinInject<RefRepository>()
+    val watcher = koinInject<FileWatcher>()
+    val writes = koinInject<WriteQueue>()
     var session by remember { mutableStateOf<GitRepositorySession?>(null) }
     val scope = rememberCoroutineScope()
     LaunchedEffect(repository) {
-        val location = (git.access.locate(Paths.get(repository)) as? Result.Success)?.data ?: return@LaunchedEffect
-        val opened = GitRepositorySession(location, git.refs, git.access, NativeFileWatcher(), WriteQueue())
+        val location = (access.locate(Paths.get(repository)) as? Result.Success)?.data ?: return@LaunchedEffect
+        val opened = GitRepositorySession(location, refs, access, watcher, writes)
         // A child of the window's scope: closing the window stops the watcher and git.
         val sessionScope = CoroutineScope(scope.coroutineContext + SupervisorJob(scope.coroutineContext[Job]))
         sessionScope.launch {
@@ -67,6 +70,5 @@ private fun GraphWindow(repository: String) {
         session = opened
     }
     val current = session ?: return
-    val data = remember { RepositoryData(git.commits, git.stashes, git.diffs, app.repositoryUiState, app.settings) }
-    RepositoryScreen(current, data)
+    RepositoryScreen(current)
 }

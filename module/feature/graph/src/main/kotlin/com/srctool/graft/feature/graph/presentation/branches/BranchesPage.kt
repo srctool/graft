@@ -167,7 +167,13 @@ internal fun BranchesContent(state: BranchesState, onEvent: (BranchesEvent) -> U
                     state = list,
                 ) {
                     items(state.rows, key = { it.key }) { row ->
-                        PanelRowView(row, row.key == state.focus && focused, state.menuFor == row.key, onEvent)
+                        PanelRowView(
+                            row,
+                            row.key == state.focus && focused,
+                            state.menuFor == row.key,
+                            state.defaultBranch,
+                            onEvent,
+                        )
                     }
                 }
             }
@@ -202,7 +208,13 @@ private fun FailedBody(state: BranchesState, onEvent: (BranchesEvent) -> Unit) {
 }
 
 @Composable
-private fun PanelRowView(row: PanelRow, focused: Boolean, menuOpen: Boolean, onEvent: (BranchesEvent) -> Unit) {
+private fun PanelRowView(
+    row: PanelRow,
+    focused: Boolean,
+    menuOpen: Boolean,
+    defaultBranch: String?,
+    onEvent: (BranchesEvent) -> Unit,
+) {
     val colors = Camouflage.colors
     val tokens = Graft.tokens
     val hover = remember { MutableInteractionSource() }
@@ -267,7 +279,7 @@ private fun PanelRowView(row: PanelRow, focused: Boolean, menuOpen: Boolean, onE
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Box(Modifier.weight(1f)) {
-                    CamoMenuAnchor(items = refMenu(row, onEvent), controller = menu) { _ ->
+                    CamoMenuAnchor(items = refMenu(row, defaultBranch, onEvent), controller = menu) { _ ->
                         Row(
                             Modifier.alpha(if (row.hidden) 0.5f else 1f),
                             verticalAlignment = Alignment.CenterVertically,
@@ -379,10 +391,31 @@ private fun PanelRowView(row: PanelRow, focused: Boolean, menuOpen: Boolean, onE
 }
 
 @Composable
-private fun refMenu(row: PanelRow.RefItem, onEvent: (BranchesEvent) -> Unit): List<CamoMenuItem> {
+private fun refMenu(
+    row: PanelRow.RefItem,
+    defaultBranch: String?,
+    onEvent: (BranchesEvent) -> Unit,
+): List<CamoMenuItem> {
     val close = { onEvent(BranchesEvent.MenuShown(null)) }
     val name = row.ref.name
-    return listOf(
+    // Compare (Task 15): with the default branch, and with the branch's upstream.
+    val compare =
+        listOfNotNull(
+            defaultBranch?.takeIf { it != name }?.let { main ->
+                val label = main.substringAfter("refs/heads/").substringAfter("refs/remotes/")
+                CamoMenuItem(graftText("branches.menu.compareMain", "Compare with {name}", "name" to label), onClick = {
+                    onEvent(BranchesEvent.CompareWith(main, name))
+                    close()
+                })
+            },
+            row.ref.upstream?.takeIf { !row.ref.upstreamGone }?.let { upstream ->
+                CamoMenuItem(graftText("branches.menu.compareUpstream", "Compare with its upstream"), onClick = {
+                    onEvent(BranchesEvent.CompareWith(upstream, name))
+                    close()
+                })
+            },
+        )
+    return compare + listOf(
         CamoMenuItem(graftText("branches.menu.hide", "Hide"), onClick = {
             onEvent(BranchesEvent.HideToggled(name))
             close()

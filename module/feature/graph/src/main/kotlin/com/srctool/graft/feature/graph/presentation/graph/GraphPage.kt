@@ -660,10 +660,18 @@ private fun GraphTable(
                     is TableEntry.Commit -> {
                         if (graph == null) return@items
                         val select = { onEvent(GraphEvent.Selected(Selection.Row(e.row))) }
-                        CommitRow(state, graph, e.row, columns, onSelect = select) {
-                            select()
-                            onEvent(GraphEvent.OpenSelected)
-                        }
+                        CommitRow(
+                            state,
+                            graph,
+                            e.row,
+                            columns,
+                            onSelect = select,
+                            onOpen = {
+                                select()
+                                onEvent(GraphEvent.OpenSelected)
+                            },
+                            onMark = { onEvent(GraphEvent.Marked(Selection.Row(e.row))) },
+                        )
                     }
                 }
             }
@@ -684,6 +692,8 @@ private fun tableKey(event: KeyEvent, list: LazyListState, onEvent: (GraphEvent)
             alt && event.key == Key.DirectionRight -> GraphEvent.OtherParent
             mod && alt && event.key == Key.MoveHome -> GraphEvent.JumpToHead
             mod && event.key == Key.C -> GraphEvent.CopyHash
+            mod && event.key == Key.Spacebar -> GraphEvent.MarkSelected
+            mod && event.key == Key.D -> GraphEvent.CompareMarked
             alt || mod -> return false
             event.key == Key.DirectionDown -> GraphEvent.MovedBy(1)
             event.key == Key.DirectionUp -> GraphEvent.MovedBy(-1)

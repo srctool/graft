@@ -9,6 +9,7 @@ import com.srctool.graft.data.git.api.repositories.StashRepository
 import com.srctool.graft.presentation.session.RepoSnapshot
 import com.srctool.graft.presentation.session.RepositorySession
 import com.srctool.graft.presentation.session.SnapshotPart
+import com.srctool.graft.presentation.view.CenterView
 import com.srctool.graft.presentation.view.RepositoryViewState
 import com.srctool.graft.presentation.view.ViewSelection
 import com.srctool.sinew.models.Result
@@ -87,6 +88,8 @@ internal class BranchesViewModel(
         is BranchesEvent.CopyName -> BranchesAction.Copy(event.name)
 
         BranchesEvent.Retry -> BranchesAction.Retry
+
+        is BranchesEvent.CompareWith -> BranchesAction.Compare(event.base, event.compare)
     }
 
     override suspend fun onAction(action: BranchesAction) {
@@ -109,6 +112,8 @@ internal class BranchesViewModel(
             is BranchesAction.Copy -> emitEffect(BranchesEffect.CopyToClipboard(action.text))
 
             BranchesAction.Retry -> session.refresh(setOf(SnapshotPart.REFS))
+
+            is BranchesAction.Compare -> shared.center.value = CenterView.Compare(action.base, action.compare)
         }
     }
 
@@ -153,7 +158,7 @@ internal class BranchesViewModel(
         setState {
             // Focus stays on its row; when that row went away (filtered, collapsed), it moves to the first one.
             val focus = focus?.takeIf { key -> rows.any { it.key == key } } ?: rows.firstOrNull()?.key
-            copy(rows = rows, phase = phase, error = failure, focus = focus)
+            copy(rows = rows, phase = phase, error = failure, focus = focus, defaultBranch = defaultBranch(snap.refs))
         }
     }
 

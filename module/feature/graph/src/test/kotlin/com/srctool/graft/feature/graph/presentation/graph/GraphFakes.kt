@@ -183,6 +183,14 @@ internal class FakeCommitRepository(var rows: List<CommitRow> = Sample.rows) : C
 
     override suspend fun hasCommitGraph(repository: Path): Result<Boolean> = Result.Success(hasGraph)
 
+    /** Branch, tag and hash-prefix names of [rows] and [Sample.refs]; anything else doesn't resolve. */
+    override suspend fun resolve(repository: Path, revision: String): Result<ObjectId?> {
+        Sample.refs.firstOrNull {
+            it.name == revision || it.shortName == revision
+        }?.let { return Result.Success(it.commit) }
+        return Result.Success(rows.firstOrNull { it.id.hex.startsWith(revision) && revision.length >= 4 }?.id)
+    }
+
     override suspend fun writeCommitGraph(repository: Path): Result<Unit> {
         graphWrites++
         hasGraph = true
