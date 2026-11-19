@@ -19,8 +19,12 @@ import com.srctool.graft.feature.home.presentation.clone.CloneViewModel
 import com.srctool.graft.feature.home.presentation.home.HomeViewModel
 import com.srctool.graft.feature.home.presentation.initrepo.InitViewModel
 import com.srctool.graft.feature.home.presentation.onboarding.OnboardingViewModel
+import com.srctool.graft.feature.home.search.HomeActionSearchSource
+import com.srctool.graft.feature.home.search.RepositorySearchSource
+import com.srctool.graft.presentation.search.SearchSource
 import org.koin.core.module.Module
 import org.koin.core.module.dsl.viewModel
+import org.koin.core.qualifier.named
 import org.koin.dsl.module
 
 /**
@@ -35,6 +39,9 @@ public val homeFeatureKoin: Module =
         factory<InitRepositoryUseCase> { GitInitRepositoryUseCase(get(), get(), get()) }
         single<RepositorySummaryUseCase> { GitRepositorySummaryUseCase(get()) }
         single<InitTemplates> { BundledInitTemplates }
+
+        single<SearchSource>(named("home.repositories")) { RepositorySearchSource(get()) }
+        single<SearchSource>(named("home.actions")) { HomeActionSearchSource() }
 
         viewModel { HomeViewModel(get(), get(), get(), get(), get(), get()) }
         viewModel { OnboardingViewModel(install = get(), identity = get(), settings = get()) }

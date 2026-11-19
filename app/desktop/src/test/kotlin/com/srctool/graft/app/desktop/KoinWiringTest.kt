@@ -24,6 +24,10 @@ import com.srctool.graft.data.git.api.repositories.ReflogRepository
 import com.srctool.graft.data.git.api.repositories.RemoteRepository
 import com.srctool.graft.data.git.api.repositories.RepositoryAccessRepository
 import com.srctool.graft.data.git.api.repositories.StashRepository
+import com.srctool.graft.data.git.api.repositories.TreeRepository
+import com.srctool.graft.presentation.search.SearchGroup
+import com.srctool.graft.presentation.search.SearchScope
+import com.srctool.graft.presentation.search.SearchSource
 import com.srctool.graft.presentation.session.RepoSnapshot
 import com.srctool.graft.presentation.session.RepositorySession
 import com.srctool.graft.presentation.session.SnapshotPart
@@ -84,7 +88,7 @@ class KoinWiringTest {
                 CompareRepository::class, ReflogRepository::class, StashRepository::class, RemoteRepository::class,
                 IdentityRepository::class, SettingsRepository::class, KnownRepositoryRepository::class,
                 WindowStateRepository::class, WorkspaceRepository::class, FolderScanRepository::class,
-                RepositoryUiStateRepository::class, GitInstallRepository::class,
+                RepositoryUiStateRepository::class, GitInstallRepository::class, TreeRepository::class,
             )
         types.forEach { koin.get<Any>(it) }
         // One instance each, shared by every screen.
@@ -147,5 +151,26 @@ class KoinWiringTest {
         val licenses = koin.get<Any>(Class.forName("$base.about.LicenseSource").kotlin)
         val load = licenses::class.java.getMethod("load")
         assertTrue((load.invoke(licenses) as List<*>).size > 10)
+    }
+
+    @Test
+    fun `Search Everywhere finds every feature's source, and its view model resolves with a scope`() {
+        val koin = koin()
+        val sources = koin.getAll<SearchSource>()
+        assertEquals(
+            setOf(
+                SearchGroup.Repositories,
+                SearchGroup.Refs,
+                SearchGroup.Commits,
+                SearchGroup.Files,
+                SearchGroup.Actions,
+            ),
+            sources.map { it.group }.toSet(),
+        )
+        // Actions come from both Home and the host.
+        assertEquals(2, sources.count { it.group == SearchGroup.Actions })
+        val type = Class.forName("com.srctool.graft.navigation.search.SearchViewModel").kotlin
+        val vm = koin.get<Any>(type, parameters = { parametersOf(SearchScope()) })
+        assertEquals("SearchViewModel", vm::class.simpleName)
     }
 }

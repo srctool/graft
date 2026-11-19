@@ -9,9 +9,13 @@ import com.srctool.graft.navigation.about.BuildVersion
 import com.srctool.graft.navigation.about.BundledBuildVersion
 import com.srctool.graft.navigation.about.BundledLicenseSource
 import com.srctool.graft.navigation.about.LicenseSource
+import com.srctool.graft.navigation.search.HostActionSearchSource
+import com.srctool.graft.navigation.search.SearchViewModel
 import com.srctool.graft.navigation.settings.SettingsViewModel
+import com.srctool.graft.presentation.search.SearchSource
 import org.koin.core.module.Module
 import org.koin.core.module.dsl.viewModel
+import org.koin.core.qualifier.named
 import org.koin.dsl.module
 
 /**
@@ -23,6 +27,8 @@ public val navigationKoin: Module =
         includes(homeFeatureKoin)
         single<LicenseSource> { BundledLicenseSource() }
         single<BuildVersion> { BundledBuildVersion() }
+        single<SearchSource>(named("host.actions")) { HostActionSearchSource() }
         viewModel { SettingsViewModel(get()) }
+        viewModel { p -> SearchViewModel(getAll<SearchSource>(), p.get()) }
         viewModel { AboutViewModel(install = get(), licenses = get(), build = get()) }
     }

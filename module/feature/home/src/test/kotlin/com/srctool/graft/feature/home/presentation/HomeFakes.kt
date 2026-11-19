@@ -62,9 +62,12 @@ internal class FakeKnown(
 ) : KnownRepositoryRepository {
     val repositories = repositories.toMutableList()
     var writeFails = false
+    var listFails = false
 
-    override suspend fun list(): Result<Saved<List<KnownRepository>>> =
-        Result.Success(Saved(repositories.toList(), status))
+    override suspend fun list(): Result<Saved<List<KnownRepository>>> {
+        if (listFails) return Result.Failure(FakeFailure("unreadable"))
+        return Result.Success(Saved(repositories.toList(), status))
+    }
 
     private fun write(change: () -> Unit): Result<Unit> {
         if (writeFails) return Result.Failure(FakeFailure("newer"))

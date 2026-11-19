@@ -7,6 +7,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
@@ -39,14 +40,19 @@ import org.koin.compose.koinInject
 /**
  * Temporary (G1 Task 14, question 4): one repository's left panel, graph or diff, and commit details in a
  * [DockLayout], sharing a [RepositoryViewState]. Task 20's main window host in :module:navigation replaces it and
- * keeps the screens. The graph stays composed under a diff, so going back keeps its selection and scroll.
+ * keeps the screens. [onViewState] hands the host the shared state while the screen is shown. The graph stays composed under a diff, so going back keeps its selection and scroll.
  */
 @Composable
-public fun RepositoryScreen(session: RepositorySession) {
+public fun RepositoryScreen(session: RepositorySession, onViewState: (RepositoryViewState?) -> Unit = {}) {
     val location = session.location
     val folder = (location.workTree ?: location.gitDir).toString()
     val uiState = koinInject<RepositoryUiStateRepository>()
     val shared = remember(location) { RepositoryViewState(location.commonDir, uiState) }
+    // The host (Search Everywhere) selects commits through the same state the panes share.
+    DisposableEffect(shared) {
+        onViewState(shared)
+        onDispose { onViewState(null) }
+    }
     val dock =
         remember(location) {
             DockLayoutState().apply {

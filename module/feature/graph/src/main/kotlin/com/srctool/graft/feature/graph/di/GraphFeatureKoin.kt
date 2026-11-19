@@ -18,8 +18,13 @@ import com.srctool.graft.feature.graph.presentation.details.DetailsViewModel
 import com.srctool.graft.feature.graph.presentation.diff.DiffScreenViewModel
 import com.srctool.graft.feature.graph.presentation.graph.GraphViewModel
 import com.srctool.graft.feature.graph.presentation.operations.OperationsViewModel
+import com.srctool.graft.feature.graph.search.CommitSearchSource
+import com.srctool.graft.feature.graph.search.FileSearchSource
+import com.srctool.graft.feature.graph.search.RefSearchSource
+import com.srctool.graft.presentation.search.SearchSource
 import org.koin.core.module.Module
 import org.koin.core.module.dsl.viewModel
+import org.koin.core.qualifier.named
 import org.koin.dsl.module
 
 /**
@@ -33,6 +38,11 @@ public val graphFeatureKoin: Module =
         factory<SearchGraphUseCase> { GitSearchGraphUseCase(get()) }
         factory<CompareSummaryUseCase> { GitCompareSummaryUseCase(get()) }
         factory<ReflogTimelineUseCase> { GitReflogTimelineUseCase(get(), get()) }
+
+        // Search Everywhere's contributions (D1): the open repository's refs, commits and files.
+        single<SearchSource>(named("graph.refs")) { RefSearchSource() }
+        single<SearchSource>(named("graph.commits")) { CommitSearchSource(get()) }
+        single<SearchSource>(named("graph.files")) { FileSearchSource(get()) }
 
         viewModel { p -> GraphViewModel(p.get(), p.get(), get(), get(), get(), get(), p.get()) }
         viewModel { p -> BranchesViewModel(p.get(), p.get(), p.get(), get()) }
