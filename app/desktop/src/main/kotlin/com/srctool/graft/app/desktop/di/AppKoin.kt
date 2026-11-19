@@ -24,24 +24,23 @@ import org.koin.core.module.Module
 import org.koin.dsl.module
 
 /** What the app itself provides (ADR-28): the git runner, Graft's folders, the write queue and the file watcher. */
-internal val appKoin: Module =
-    module {
-        single { CommandLog() }
-        single<GitRunner> { ProcessGitRunner(GitRunnerConfig(commandLog = get())) }
-        single { AppFolders.current() }
-        single { WriteQueue() }
-        single<FileWatcher> { NativeFileWatcher() }
-        // The windows and tabs, and one session per repository that some tab shows (Architecture, "Repository session").
-        single { WindowState() }
-        single {
-            val refs = get<RefRepository>()
-            val access = get<RepositoryAccessRepository>()
-            val watcher = get<FileWatcher>()
-            val writes = get<WriteQueue>()
-            RepositorySessionsService(get()) { GitRepositorySession(it, refs, access, watcher, writes) }
-        }
-        single<RepositorySessions> { get<RepositorySessionsService>() }
+internal fun appKoin(): Module = module {
+    single { CommandLog() }
+    single<GitRunner> { ProcessGitRunner(GitRunnerConfig(commandLog = get())) }
+    single { AppFolders.current() }
+    single { WriteQueue() }
+    single<FileWatcher> { NativeFileWatcher() }
+    // The windows and tabs, and one session per repository that some tab shows (Architecture, "Repository session").
+    single { WindowState() }
+    single {
+        val refs = get<RefRepository>()
+        val access = get<RepositoryAccessRepository>()
+        val watcher = get<FileWatcher>()
+        val writes = get<WriteQueue>()
+        RepositorySessionsService(get()) { GitRepositorySession(it, refs, access, watcher, writes) }
     }
+    single<RepositorySessions> { get<RepositorySessionsService>() }
+}
 
 /** Every Koin module the desktop app starts with: its own, the data modules', the features'. */
-internal val desktopModules: List<Module> = listOf(appKoin, gitDataKoin, appDataKoin, navigationKoin)
+internal fun desktopModules(): List<Module> = listOf(appKoin(), gitDataKoin(), appDataKoin(), navigationKoin())

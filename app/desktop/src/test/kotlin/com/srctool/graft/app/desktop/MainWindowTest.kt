@@ -66,7 +66,7 @@ class MainWindowTest {
         startKoin {
             allowOverride(true)
             modules(
-                desktopModules +
+                desktopModules() +
                     module {
                         single<GitRunner> { sandbox.runner() }
                         single { AppFolders(folders, folders, folders.resolve("cache"), folders.resolve("logs")) }

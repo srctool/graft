@@ -68,7 +68,7 @@ class KoinWiringTest {
             }
         return koinApplication {
             allowOverride(true)
-            modules(desktopModules + overrides)
+            modules(desktopModules() + overrides)
         }.koin
     }
 

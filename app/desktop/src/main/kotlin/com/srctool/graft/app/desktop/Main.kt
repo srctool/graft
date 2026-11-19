@@ -52,7 +52,7 @@ private val MAC = System.getProperty("os.name").orEmpty().startsWith("Mac")
 @OptIn(FlowPreview::class, ExperimentalCoroutinesApi::class)
 fun main() {
     // ADR-28: everything the screens need is wired once, here.
-    startKoin { modules(desktopModules) }
+    startKoin { modules(desktopModules()) }
     val koin = KoinPlatform.getKoin()
     val windows = koin.get<WindowState>()
     val sessions = koin.get<RepositorySessionsService>()

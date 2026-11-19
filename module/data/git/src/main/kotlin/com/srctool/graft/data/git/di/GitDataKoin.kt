@@ -22,19 +22,18 @@ import org.koin.dsl.module
  * This module's repositories for Koin (ADR-28), each bound to its `api` interface. The app's Koin setup provides the
  * `GitRunner`; [GitDataModule] builds the implementations, so tests and the CLI can still wire by hand.
  */
-public val gitDataKoin: Module =
-    module {
-        single { GitDataModule(get(), commandLog = get()) }
-        single<CommitRepository> { get<GitDataModule>().commits }
-        single<RefRepository> { get<GitDataModule>().refs }
-        single<RepositoryAccessRepository> { get<GitDataModule>().access }
-        single<DiffRepository> { get<GitDataModule>().diffs }
-        single<CompareRepository> { get<GitDataModule>().compare }
-        single<ReflogRepository> { get<GitDataModule>().reflogs }
-        single<StashRepository> { get<GitDataModule>().stashes }
-        single<RemoteRepository> { get<GitDataModule>().remotes }
-        single<IdentityRepository> { get<GitDataModule>().identity }
-        single<TreeRepository> { get<GitDataModule>().trees }
-        single<GitInstallRepository> { get<GitDataModule>().install }
-        single<GitLogRepository> { get<GitDataModule>().log }
-    }
+public fun gitDataKoin(): Module = module {
+    single { GitDataModule(get(), commandLog = get()) }
+    single<CommitRepository> { get<GitDataModule>().commits }
+    single<RefRepository> { get<GitDataModule>().refs }
+    single<RepositoryAccessRepository> { get<GitDataModule>().access }
+    single<DiffRepository> { get<GitDataModule>().diffs }
+    single<CompareRepository> { get<GitDataModule>().compare }
+    single<ReflogRepository> { get<GitDataModule>().reflogs }
+    single<StashRepository> { get<GitDataModule>().stashes }
+    single<RemoteRepository> { get<GitDataModule>().remotes }
+    single<IdentityRepository> { get<GitDataModule>().identity }
+    single<TreeRepository> { get<GitDataModule>().trees }
+    single<GitInstallRepository> { get<GitDataModule>().install }
+    single<GitLogRepository> { get<GitDataModule>().log }
+}
