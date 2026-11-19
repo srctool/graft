@@ -5,6 +5,7 @@ package com.srctool.graft.app.desktop
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -17,8 +18,13 @@ import androidx.compose.ui.window.rememberWindowState
 import com.srctool.graft.app.desktop.di.desktopModules
 import com.srctool.graft.app.desktop.session.GitRepositorySession
 import com.srctool.graft.core.git.WriteQueue
+import com.srctool.graft.core.ui.theme.GraftDensity
 import com.srctool.graft.core.ui.theme.GraftTheme
+import com.srctool.graft.core.ui.theme.GraftThemeMode
 import com.srctool.graft.core.watcher.FileWatcher
+import com.srctool.graft.data.app.api.models.Density
+import com.srctool.graft.data.app.api.models.ThemeChoice
+import com.srctool.graft.data.app.api.repositories.SettingsRepository
 import com.srctool.graft.data.git.api.repositories.RefRepository
 import com.srctool.graft.data.git.api.repositories.RepositoryAccessRepository
 import com.srctool.graft.feature.graph.presentation.repository.RepositoryScreen
@@ -43,7 +49,20 @@ fun main() {
             title = "Graft",
             state = rememberWindowState(width = 1280.dp, height = 900.dp),
         ) {
-            GraftTheme {
+            // The theme and density follow Settings as they change (Settings writes publish through `changes`).
+            val settings = koinInject<SettingsRepository>()
+            val current by settings.changes.collectAsState()
+            LaunchedEffect(settings) { settings.read() }
+            GraftTheme(
+                mode = current?.theme.toThemeMode(),
+                density = if (current?.density ==
+                    Density.COMFORTABLE
+                ) {
+                    GraftDensity.Comfortable
+                } else {
+                    GraftDensity.Standard
+                },
+            ) {
                 if (repository != null) {
                     GraphWindow(repository)
                 } else {
@@ -77,4 +96,11 @@ private fun GraphWindow(repository: String) {
     }
     val current = session ?: return
     RepositoryScreen(current)
+}
+
+/** Until Settings has been read, follow the OS: no flash of the wrong theme for a user who chose System. */
+private fun ThemeChoice?.toThemeMode(): GraftThemeMode = when (this) {
+    ThemeChoice.LIGHT -> GraftThemeMode.LIGHT
+    ThemeChoice.DARK -> GraftThemeMode.DARK
+    else -> GraftThemeMode.SYSTEM
 }

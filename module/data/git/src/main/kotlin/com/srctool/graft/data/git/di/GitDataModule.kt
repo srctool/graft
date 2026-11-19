@@ -7,6 +7,7 @@ import com.srctool.graft.core.git.GitRunner
 import com.srctool.graft.data.git.api.repositories.CommitRepository
 import com.srctool.graft.data.git.api.repositories.CompareRepository
 import com.srctool.graft.data.git.api.repositories.DiffRepository
+import com.srctool.graft.data.git.api.repositories.GitInstallRepository
 import com.srctool.graft.data.git.api.repositories.IdentityRepository
 import com.srctool.graft.data.git.api.repositories.RefRepository
 import com.srctool.graft.data.git.api.repositories.ReflogRepository
@@ -17,6 +18,7 @@ import com.srctool.graft.data.git.implementation.repositories.GitCommitRepositor
 import com.srctool.graft.data.git.implementation.repositories.GitCompareRepository
 import com.srctool.graft.data.git.implementation.repositories.GitDiffRepository
 import com.srctool.graft.data.git.implementation.repositories.GitIdentityRepository
+import com.srctool.graft.data.git.implementation.repositories.GitInstallRepositoryImpl
 import com.srctool.graft.data.git.implementation.repositories.GitRefRepository
 import com.srctool.graft.data.git.implementation.repositories.GitReflogRepository
 import com.srctool.graft.data.git.implementation.repositories.GitRemoteRepository
@@ -40,4 +42,5 @@ public class GitDataModule(runner: GitRunner, neutralFolder: Path = Paths.get(Sy
     public val stashes: StashRepository = GitStashRepository(runner)
     public val remotes: RemoteRepository = GitRemoteRepository(runner)
     public val identity: IdentityRepository = GitIdentityRepository(runner, neutralFolder)
+    public val install: GitInstallRepository = GitInstallRepositoryImpl(runner, neutralFolder)
 }

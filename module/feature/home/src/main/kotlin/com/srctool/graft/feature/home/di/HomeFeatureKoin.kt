@@ -18,6 +18,7 @@ import com.srctool.graft.feature.home.domain.implementation.usecases.GitScanFold
 import com.srctool.graft.feature.home.presentation.clone.CloneViewModel
 import com.srctool.graft.feature.home.presentation.home.HomeViewModel
 import com.srctool.graft.feature.home.presentation.initrepo.InitViewModel
+import com.srctool.graft.feature.home.presentation.onboarding.OnboardingViewModel
 import org.koin.core.module.Module
 import org.koin.core.module.dsl.viewModel
 import org.koin.dsl.module
@@ -35,7 +36,8 @@ public val homeFeatureKoin: Module =
         single<RepositorySummaryUseCase> { GitRepositorySummaryUseCase(get()) }
         single<InitTemplates> { BundledInitTemplates }
 
-        viewModel { HomeViewModel(get(), get(), get(), get(), get()) }
+        viewModel { HomeViewModel(get(), get(), get(), get(), get(), get()) }
+        viewModel { OnboardingViewModel(install = get(), identity = get(), settings = get()) }
         viewModel { p -> CloneViewModel(folder = p.getOrNull(), clone = get()) }
         viewModel { p -> InitViewModel(folder = p.getOrNull(), init = get(), identity = get(), templates = get()) }
     }

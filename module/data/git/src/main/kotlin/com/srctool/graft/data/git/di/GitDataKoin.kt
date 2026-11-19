@@ -6,6 +6,7 @@ package com.srctool.graft.data.git.di
 import com.srctool.graft.data.git.api.repositories.CommitRepository
 import com.srctool.graft.data.git.api.repositories.CompareRepository
 import com.srctool.graft.data.git.api.repositories.DiffRepository
+import com.srctool.graft.data.git.api.repositories.GitInstallRepository
 import com.srctool.graft.data.git.api.repositories.IdentityRepository
 import com.srctool.graft.data.git.api.repositories.RefRepository
 import com.srctool.graft.data.git.api.repositories.ReflogRepository
@@ -31,4 +32,5 @@ public val gitDataKoin: Module =
         single<StashRepository> { get<GitDataModule>().stashes }
         single<RemoteRepository> { get<GitDataModule>().remotes }
         single<IdentityRepository> { get<GitDataModule>().identity }
+        single<GitInstallRepository> { get<GitDataModule>().install }
     }

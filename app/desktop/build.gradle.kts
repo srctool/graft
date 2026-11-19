@@ -3,6 +3,7 @@
 
 plugins {
     id("graft.compose-app")
+    id("graft.license-report")
 }
 
 dependencies {
@@ -39,6 +40,17 @@ dependencies {
     testImplementation(testFixtures(projects.module.core.git))
     testImplementation(compose.desktop.currentOs)
     testImplementation(libs.compose.ui.test)
+}
+
+// About shows this version (S40); the properties file carries it onto the classpath.
+val graftVersion = "0.1.0"
+version = graftVersion
+
+tasks.processResources {
+    // A local, not the script's property: the configuration cache can't store references to the script.
+    val appVersion = graftVersion
+    inputs.property("version", appVersion)
+    filesMatching("graft/build.properties") { expand("version" to appVersion) }
 }
 
 compose.desktop {

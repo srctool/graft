@@ -39,6 +39,9 @@ internal data class HomeRow(val path: Path, val known: KnownRepository?) {
 internal sealed interface HomeDialog {
     data object None : HomeDialog
 
+    /** Onboarding (S38): on the first run, and again from **Welcome…**. */
+    data object Welcome : HomeDialog
+
     /** S2, optionally into [folder] (a folder the user opened that wasn't a repository). */
     data class Clone(val folder: Path? = null) : HomeDialog
 

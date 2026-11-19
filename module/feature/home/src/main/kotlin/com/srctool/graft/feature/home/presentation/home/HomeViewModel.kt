@@ -6,6 +6,7 @@ package com.srctool.graft.feature.home.presentation.home
 import androidx.lifecycle.viewModelScope
 import com.srctool.graft.data.app.api.models.KnownRepository
 import com.srctool.graft.data.app.api.repositories.KnownRepositoryRepository
+import com.srctool.graft.data.app.api.repositories.SettingsRepository
 import com.srctool.graft.data.app.api.repositories.WorkspaceRepository
 import com.srctool.graft.feature.home.domain.api.models.OpenOutcome
 import com.srctool.graft.feature.home.domain.api.usecases.OpenRepositoryUseCase
@@ -28,6 +29,7 @@ internal class HomeViewModel(
     private val summaries: RepositorySummaryUseCase,
     private val known: KnownRepositoryRepository,
     private val workspaces: WorkspaceRepository,
+    private val settings: SettingsRepository,
     private val clock: () -> Long = System::currentTimeMillis,
 ) : EventActionViewModel<HomeState, HomeEvent, HomeAction, HomeEffect>(HomeState()) {
     private var opened = false
@@ -145,7 +147,12 @@ internal class HomeViewModel(
 
     override suspend fun onAction(action: HomeAction) {
         when (action) {
-            HomeAction.Start, HomeAction.Reload -> load()
+            HomeAction.Start -> {
+                load()
+                welcomeOnFirstRun()
+            }
+
+            HomeAction.Reload -> load()
 
             is HomeAction.Local -> setState(action.change)
 
@@ -242,6 +249,12 @@ internal class HomeViewModel(
                 emitEffect(HomeEffect.Open(action.root))
             }
         }
+    }
+
+    /** The welcome steps open by themselves until they've been finished or closed once (Onboarding). */
+    private suspend fun welcomeOnFirstRun() {
+        val onboarded = (settings.read() as? Result.Success)?.data?.value?.onboarded ?: return
+        if (!onboarded && currentState.dialog == HomeDialog.None) setState { copy(dialog = HomeDialog.Welcome) }
     }
 
     private suspend fun load() {
