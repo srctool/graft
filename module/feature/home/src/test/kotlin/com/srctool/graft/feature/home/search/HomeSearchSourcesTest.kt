@@ -37,11 +37,11 @@ class HomeSearchSourcesTest {
         assertEquals(8, found.size)
         val r7 = found.first { it.title == "r7" }
         assertEquals("~/Projects/r7", r7.detail)
-        assertEquals("/home/ann/Projects/r7", r7.extra)
+        assertEquals(home.resolve("Projects/r7").toString(), r7.extra)
         assertEquals(SearchTarget.OpenRepository(home.resolve("Projects/r7")), r7.target)
         assertEquals(SearchKind.Repository, r7.kind)
         // Outside the home folder the path stays whole.
-        assertEquals("/srv/other", found.first { it.title == "other" }.detail)
+        assertEquals(Paths.get("/srv/other").toString(), found.first { it.title == "other" }.detail)
     }
 
     @Test
