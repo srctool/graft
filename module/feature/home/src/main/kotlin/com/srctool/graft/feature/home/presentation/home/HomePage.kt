@@ -85,6 +85,7 @@ import com.srctool.graft.feature.home.presentation.clone.CloneDialog
 import com.srctool.graft.feature.home.presentation.initrepo.InitDialog
 import com.srctool.graft.feature.home.presentation.onboarding.OnboardingDialog
 import com.srctool.graft.feature.home.presentation.rememberDestinationOwner
+import com.srctool.graft.feature.home.search.HomeCommand
 import com.srctool.sinew.exception.displayMessage
 import com.srctool.sinew.models.SinewException
 import com.srctool.sinew.viewmodel.ObserveEffects
@@ -103,12 +104,30 @@ internal fun HomePage(
     onOpenAll: (List<Path>) -> Unit,
     onSettings: () -> Unit,
     onAbout: () -> Unit,
+    onSearch: () -> Unit,
     welcomeRequested: Boolean,
     onWelcomeHandled: () -> Unit,
+    command: HomeCommand?,
+    onCommandHandled: () -> Unit,
 ) {
     val state by viewModel.state.collectAsState()
     LaunchedEffect(viewModel) { viewModel.onEvent(HomeEvent.Opened) }
     // The host asks for the welcome steps again (Settings > Onboarding); it's told once they're on screen.
+    // An action chosen elsewhere (Search Everywhere) is carried out here, where the pickers and dialogs are.
+    val picker = LocalFolderPicker.current
+    val openTitle = graftText("home.open.title", "Choose a repository's folder")
+    val scanTitle = graftText("home.scan.pick", "Choose a folder to scan for repositories")
+    LaunchedEffect(command) {
+        when (command) {
+            HomeCommand.Open -> picker.pick(openTitle, null)?.let { viewModel.onEvent(HomeEvent.OpenFolder(it)) }
+            HomeCommand.Clone -> viewModel.onEvent(HomeEvent.DialogSet(HomeDialog.Clone()))
+            HomeCommand.Init -> viewModel.onEvent(HomeEvent.DialogSet(HomeDialog.Init()))
+            HomeCommand.Scan -> picker.pick(scanTitle, null)?.let { viewModel.onEvent(HomeEvent.ScanFolderChosen(it)) }
+            HomeCommand.NewWorkspace -> viewModel.onEvent(HomeEvent.DialogSet(HomeDialog.NewWorkspace()))
+            null -> return@LaunchedEffect
+        }
+        onCommandHandled()
+    }
     LaunchedEffect(welcomeRequested) {
         if (welcomeRequested) {
             viewModel.onEvent(HomeEvent.DialogSet(HomeDialog.Welcome))
@@ -121,7 +140,7 @@ internal fun HomePage(
             is HomeEffect.OpenAll -> onOpenAll(effect.roots)
         }
     }
-    HomeContent(state, viewModel::onEvent, onSettings, onAbout)
+    HomeContent(state, viewModel::onEvent, onSettings, onAbout, onSearch)
 }
 
 /** The Home destination: its view model from Koin, in a store of its own. */
@@ -131,11 +150,17 @@ public fun HomeDestination(
     onOpenAll: (List<Path>) -> Unit,
     onSettings: () -> Unit,
     onAbout: () -> Unit,
+    onSearch: () -> Unit = {},
     welcomeRequested: Boolean = false,
     onWelcomeHandled: () -> Unit = {},
+    command: HomeCommand? = null,
+    onCommandHandled: () -> Unit = {},
 ) {
     val viewModel = koinViewModel<HomeViewModel>(viewModelStoreOwner = rememberDestinationOwner("home"))
-    HomePage(viewModel, onOpen, onOpenAll, onSettings, onAbout, welcomeRequested, onWelcomeHandled)
+    HomePage(
+        viewModel, onOpen, onOpenAll, onSettings, onAbout, onSearch,
+        welcomeRequested, onWelcomeHandled, command, onCommandHandled,
+    )
 }
 
 /** Home without its view model, for screenshot tests. */
@@ -146,6 +171,7 @@ internal fun HomeContent(
     onEvent: (HomeEvent) -> Unit,
     onSettings: () -> Unit = {},
     onAbout: () -> Unit = {},
+    onSearch: () -> Unit = {},
 ) {
     val colors = Camouflage.colors
     val picker = LocalFolderPicker.current
@@ -184,7 +210,7 @@ internal fun HomeContent(
                 true
             },
     ) {
-        TopBar(state, onEvent, onSettings, onAbout)
+        TopBar(state, onEvent, onSettings, onAbout, onSearch)
         if (state.readOnly) {
             CamoBanner(
                 graftText(
@@ -211,7 +237,13 @@ internal fun HomeContent(
 }
 
 @Composable
-private fun TopBar(state: HomeState, onEvent: (HomeEvent) -> Unit, onSettings: () -> Unit, onAbout: () -> Unit) {
+private fun TopBar(
+    state: HomeState,
+    onEvent: (HomeEvent) -> Unit,
+    onSettings: () -> Unit,
+    onAbout: () -> Unit,
+    onSearch: () -> Unit,
+) {
     val picker = LocalFolderPicker.current
     val density = Graft.tokens.density
     val openTitle = graftText("home.open.title", "Choose a repository's folder")
@@ -254,6 +286,7 @@ private fun TopBar(state: HomeState, onEvent: (HomeEvent) -> Unit, onSettings: (
         )
         val menu =
             listOf(
+                CamoMenuItem(graftText("home.menu.search", "Search everywhere…"), onClick = onSearch),
                 CamoMenuItem(graftText("home.menu.settings", "Settings…"), onClick = onSettings),
                 CamoMenuItem(
                     graftText("home.menu.welcome", "Welcome…"),

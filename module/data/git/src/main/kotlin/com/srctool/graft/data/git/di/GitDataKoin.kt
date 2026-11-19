@@ -13,6 +13,7 @@ import com.srctool.graft.data.git.api.repositories.ReflogRepository
 import com.srctool.graft.data.git.api.repositories.RemoteRepository
 import com.srctool.graft.data.git.api.repositories.RepositoryAccessRepository
 import com.srctool.graft.data.git.api.repositories.StashRepository
+import com.srctool.graft.data.git.api.repositories.TreeRepository
 import org.koin.core.module.Module
 import org.koin.dsl.module
 
@@ -32,5 +33,6 @@ public val gitDataKoin: Module =
         single<StashRepository> { get<GitDataModule>().stashes }
         single<RemoteRepository> { get<GitDataModule>().remotes }
         single<IdentityRepository> { get<GitDataModule>().identity }
+        single<TreeRepository> { get<GitDataModule>().trees }
         single<GitInstallRepository> { get<GitDataModule>().install }
     }

@@ -14,6 +14,7 @@ import com.srctool.graft.data.git.api.repositories.ReflogRepository
 import com.srctool.graft.data.git.api.repositories.RemoteRepository
 import com.srctool.graft.data.git.api.repositories.RepositoryAccessRepository
 import com.srctool.graft.data.git.api.repositories.StashRepository
+import com.srctool.graft.data.git.api.repositories.TreeRepository
 import com.srctool.graft.data.git.implementation.repositories.GitCommitRepository
 import com.srctool.graft.data.git.implementation.repositories.GitCompareRepository
 import com.srctool.graft.data.git.implementation.repositories.GitDiffRepository
@@ -24,6 +25,7 @@ import com.srctool.graft.data.git.implementation.repositories.GitReflogRepositor
 import com.srctool.graft.data.git.implementation.repositories.GitRemoteRepository
 import com.srctool.graft.data.git.implementation.repositories.GitRepositoryAccessRepository
 import com.srctool.graft.data.git.implementation.repositories.GitStashRepository
+import com.srctool.graft.data.git.implementation.repositories.GitTreeRepository
 import java.nio.file.Path
 import java.nio.file.Paths
 
@@ -42,5 +44,6 @@ public class GitDataModule(runner: GitRunner, neutralFolder: Path = Paths.get(Sy
     public val stashes: StashRepository = GitStashRepository(runner)
     public val remotes: RemoteRepository = GitRemoteRepository(runner)
     public val identity: IdentityRepository = GitIdentityRepository(runner, neutralFolder)
+    public val trees: TreeRepository = GitTreeRepository(runner)
     public val install: GitInstallRepository = GitInstallRepositoryImpl(runner, neutralFolder)
 }
