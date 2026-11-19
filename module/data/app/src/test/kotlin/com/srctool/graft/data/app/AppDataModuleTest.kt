@@ -9,6 +9,7 @@ import com.srctool.graft.data.app.api.models.DiffStyle
 import com.srctool.graft.data.app.api.models.GraphAuthorKind
 import com.srctool.graft.data.app.api.models.GraphBranches
 import com.srctool.graft.data.app.api.models.GraphViewState
+import com.srctool.graft.data.app.api.models.PanelLayout
 import com.srctool.graft.data.app.api.models.RepositoryUiState
 import com.srctool.graft.data.app.api.models.SavedStatus
 import com.srctool.graft.data.app.api.models.SavedWindow
@@ -195,13 +196,28 @@ class AppDataModuleTest {
     @Test
     fun `windows and repositories share the app state file`() = runBlocking<Unit> {
         val data = module()
-        val windows = listOf(SavedWindow(10, 20, 1200, 800, false), SavedWindow(-1600, 0, 800, 600, true))
+        val windows =
+            listOf(
+                SavedWindow(10, 20, 1200, 800, false, tabs = listOf("a", "b"), activeTab = 1),
+                SavedWindow(-1600, 0, 800, 600, true),
+            )
         data.windows.save(windows).getOrThrow()
         data.knownRepositories.opened(repo("a")).getOrThrow()
         val again = module()
         assertEquals(windows, again.windows.windows().getOrThrow())
         assertEquals(1, again.knownRepositories.list().getOrThrow().value.size)
         assertTrue(Files.exists(folders.data.resolve("app-state.json")))
+    }
+
+    @Test
+    fun `a window saved before tabs were kept reads as Home in front`() = runBlocking<Unit> {
+        val file = folders.data.resolve("app-state.json")
+        Files.createDirectories(file.parent)
+        Files.writeString(
+            file,
+            """{"version":1,"windows":[{"x":1,"y":2,"width":900,"height":700,"maximized":true}]}""",
+        )
+        assertEquals(listOf(SavedWindow(1, 2, 900, 700, true)), module().windows.windows().getOrThrow())
     }
 
     @Test
@@ -301,6 +317,22 @@ class AppDataModuleTest {
         val read = module().repositoryUiState.read(commonDir).getOrThrow().value
         assertEquals(graph, read.graph)
         assertEquals(columns, read.columns)
+    }
+
+    @Test
+    fun `the panel layout round-trips and an older file has none`() = runBlocking<Unit> {
+        val commonDir = repo("r").resolve(".git")
+        val state = module().repositoryUiState
+        assertEquals(PanelLayout(), state.read(commonDir).getOrThrow().value.panels)
+        val panels =
+            PanelLayout(
+                sides = mapOf("operations" to "right"),
+                open = mapOf("left" to "branches", "bottom" to "gitlog"),
+                sizes = mapOf("left" to 300f, "bottom" to 180f),
+                saved = true,
+            )
+        state.update(commonDir) { it.copy(panels = panels) }.getOrThrow()
+        assertEquals(panels, module().repositoryUiState.read(commonDir).getOrThrow().value.panels)
     }
 
     @Test

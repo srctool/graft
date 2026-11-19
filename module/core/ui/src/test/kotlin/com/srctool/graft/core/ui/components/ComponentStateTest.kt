@@ -132,4 +132,20 @@ class ComponentStateTest {
         assertEquals(DockSide.RIGHT, restored.side("tags", DockSide.LEFT))
         assertEquals("log", restored.open(DockSide.BOTTOM))
     }
+
+    @Test
+    fun `focus mode hides every dock, brings them back, and is never what gets saved`() {
+        val dock = DockLayoutState()
+        dock.show("branches", DockSide.LEFT)
+        dock.show("log", DockSide.BOTTOM)
+        dock.toggleFocusMode()
+        assertTrue(dock.focusMode)
+        assertTrue(DockSide.entries.all { dock.open(it) == null })
+        // A restart in focus mode must not start with everything hidden.
+        assertEquals("branches", dock.snapshot().open[DockSide.LEFT])
+        dock.toggleFocusMode()
+        assertFalse(dock.focusMode)
+        assertEquals("branches", dock.open(DockSide.LEFT))
+        assertEquals("log", dock.open(DockSide.BOTTOM))
+    }
 }

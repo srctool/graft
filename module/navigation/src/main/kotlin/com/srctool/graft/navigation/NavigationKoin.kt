@@ -3,6 +3,7 @@
 
 package com.srctool.graft.navigation
 
+import com.srctool.graft.feature.graph.di.graphFeatureKoin
 import com.srctool.graft.feature.home.di.homeFeatureKoin
 import com.srctool.graft.navigation.about.AboutViewModel
 import com.srctool.graft.navigation.about.BuildVersion
@@ -24,7 +25,7 @@ import org.koin.dsl.module
  */
 public val navigationKoin: Module =
     module {
-        includes(homeFeatureKoin)
+        includes(homeFeatureKoin, graphFeatureKoin)
         single<LicenseSource> { BundledLicenseSource() }
         single<BuildVersion> { BundledBuildVersion() }
         single<SearchSource>(named("host.actions")) { HostActionSearchSource() }

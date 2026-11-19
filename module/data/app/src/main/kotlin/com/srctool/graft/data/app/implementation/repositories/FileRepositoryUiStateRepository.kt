@@ -6,11 +6,13 @@ package com.srctool.graft.data.app.implementation.repositories
 import com.srctool.graft.data.app.api.models.GraphAuthorKind
 import com.srctool.graft.data.app.api.models.GraphBranches
 import com.srctool.graft.data.app.api.models.GraphViewState
+import com.srctool.graft.data.app.api.models.PanelLayout
 import com.srctool.graft.data.app.api.models.RepositoryUiState
 import com.srctool.graft.data.app.api.models.Saved
 import com.srctool.graft.data.app.api.repositories.RepositoryUiStateRepository
 import com.srctool.graft.data.app.implementation.source.local.GraphViewRecord
 import com.srctool.graft.data.app.implementation.source.local.JsonStore
+import com.srctool.graft.data.app.implementation.source.local.PanelsRecord
 import com.srctool.graft.data.app.implementation.source.local.RepositoryStateRecord
 import com.srctool.sinew.models.Result
 import com.srctool.sinew.models.map
@@ -38,11 +40,29 @@ internal class FileRepositoryUiStateRepository : RepositoryUiStateRepository {
         )
     }
 
-    private fun RepositoryStateRecord.toState() =
-        RepositoryUiState(hiddenRefs.toSet(), soloRefs.toSet(), pinnedRefs.toSet(), graph.toState(), columns)
+    private fun RepositoryStateRecord.toState() = RepositoryUiState(
+        hiddenRefs.toSet(),
+        soloRefs.toSet(),
+        pinnedRefs.toSet(),
+        graph.toState(),
+        columns,
+        panels.toState(),
+    )
 
-    private fun RepositoryUiState.toRecord() =
-        RepositoryStateRecord(hiddenRefs.sorted(), soloRefs.sorted(), pinnedRefs.sorted(), graph.toRecord(), columns)
+    private fun RepositoryUiState.toRecord() = RepositoryStateRecord(
+        hiddenRefs.sorted(),
+        soloRefs.sorted(),
+        pinnedRefs.sorted(),
+        graph.toRecord(),
+        columns,
+        panels.toRecord(),
+    )
+
+    private fun PanelsRecord.toState() =
+        PanelLayout(sides.toSortedMap(), open.toSortedMap(), sizes.toSortedMap(), saved)
+
+    private fun PanelLayout.toRecord() =
+        PanelsRecord(sides.toSortedMap(), open.toSortedMap(), sizes.toSortedMap(), saved)
 
     private fun GraphViewRecord.toState(): GraphViewState {
         val kinds = authorTypes.mapNotNullTo(HashSet()) { name -> KINDS.entries.firstOrNull { it.value == name }?.key }

@@ -16,6 +16,7 @@ import com.srctool.graft.feature.graph.presentation.branches.BranchesViewModel
 import com.srctool.graft.feature.graph.presentation.compare.CompareViewModel
 import com.srctool.graft.feature.graph.presentation.details.DetailsViewModel
 import com.srctool.graft.feature.graph.presentation.diff.DiffScreenViewModel
+import com.srctool.graft.feature.graph.presentation.gitlog.GitLogViewModel
 import com.srctool.graft.feature.graph.presentation.graph.GraphViewModel
 import com.srctool.graft.feature.graph.presentation.operations.OperationsViewModel
 import com.srctool.graft.feature.graph.search.CommitSearchSource
@@ -50,4 +51,5 @@ public val graphFeatureKoin: Module =
         viewModel { p -> CompareViewModel(p.get(), p.get(), p.get(), get(), get(), get(), get()) }
         viewModel { p -> DiffScreenViewModel(p.get(), p.get(), get(), get()) }
         viewModel { p -> OperationsViewModel(p.get(), p.get(), p.get(), get()) }
+        viewModel { p -> GitLogViewModel(p.get(), get()) }
     }

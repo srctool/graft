@@ -67,39 +67,75 @@ public class ProcessGitRunner(
 
     private suspend fun <T> streamOnce(cmd: StreamingGitCommand<T>, cwd: Path, emit: suspend (T) -> Unit) {
         val argv = argv(cmd)
-        val process = start(cmd, argv, cwd)
-        coroutineScope {
-            val killer = killOnCancel(process)
-            val parsesStderr = cmd.output == GitOutput.STDERR
-            // The stream the command doesn't parse is still read to the end, or git could block on a full pipe.
-            val other =
-                async {
-                    if (parsesStderr) {
-                        process.inputStream.use { it.copyTo(OutputStream.nullOutputStream()) }
-                        ""
-                    } else {
-                        process.errorStream.readCapped(config.stderrLimit)
+        val recording = Recording(cmd, cwd)
+        val process = recording.guard { start(cmd, argv, cwd) }
+        recording.guard {
+            coroutineScope {
+                val killer = killOnCancel(process)
+                val parsesStderr = cmd.output == GitOutput.STDERR
+                // The stream the command doesn't parse is still read to the end, or git could block on a full pipe.
+                val other =
+                    async {
+                        if (parsesStderr) {
+                            process.inputStream.use { it.copyTo(OutputStream.nullOutputStream()) }
+                            ""
+                        } else {
+                            process.errorStream.readCapped(config.stderrLimit)
+                        }
                     }
+                process.outputStream.close()
+                val kept = if (parsesStderr) KeepingInputStream(process.errorStream, config.stderrLimit) else null
+                try {
+                    (kept ?: process.inputStream).use { input ->
+                        cmd.parse(input).forEach { emit(it) }
+                        // Whatever the parser left unread is still drained (and, for stderr, kept for the error).
+                        if (kept != null) input.copyTo(OutputStream.nullOutputStream())
+                    }
+                } catch (e: GitParseException) {
+                    throw ParseException(MODULE, ExceptionLayer.Repository, cmd.function, e).also(::report)
+                } catch (e: IOException) {
+                    ensureActive()
+                    throw e
                 }
-            process.outputStream.close()
-            val kept = if (parsesStderr) KeepingInputStream(process.errorStream, config.stderrLimit) else null
-            try {
-                (kept ?: process.inputStream).use { input ->
-                    cmd.parse(input).forEach { emit(it) }
-                    // Whatever the parser left unread is still drained (and, for stderr, kept for the error).
-                    if (kept != null) input.copyTo(OutputStream.nullOutputStream())
-                }
-            } catch (e: GitParseException) {
-                throw ParseException(MODULE, ExceptionLayer.Repository, cmd.function, e).also(::report)
-            } catch (e: IOException) {
-                ensureActive()
-                throw e
+                val exitCode = process.onExit().await().exitValue()
+                recording.exitCode = exitCode
+                val errText = kept?.text() ?: other.await()
+                other.await()
+                killer.cancel()
+                if (exitCode != 0) throw gitFailure(cmd, argv, exitCode, errText)
             }
-            val exitCode = process.onExit().await().exitValue()
-            val errText = kept?.text() ?: other.await()
-            other.await()
-            killer.cancel()
-            if (exitCode != 0) throw gitFailure(cmd, argv, exitCode, errText)
+        }
+    }
+
+    /** One run's entry for the [CommandLog]: written when the run ends, however it ends. */
+    private inner class Recording(private val cmd: GitInvocation, private val cwd: Path) {
+        private val startedAt = System.currentTimeMillis()
+        private val startedNanos = System.nanoTime()
+
+        /** Git's exit code once it has one. */
+        var exitCode: Int? = null
+
+        inline fun <R> guard(block: () -> R): R {
+            var done = false
+            try {
+                return block().also { done = true }
+            } finally {
+                if (!done || exitCode != null) finish()
+            }
+        }
+
+        private var finished = false
+
+        fun finish() {
+            if (finished) return
+            finished = true
+            config.commandLog?.record(
+                startedAt,
+                cwd,
+                cmd.args,
+                (System.nanoTime() - startedNanos) / 1_000_000,
+                exitCode,
+            )
         }
     }
 
@@ -127,24 +163,28 @@ public class ProcessGitRunner(
     private suspend fun <T> execOnce(cmd: GitCommand<T>, cwd: Path, input: ByteArray?): T =
         withContext(Dispatchers.IO) {
             val argv = argv(cmd)
-            val process = start(cmd, argv, cwd)
-            coroutineScope {
-                val killer = killOnCancel(process)
-                val stdout = async { process.inputStream.use(InputStream::readBytes) }
-                val stderr = async { process.errorStream.readCapped(config.stderrLimit) }
-                launch {
-                    // A process may exit without reading its input; that's its answer, not a runner failure.
-                    try {
-                        process.outputStream.use { stdin -> input?.let(stdin::write) }
-                    } catch (_: IOException) {
+            val recording = Recording(cmd, cwd)
+            val process = recording.guard { start(cmd, argv, cwd) }
+            recording.guard {
+                coroutineScope {
+                    val killer = killOnCancel(process)
+                    val stdout = async { process.inputStream.use(InputStream::readBytes) }
+                    val stderr = async { process.errorStream.readCapped(config.stderrLimit) }
+                    launch {
+                        // A process may exit without reading its input; that's its answer, not a runner failure.
+                        try {
+                            process.outputStream.use { stdin -> input?.let(stdin::write) }
+                        } catch (_: IOException) {
+                        }
                     }
+                    val exitCode = process.onExit().await().exitValue()
+                    val out = stdout.await()
+                    val err = stderr.await()
+                    killer.cancel()
+                    recording.exitCode = exitCode
+                    if (exitCode !in cmd.successExitCodes) throw gitFailure(cmd, argv, exitCode, err)
+                    cmd.parse(out)
                 }
-                val exitCode = process.onExit().await().exitValue()
-                val out = stdout.await()
-                val err = stderr.await()
-                killer.cancel()
-                if (exitCode !in cmd.successExitCodes) throw gitFailure(cmd, argv, exitCode, err)
-                cmd.parse(out)
             }
         }
 

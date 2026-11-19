@@ -10,7 +10,9 @@ import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.performScrollToIndex
 import androidx.compose.ui.test.runDesktopComposeUiTest
+import com.srctool.graft.app.desktop.di.desktopModules
 import com.srctool.graft.app.desktop.session.GitRepositorySession
+import com.srctool.graft.core.configuration.AppFolders
 import com.srctool.graft.core.git.GitRunner
 import com.srctool.graft.core.git.WriteQueue
 import com.srctool.graft.core.git.testing.GitSandbox
@@ -18,24 +20,20 @@ import com.srctool.graft.core.ui.theme.GraftTheme
 import com.srctool.graft.core.watcher.FileWatcher
 import com.srctool.graft.core.watcher.RepoChange
 import com.srctool.graft.core.watcher.WatchedRepository
-import com.srctool.graft.data.app.api.models.RepositoryUiState
-import com.srctool.graft.data.app.api.models.Saved
-import com.srctool.graft.data.app.api.models.SavedStatus
-import com.srctool.graft.data.app.api.repositories.RepositoryUiStateRepository
 import com.srctool.graft.data.git.api.models.LogScope
+import com.srctool.graft.data.git.api.models.RepositoryLocation
 import com.srctool.graft.data.git.di.GitDataModule
-import com.srctool.graft.data.git.di.gitDataKoin
-import com.srctool.graft.feature.graph.di.graphFeatureKoin
-import com.srctool.graft.feature.graph.presentation.graph.GraphDestination
-import com.srctool.graft.feature.graph.presentation.graph.GraphRoute
-import com.srctool.graft.presentation.view.RepositoryViewState
-import com.srctool.sinew.models.Result
+import com.srctool.graft.navigation.shell.MainWindow
+import com.srctool.graft.presentation.session.RepositorySession
+import com.srctool.graft.presentation.session.RepositorySessions
+import com.srctool.graft.presentation.window.WindowState
 import com.srctool.sinew.models.getOrThrow
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.emptyFlow
 import kotlinx.coroutines.flow.take
 import kotlinx.coroutines.flow.toList
@@ -60,21 +58,6 @@ import kotlin.time.Duration.Companion.minutes
 class GraphMeasurementTest {
     private object NoWatcher : FileWatcher {
         override fun watch(repository: WatchedRepository): Flow<RepoChange> = emptyFlow()
-    }
-
-    private class MemoryUiState : RepositoryUiStateRepository {
-        var value = RepositoryUiState()
-
-        override suspend fun read(commonDir: Path): Result<Saved<RepositoryUiState>> =
-            Result.Success(Saved(value, SavedStatus.Current))
-
-        override suspend fun update(
-            commonDir: Path,
-            change: (RepositoryUiState) -> RepositoryUiState,
-        ): Result<RepositoryUiState> {
-            value = change(value)
-            return Result.Success(value)
-        }
     }
 
     private fun report(name: String, value: Any) = println("GRAFT_MEASURE $name=$value")
@@ -125,7 +108,6 @@ class GraphMeasurementTest {
             session.init()
             session.listen(scope)
         }
-        val ui = MemoryUiState()
         val rowLabel = SemanticsMatcher("a commit row") { node ->
             node.config.getOrNull(SemanticsProperties.ContentDescription).orEmpty().any {
                 it.startsWith("Commit ") &&
@@ -138,18 +120,30 @@ class GraphMeasurementTest {
             }
         }
 
-        // The app's Koin wiring (ADR-28), with the sandbox's runner in place of the app's own.
-        startKoin { modules(module { single<GitRunner> { sandbox.runner() } }, gitDataKoin, graphFeatureKoin) }
+        // The app's Koin wiring (ADR-28), with the sandbox's runner and folders in place of the app's own.
+        val folders = sandbox.root.resolve("graft-app")
+        startKoin {
+            allowOverride(true)
+            modules(
+                desktopModules +
+                    module {
+                        single<GitRunner> { sandbox.runner() }
+                        single { AppFolders(folders, folders, folders.resolve("cache"), folders.resolve("logs")) }
+                    },
+            )
+        }
+        val windows = WindowState()
+        val windowId = windows.openWindow()
+        windows.openRepository(windowId, location)
+        val sessions =
+            object : RepositorySessions {
+                override val sessions =
+                    MutableStateFlow<Map<RepositoryLocation, RepositorySession>>(mapOf(location to session))
+            }
         runDesktopComposeUiTest(1280, 900, testTimeout = 30.minutes) {
             val opened = System.nanoTime()
             setContent {
-                GraftTheme {
-                    GraphDestination(
-                        GraphRoute((location.workTree ?: location.gitDir).toString()),
-                        session,
-                        RepositoryViewState(location.commonDir, ui),
-                    )
-                }
+                GraftTheme { MainWindow(windows, windowId, sessions) }
             }
             waitUntil(timeoutMillis = 120_000) { onAllNodes(rowLabel).fetchSemanticsNodes().isNotEmpty() }
             report("screen.firstScreenMs", ms(opened))

@@ -18,6 +18,7 @@ import com.srctool.graft.data.git.api.repositories.CommitRepository
 import com.srctool.graft.data.git.api.repositories.CompareRepository
 import com.srctool.graft.data.git.api.repositories.DiffRepository
 import com.srctool.graft.data.git.api.repositories.GitInstallRepository
+import com.srctool.graft.data.git.api.repositories.GitLogRepository
 import com.srctool.graft.data.git.api.repositories.IdentityRepository
 import com.srctool.graft.data.git.api.repositories.RefRepository
 import com.srctool.graft.data.git.api.repositories.ReflogRepository
@@ -30,8 +31,10 @@ import com.srctool.graft.presentation.search.SearchScope
 import com.srctool.graft.presentation.search.SearchSource
 import com.srctool.graft.presentation.session.RepoSnapshot
 import com.srctool.graft.presentation.session.RepositorySession
+import com.srctool.graft.presentation.session.RepositorySessions
 import com.srctool.graft.presentation.session.SnapshotPart
 import com.srctool.graft.presentation.view.RepositoryViewState
+import com.srctool.graft.presentation.window.WindowState
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import org.junit.jupiter.api.io.TempDir
@@ -89,10 +92,14 @@ class KoinWiringTest {
                 IdentityRepository::class, SettingsRepository::class, KnownRepositoryRepository::class,
                 WindowStateRepository::class, WorkspaceRepository::class, FolderScanRepository::class,
                 RepositoryUiStateRepository::class, GitInstallRepository::class, TreeRepository::class,
+                GitLogRepository::class, WindowState::class, RepositorySessions::class,
             )
         types.forEach { koin.get<Any>(it) }
         // One instance each, shared by every screen.
         assertEquals(koin.get<CommitRepository>(), koin.get<CommitRepository>())
+        // The window's tabs and the sessions that follow them are the app's, one each.
+        assertEquals(koin.get<WindowState>(), koin.get<WindowState>())
+        assertEquals(koin.get<RepositorySessions>(), koin.get<RepositorySessions>())
     }
 
     @Test
@@ -113,6 +120,8 @@ class KoinWiringTest {
             val viewModel = koin.get<Any>(Class.forName(name).kotlin, parameters = { withSession })
             assertEquals(name, viewModel::class.qualifiedName)
         }
+        val log = Class.forName("com.srctool.graft.feature.graph.presentation.gitlog.GitLogViewModel").kotlin
+        assertEquals("GitLogViewModel", koin.get<Any>(log, parameters = { parametersOf(folder) })::class.simpleName)
         val diffType = Class.forName("com.srctool.graft.feature.graph.presentation.diff.DiffScreenViewModel").kotlin
         val diff = koin.get<Any>(diffType, parameters = { parametersOf(folder, shared) })
         assertEquals("DiffScreenViewModel", diff::class.simpleName)

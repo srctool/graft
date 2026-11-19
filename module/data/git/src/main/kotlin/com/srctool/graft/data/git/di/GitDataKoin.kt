@@ -7,6 +7,7 @@ import com.srctool.graft.data.git.api.repositories.CommitRepository
 import com.srctool.graft.data.git.api.repositories.CompareRepository
 import com.srctool.graft.data.git.api.repositories.DiffRepository
 import com.srctool.graft.data.git.api.repositories.GitInstallRepository
+import com.srctool.graft.data.git.api.repositories.GitLogRepository
 import com.srctool.graft.data.git.api.repositories.IdentityRepository
 import com.srctool.graft.data.git.api.repositories.RefRepository
 import com.srctool.graft.data.git.api.repositories.ReflogRepository
@@ -23,7 +24,7 @@ import org.koin.dsl.module
  */
 public val gitDataKoin: Module =
     module {
-        single { GitDataModule(get()) }
+        single { GitDataModule(get(), commandLog = get()) }
         single<CommitRepository> { get<GitDataModule>().commits }
         single<RefRepository> { get<GitDataModule>().refs }
         single<RepositoryAccessRepository> { get<GitDataModule>().access }
@@ -35,4 +36,5 @@ public val gitDataKoin: Module =
         single<IdentityRepository> { get<GitDataModule>().identity }
         single<TreeRepository> { get<GitDataModule>().trees }
         single<GitInstallRepository> { get<GitDataModule>().install }
+        single<GitLogRepository> { get<GitDataModule>().log }
     }

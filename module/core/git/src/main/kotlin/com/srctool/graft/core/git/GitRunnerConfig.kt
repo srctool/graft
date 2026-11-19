@@ -20,6 +20,8 @@ public data class GitRunnerConfig(
     val launcher: ProcessLauncher = ProcessLauncher.Default,
     /** At most this much of stderr is kept for errors and "Show output". */
     val stderrLimit: Int = 1 shl 20,
+    /** Every command the runner runs is recorded here for the Git log; null records nothing. */
+    val commandLog: CommandLog? = null,
 )
 
 /**

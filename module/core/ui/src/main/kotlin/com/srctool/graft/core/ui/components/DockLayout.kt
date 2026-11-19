@@ -19,8 +19,11 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.Stable
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateMapOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
@@ -116,6 +119,11 @@ public class DockLayoutState(
         (lastOpened[side] ?: fallback)?.let { show(it, side) }
     }
 
+    /** Opens [id] in [side], or closes that dock when [id] is what's open there. */
+    public fun toggleSideOf(side: DockSide, id: String) {
+        if (opened[side] == id) close(side) else show(id, side)
+    }
+
     /** Moves [window] to [to], open there if it was open before. */
     public fun move(window: ToolWindow, to: DockSide) {
         val from = side(window.id, window.defaultSide)
@@ -126,15 +134,35 @@ public class DockLayoutState(
         if (wasOpen) show(window.id, to)
     }
 
-    /** Focus mode: every dock closed; the center alone remains. */
+    /** Every dock closed; the center alone remains. */
     public fun hideAll() {
         opened.clear()
     }
 
-    public fun snapshot(): DockLayoutSnapshot =
-        DockLayoutSnapshot(sides.toMap(), opened.toMap(), splits.mapValues { it.value.size.value })
+    private var beforeFocus: DockLayoutSnapshot? by mutableStateOf(null)
+
+    /** Focus mode is on: [toggleFocusMode] hid every dock and will bring them back. */
+    public val focusMode: Boolean get() = beforeFocus != null
+
+    /** Focus mode (`Mod+Shift+F12`): hides every dock, then the next call restores the layout it hid. */
+    public fun toggleFocusMode() {
+        val before = beforeFocus
+        if (before == null) {
+            beforeFocus = current()
+            hideAll()
+        } else {
+            beforeFocus = null
+            restore(before)
+        }
+    }
+
+    /** What to save: while focus mode hides the docks, the layout it will bring back, so a restart never starts hidden. */
+    public fun snapshot(): DockLayoutSnapshot = beforeFocus ?: current()
+
+    private fun current() = DockLayoutSnapshot(sides.toMap(), opened.toMap(), splits.mapValues { it.value.size.value })
 
     public fun restore(snapshot: DockLayoutSnapshot) {
+        beforeFocus = null
         sides.clear()
         sides.putAll(snapshot.sides)
         opened.clear()
