@@ -79,10 +79,12 @@ class StagingRepositoryTest {
     @Test
     fun `a name with pattern characters stages only that file`(sandbox: GitSandbox) = runBlocking {
         val repo = sandbox.repo { commit("one") { file("seed.txt", "1\n") } }
-        write(repo, "[a]*.txt", "x\n")
+        // Windows can't have a `*` in a name, but brackets are a pattern there too: `[a]1.txt` would match `a1.txt`.
+        val name = if (GitSandbox.isPosix) "[a]*.txt" else "[a]1.txt"
+        write(repo, name, "x\n")
         write(repo, "a1.txt", "y\n")
-        repository(sandbox).stage(repo, whole("[a]*.txt")).getOrThrow()
-        assertEquals("A  [a]*.txt\n?? a1.txt", status(sandbox, repo))
+        repository(sandbox).stage(repo, whole(name)).getOrThrow()
+        assertEquals("A  $name\n?? a1.txt", status(sandbox, repo))
     }
 
     @Test
