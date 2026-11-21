@@ -9,6 +9,7 @@ import com.srctool.graft.core.git.GitRunner
 import com.srctool.graft.core.git.GitRunnerConfig
 import com.srctool.graft.core.git.ProcessGitRunner
 import com.srctool.graft.core.git.ProcessLauncher
+import com.srctool.graft.core.git.patchFailure
 import com.srctool.sinew.models.Result
 import kotlinx.coroutines.runBlocking
 import java.nio.file.Files
@@ -118,9 +119,15 @@ public class GitSandbox(tempDir: Path) {
 }
 
 /** `git <args>` returning stdout as text. Test setup only; production code uses typed commands. */
-public class RawGitCommand(override val args: List<String>, override val mutates: Boolean = true) :
-    GitCommand<String>() {
-    override val function: String = "TEST"
+public class RawGitCommand(
+    override val args: List<String>,
+    override val mutates: Boolean = true,
+    override val environment: Map<String, String?> = emptyMap(),
+    override val function: String = "TEST",
+) : GitCommand<String>() {
+
+    override fun failure(argv: List<String>, exitCode: Int, stderr: String): GitException? =
+        patchFailure(function, argv, exitCode, stderr)
 
     override fun parse(stdout: ByteArray): String = stdout.toString(Charsets.UTF_8)
 }
