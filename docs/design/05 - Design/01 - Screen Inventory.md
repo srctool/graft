@@ -30,7 +30,7 @@ Every screen and view, where it opens, and its states. Layout rules and the main
 | S3 | **Init** | dialog | folder, default branch, `.gitignore` template, license, README, create on GitHub | G1 |
 | S4 | **Main window** | tab | toolbar, left panel, graph, right panel, bottom, status bar | G1 |
 | S5 | **Commit details** | right | message, author/committer, signature, parents, files (tree/list) | G1 |
-| S6 | **Diff viewer** | center | file list, side-by-side / unified, word highlights, image diff, `>>` arrows | G1 |
+| S6 | **Diff viewer** | center | file list, side-by-side / unified, word highlights, image diff, `>>` arrows, Markdown Diff / Preview / Changes toggle ([Markdown Preview](../02%20-%20Features/33%20-%20Markdown%20Preview.md)) | G1 |
 | S7 | **Compare** | center | A/B pickers, commits both ways, combined diff, merge preview | G1 |
 | S8 | **Reflog timeline** | bottom | entries with source, actions | G1 |
 | S9 | **Changes panel** | right | Staged/Unstaged or changelists, commit box, guards result | G2 |
