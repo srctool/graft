@@ -13,6 +13,8 @@ Not listed in the original wish list, but every other feature needs it: selectin
 
 Two lists, **Unstaged** and **Staged**, from `git status --porcelain=v2`. Tree or flat view. Each file shows its status (M, A, D, R, C, U, ?, ignored on request).
 
+The panel is a **list of working copies**: the repository itself, then its submodules ([Review in the parent](08%20-%20Submodules.md)). Until G5 only the repository's own list is filled; a submodule is one row (path, "moved" / "modified content" / "untracked content", **Open**).
+
 ## Selection model
 
 One `ChangeSelection` type is used by **commit, stash, shelf and discard**:
@@ -29,7 +31,7 @@ Hunk and line staging builds a patch and applies it with `git apply --cached` (u
 - Unified and side-by-side; word-level highlights; syntax highlighting.
 - Ignore whitespace, show/hide context, expand context.
 - Image diff (side by side, swipe, onion skin) and binary info.
-- Submodule pointer changes show the commits between the two pointers.
+- Submodule pointer changes show the commits between the two pointers and, from G5, the files changed inside the submodule between them.
 - File history and blame (`git log --follow`, `git blame --porcelain`).
 
 ## Commit
