@@ -9,6 +9,7 @@ import com.srctool.graft.data.git.api.repositories.DiffRepository
 import com.srctool.graft.data.git.api.repositories.GitInstallRepository
 import com.srctool.graft.data.git.api.repositories.GitLogRepository
 import com.srctool.graft.data.git.api.repositories.IdentityRepository
+import com.srctool.graft.data.git.api.repositories.LocalHistoryRepository
 import com.srctool.graft.data.git.api.repositories.RefRepository
 import com.srctool.graft.data.git.api.repositories.ReflogRepository
 import com.srctool.graft.data.git.api.repositories.RemoteRepository
@@ -40,4 +41,5 @@ public fun gitDataKoin(): Module = module {
     single<GitLogRepository> { get<GitDataModule>().log }
     single<WorkingTreeRepository> { get<GitDataModule>().workingTree }
     single<StagingRepository> { get<GitDataModule>().staging }
+    single<LocalHistoryRepository> { get<GitDataModule>().history }
 }
