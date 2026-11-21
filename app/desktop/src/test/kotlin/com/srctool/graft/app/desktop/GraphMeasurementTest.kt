@@ -71,6 +71,8 @@ class GraphMeasurementTest {
     }
 
     @org.junit.jupiter.api.Test
+    // A full load of 1.5M commits takes about 30 s and the scroll pass longer: more than the build's 2-minute default.
+    @org.junit.jupiter.api.Timeout(30, unit = java.util.concurrent.TimeUnit.MINUTES)
     fun `the graph screen on a large repository`() {
         val repo = System.getenv("GRAFT_MEASURE_REPO")
         assumeTrue(repo != null, "set GRAFT_MEASURE_REPO to measure")
