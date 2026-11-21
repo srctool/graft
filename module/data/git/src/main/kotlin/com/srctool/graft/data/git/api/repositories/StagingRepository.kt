@@ -33,8 +33,8 @@ public interface StagingRepository {
      * Throws away the selected changes in the working tree, back to what the index has (`GIT-R-APLY-…`,
      * `GIT-R-REST-…`). An untracked file is deleted, and only as a whole. The index is not touched.
      *
-     * Nothing is kept: the Local History snapshot that makes a discard undoable is taken by the caller until
-     * Task 4 moves it here.
+     * A Local History snapshot labelled "before discard" is taken first, once the selection is known to fit, and
+     * is the way back; if it can't be taken, nothing is discarded.
      */
     public suspend fun discard(repository: Path, selection: ChangeSelection, contextLines: Int = 3): Result<Unit>
 }

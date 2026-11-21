@@ -11,6 +11,7 @@ import com.srctool.graft.core.git.PatchProblem
 import com.srctool.graft.data.git.api.models.ChangeSelection
 import com.srctool.graft.data.git.api.models.FileSelection
 import com.srctool.graft.data.git.api.models.FileSelection.Scope
+import com.srctool.graft.data.git.api.repositories.LocalHistoryRepository
 import com.srctool.graft.data.git.api.repositories.StagingRepository
 import com.srctool.graft.data.git.implementation.source.local.AddCommand
 import com.srctool.graft.data.git.implementation.source.local.ApplyPatchCommand
@@ -33,7 +34,8 @@ import java.io.IOException
 import java.nio.file.Files
 import java.nio.file.Path
 
-internal class GitStagingRepository(private val runner: GitRunner) : StagingRepository {
+internal class GitStagingRepository(private val runner: GitRunner, private val history: LocalHistoryRepository) :
+    StagingRepository {
     override suspend fun stage(repository: Path, selection: ChangeSelection, contextLines: Int): Result<Unit> =
         move(repository, selection, contextLines, Direction.STAGE)
 
@@ -86,6 +88,11 @@ internal class GitStagingRepository(private val runner: GitRunner) : StagingRepo
                     is Result.Failure -> return r
                 }
             built?.let(patch::write)
+        }
+        // The way back, taken once the selection is known to fit and before anything is thrown away (E2). If it
+        // can't be taken, nothing is discarded.
+        if (direction == Direction.DISCARD) {
+            (history.snapshot(repository, "before discard") as? Result.Failure)?.let { return it }
         }
         if (patch.size() > 0) {
             val command = ApplyPatchCommand(cached = direction.toIndex, reverse = direction.applyTo == ApplyTo.NEW)
