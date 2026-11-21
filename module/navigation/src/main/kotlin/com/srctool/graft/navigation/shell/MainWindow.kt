@@ -76,6 +76,8 @@ import com.srctool.graft.presentation.window.Tab
 import com.srctool.graft.presentation.window.TabContent
 import com.srctool.graft.presentation.window.WindowState
 import com.srctool.sinew.models.Result
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.emptyFlow
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.launch
 import org.koin.compose.koinInject
@@ -99,6 +101,8 @@ public fun MainWindow(
     sessions: RepositorySessions,
     missingFolders: List<String> = emptyList(),
     macTitleBar: Boolean = false,
+    /** Folders another launch (`graft open`) asks this window to open; each opens as a tab, or says it isn't one. */
+    requests: Flow<List<Path>> = emptyFlow(),
 ) {
     val access = koinInject<RepositoryAccessRepository>()
     val commits = koinInject<CommitRepository>()
@@ -141,6 +145,8 @@ public fun MainWindow(
             }
         }
     }
+
+    LaunchedEffect(requests) { requests.collect { folders -> folders.forEach(::open) } }
 
     fun select(id: ObjectId) {
         activeScope?.view?.let {

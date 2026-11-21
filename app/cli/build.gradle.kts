@@ -3,6 +3,13 @@
 
 plugins {
     id("graft.kotlin-library")
+    application
+}
+
+// D6: a JVM launcher in G1; the native image arrives with G3's commands.
+application {
+    mainClass.set("com.srctool.graft.app.cli.MainKt")
+    applicationName = "graft"
 }
 
 dependencies {
@@ -17,4 +24,5 @@ dependencies {
     implementation(projects.module.core.preference)
     implementation(projects.module.core.exception)
     implementation(projects.module.core.configuration)
+    testImplementation(libs.kotlinx.coroutines.test)
 }

@@ -6,6 +6,7 @@ package com.srctool.graft.app.desktop
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.unit.DpSize
@@ -17,7 +18,13 @@ import androidx.compose.ui.window.application
 import androidx.compose.ui.window.rememberWindowState
 import com.srctool.graft.app.desktop.di.desktopModules
 import com.srctool.graft.app.desktop.session.RepositorySessionsService
+import com.srctool.graft.core.configuration.AppFolders
 import com.srctool.graft.core.configuration.WindowBounds
+import com.srctool.graft.core.configuration.instance.AppInstanceClient
+import com.srctool.graft.core.configuration.instance.AppInstanceServer
+import com.srctool.graft.core.configuration.instance.InstanceFolder
+import com.srctool.graft.core.configuration.instance.InstanceRequest
+import com.srctool.graft.core.configuration.instance.InstanceResponse
 import com.srctool.graft.core.ui.theme.GraftDensity
 import com.srctool.graft.core.ui.theme.GraftTheme
 import com.srctool.graft.core.ui.theme.GraftThemeMode
@@ -35,8 +42,12 @@ import com.srctool.graft.presentation.window.WindowState
 import com.srctool.sinew.models.Result
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.FlowPreview
+import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.debounce
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.onEach
+import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.runBlocking
 import org.koin.compose.koinInject
 import org.koin.core.context.startKoin
@@ -44,13 +55,36 @@ import org.koin.mp.KoinPlatform
 import java.awt.GraphicsEnvironment
 import java.nio.file.Path
 import java.nio.file.Paths
+import kotlin.system.exitProcess
 
 private val DEFAULT_SIZE = DpSize(1280.dp, 900.dp)
 private const val SAVE_PAUSE_MS = 500L
+private const val HANDOFF_WAIT_MS = 3_000L
 private val MAC = System.getProperty("os.name").orEmpty().startsWith("Mac")
 
 @OptIn(FlowPreview::class, ExperimentalCoroutinesApi::class)
-fun main() {
+fun main(args: Array<String>) {
+    // One instance (Platform Integration 3.5): a second launch hands its folders to the first and exits.
+    val instance = InstanceFolder.of(
+        AppFolders.current(),
+        Paths.get(System.getProperty("java.io.tmpdir")),
+        System.getProperty("user.name").orEmpty(),
+    )
+    val incoming = Channel<List<String>>(Channel.UNLIMITED)
+    val server =
+        when (val bound = runBlocking { AppInstanceServer.bind(instance) { request -> accept(request, incoming) } }) {
+            is Result.Success -> bound.data ?: handOff(instance, args)
+
+            // Without the socket the app still runs, only without `graft open` reaching it.
+            is Result.Failure -> {
+                System.err.println("Single instance is off: ${bound.error.code}")
+                null
+            }
+        }
+    server?.let { Runtime.getRuntime().addShutdownHook(Thread { it.close() }) }
+    // The folders this launch was given open as tabs once the window is up.
+    if (args.isNotEmpty()) incoming.trySend(args.toList())
+
     // ADR-28: everything the screens need is wired once, here.
     startKoin { modules(desktopModules()) }
     val koin = KoinPlatform.getKoin()
@@ -115,6 +149,7 @@ fun main() {
                     saved.save(listOf(current()))
                     sessions.destroy()
                 }
+                server?.close()
                 exitApplication()
             },
             title = "Graft",
@@ -146,10 +181,34 @@ fun main() {
                     GraftDensity.Standard
                 },
             ) {
-                MainWindow(windows, windowId, sessions, missing, macTitleBar = MAC)
+                // A request raises the window as well as opening the tab.
+                val requests =
+                    remember(incoming) {
+                        incoming.receiveAsFlow().onEach {
+                            state.isMinimized = false
+                            window.toFront()
+                            window.requestFocus()
+                        }.map { paths -> paths.map(Paths::get) }
+                    }
+                MainWindow(windows, windowId, sessions, missing, macTitleBar = MAC, requests = requests)
             }
         }
     }
+}
+
+/** What the running app is told: open the folders and raise the window; a ping only answers. */
+private fun accept(request: InstanceRequest, incoming: Channel<List<String>>): InstanceResponse {
+    if (request.command == InstanceRequest.OPEN) incoming.trySend(request.paths)
+    return InstanceResponse(ok = true)
+}
+
+/** Another instance is running: gives it this launch's folders and exits (with 1 when it can't be reached). */
+private fun handOff(instance: InstanceFolder, args: Array<String>): Nothing {
+    val answer =
+        runBlocking {
+            AppInstanceClient(instance).send(InstanceRequest.OPEN, args.toList(), waitMillis = HANDOFF_WAIT_MS)
+        }
+    exitProcess(if ((answer as? Result.Success)?.data?.ok == true) 0 else 1)
 }
 
 /** The saved bounds moved onto a screen that exists now (Platform Integration 3.6). */
