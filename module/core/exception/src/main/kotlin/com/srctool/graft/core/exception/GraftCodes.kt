@@ -30,8 +30,14 @@ public object GraftCodes {
         /** `git apply` refused a patch: it doesn't fit the file as it is now, or it's damaged. */
         public const val PATCH: String = "PAT"
 
+        /** Undo or redo refused: the branch has moved since, so going back would lose commits. */
+        public const val MOVED: String = "MOVD"
+
         public val all: List<String> =
-            listOf(REJECTED, AUTH, CONFLICT, LOCKED, NOT_FOUND, NETWORK, TIMEOUT, VERSION, EXIT, UNSAFE_OWNER, PATCH)
+            listOf(
+                REJECTED, AUTH, CONFLICT, LOCKED, NOT_FOUND, NETWORK, TIMEOUT, VERSION, EXIT,
+                UNSAFE_OWNER, PATCH, MOVED,
+            )
     }
 
     private val functionPattern = Regex("[A-Z][A-Z0-9]{1,3}")

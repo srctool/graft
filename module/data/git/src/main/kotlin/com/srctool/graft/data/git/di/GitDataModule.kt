@@ -12,6 +12,7 @@ import com.srctool.graft.data.git.api.repositories.GitInstallRepository
 import com.srctool.graft.data.git.api.repositories.GitLogRepository
 import com.srctool.graft.data.git.api.repositories.IdentityRepository
 import com.srctool.graft.data.git.api.repositories.LocalHistoryRepository
+import com.srctool.graft.data.git.api.repositories.OperationLogRepository
 import com.srctool.graft.data.git.api.repositories.RefRepository
 import com.srctool.graft.data.git.api.repositories.ReflogRepository
 import com.srctool.graft.data.git.api.repositories.RemoteRepository
@@ -26,6 +27,7 @@ import com.srctool.graft.data.git.implementation.repositories.GitDiffRepository
 import com.srctool.graft.data.git.implementation.repositories.GitIdentityRepository
 import com.srctool.graft.data.git.implementation.repositories.GitInstallRepositoryImpl
 import com.srctool.graft.data.git.implementation.repositories.GitLocalHistoryRepository
+import com.srctool.graft.data.git.implementation.repositories.GitOperationLogRepository
 import com.srctool.graft.data.git.implementation.repositories.GitRefRepository
 import com.srctool.graft.data.git.implementation.repositories.GitReflogRepository
 import com.srctool.graft.data.git.implementation.repositories.GitRemoteRepository
@@ -34,7 +36,9 @@ import com.srctool.graft.data.git.implementation.repositories.GitStagingReposito
 import com.srctool.graft.data.git.implementation.repositories.GitStashRepository
 import com.srctool.graft.data.git.implementation.repositories.GitTreeRepository
 import com.srctool.graft.data.git.implementation.repositories.GitWorkingTreeRepository
+import com.srctool.graft.data.git.implementation.repositories.MutationRecorder
 import com.srctool.graft.data.git.implementation.repositories.RecordedGitLogRepository
+import com.srctool.graft.data.git.implementation.source.local.OpLogStore
 import java.nio.file.Path
 import java.nio.file.Paths
 
@@ -63,5 +67,8 @@ public class GitDataModule(
     public val log: GitLogRepository = RecordedGitLogRepository(commandLog)
     public val workingTree: WorkingTreeRepository = GitWorkingTreeRepository(runner)
     public val history: LocalHistoryRepository = GitLocalHistoryRepository(runner)
-    public val staging: StagingRepository = GitStagingRepository(runner, history)
+    private val opLogStore = OpLogStore()
+    private val recorder = MutationRecorder(runner, opLogStore)
+    public val operations: OperationLogRepository = GitOperationLogRepository(recorder, opLogStore)
+    public val staging: StagingRepository = GitStagingRepository(runner, history, recorder)
 }

@@ -34,8 +34,11 @@ import java.io.IOException
 import java.nio.file.Files
 import java.nio.file.Path
 
-internal class GitStagingRepository(private val runner: GitRunner, private val history: LocalHistoryRepository) :
-    StagingRepository {
+internal class GitStagingRepository(
+    private val runner: GitRunner,
+    private val history: LocalHistoryRepository,
+    private val recorder: MutationRecorder,
+) : StagingRepository {
     override suspend fun stage(repository: Path, selection: ChangeSelection, contextLines: Int): Result<Unit> =
         move(repository, selection, contextLines, Direction.STAGE)
 
@@ -96,13 +99,13 @@ internal class GitStagingRepository(private val runner: GitRunner, private val h
         }
         if (patch.size() > 0) {
             val command = ApplyPatchCommand(cached = direction.toIndex, reverse = direction.applyTo == ApplyTo.NEW)
-            val applied = runner.run(command, repository, patch.toByteArray())
+            val applied = recorder.run(command, repository, input = patch.toByteArray())
             if (applied is Result.Failure) return applied
         }
         if (whole.isEmpty()) return Result.Success(Unit)
         return when (direction) {
-            Direction.STAGE -> runner.run(AddCommand(), repository, paths(whole))
-            Direction.UNSTAGE -> runner.run(ResetPathsCommand(), repository, paths(whole))
+            Direction.STAGE -> recorder.run(AddCommand(), repository, input = paths(whole))
+            Direction.UNSTAGE -> recorder.run(ResetPathsCommand(), repository, input = paths(whole))
             Direction.DISCARD -> discardWhole(repository, whole, tracked)
         }
     }
@@ -114,7 +117,7 @@ internal class GitStagingRepository(private val runner: GitRunner, private val h
     private suspend fun discardWhole(repository: Path, files: List<FileSelection>, tracked: Set<String>): Result<Unit> {
         val (known, untracked) = files.partition { it.path in tracked }
         if (known.isNotEmpty()) {
-            val restored = runner.run(RestoreWorktreeCommand(), repository, paths(known))
+            val restored = recorder.run(RestoreWorktreeCommand(), repository, input = paths(known))
             if (restored is Result.Failure) return restored
         }
         return deleteUntracked(repository, untracked.map { it.path })

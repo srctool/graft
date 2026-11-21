@@ -10,7 +10,6 @@ import com.srctool.graft.data.git.api.models.FileSelection
 import com.srctool.graft.data.git.api.models.FileSelection.Scope
 import com.srctool.graft.data.git.api.models.LocalHistoryLimits
 import com.srctool.graft.data.git.implementation.repositories.GitLocalHistoryRepository
-import com.srctool.graft.data.git.implementation.repositories.GitStagingRepository
 import com.srctool.sinew.models.Result
 import com.srctool.sinew.models.getOrThrow
 import kotlinx.coroutines.runBlocking
@@ -495,7 +494,7 @@ class LocalHistoryRepositoryTest {
     fun `a discard is taken after a snapshot that still has what it threw away`(sandbox: GitSandbox) = runBlocking {
         val repo = base(sandbox)
         val history = history(sandbox)
-        val staging = GitStagingRepository(sandbox.runner(), history)
+        val staging = sandbox.staging(history)
         write(repo, "tracked.txt", "precious edit\n")
         write(repo, "untracked.txt", "precious new file\n")
         val selection = ChangeSelection(
@@ -522,7 +521,7 @@ class LocalHistoryRepositoryTest {
         // A file where the scratch folder should be makes the snapshot fail.
         Files.createDirectories(repo.resolve(".git/graft"))
         Files.writeString(repo.resolve(".git/graft/tmp"), "in the way")
-        val staging = GitStagingRepository(sandbox.runner(), history(sandbox))
+        val staging = sandbox.staging(history(sandbox))
         val result = staging.discard(repo, ChangeSelection(listOf(FileSelection("tracked.txt", Scope.WholeFile))))
         assertIs<Result.Failure>(result)
         assertEquals("edit\n", Files.readString(repo.resolve("tracked.txt")))
@@ -533,7 +532,7 @@ class LocalHistoryRepositoryTest {
         val repo = base(sandbox)
         write(repo, "tracked.txt", "edit\n")
         val history = history(sandbox)
-        val staging = GitStagingRepository(sandbox.runner(), history)
+        val staging = sandbox.staging(history)
         val stale = staging.discard(repo, ChangeSelection(listOf(FileSelection("tracked.txt", Scope.Hunks(setOf(4))))))
         assertIs<Result.Failure>(stale)
         assertEquals(emptyList(), history.snapshots(repo).getOrThrow())

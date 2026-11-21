@@ -23,8 +23,7 @@ internal class HistoryLocation(val gitDir: Path, val commonDir: Path) {
 }
 
 /** This worktree's git dir and the one shared by all worktrees, as absolute paths. */
-internal class LocateHistoryCommand : GitCommand<HistoryLocation>() {
-    override val function = "LHST"
+internal class LocateHistoryCommand(override val function: String = "LHST") : GitCommand<HistoryLocation>() {
     override val args = listOf("rev-parse", "--path-format=absolute", "--absolute-git-dir", "--git-common-dir")
 
     override fun parse(stdout: ByteArray): HistoryLocation {

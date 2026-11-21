@@ -16,6 +16,8 @@ dependencies {
     api(libs.koin.core)
     testImplementation(libs.koin.test)
     implementation(projects.module.core.exception)
+    // The op log's JSON Lines file, read and written without generated serializers.
+    implementation(libs.kotlinx.serialization.json)
 
     testImplementation(testFixtures(projects.module.core.git))
     testImplementation(libs.kotlinx.coroutines.test)
