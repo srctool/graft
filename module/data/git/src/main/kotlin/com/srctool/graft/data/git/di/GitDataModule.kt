@@ -17,6 +17,7 @@ import com.srctool.graft.data.git.api.repositories.RemoteRepository
 import com.srctool.graft.data.git.api.repositories.RepositoryAccessRepository
 import com.srctool.graft.data.git.api.repositories.StashRepository
 import com.srctool.graft.data.git.api.repositories.TreeRepository
+import com.srctool.graft.data.git.api.repositories.WorkingTreeRepository
 import com.srctool.graft.data.git.implementation.repositories.GitCommitRepository
 import com.srctool.graft.data.git.implementation.repositories.GitCompareRepository
 import com.srctool.graft.data.git.implementation.repositories.GitDiffRepository
@@ -28,6 +29,7 @@ import com.srctool.graft.data.git.implementation.repositories.GitRemoteRepositor
 import com.srctool.graft.data.git.implementation.repositories.GitRepositoryAccessRepository
 import com.srctool.graft.data.git.implementation.repositories.GitStashRepository
 import com.srctool.graft.data.git.implementation.repositories.GitTreeRepository
+import com.srctool.graft.data.git.implementation.repositories.GitWorkingTreeRepository
 import com.srctool.graft.data.git.implementation.repositories.RecordedGitLogRepository
 import java.nio.file.Path
 import java.nio.file.Paths
@@ -55,4 +57,5 @@ public class GitDataModule(
     public val trees: TreeRepository = GitTreeRepository(runner)
     public val install: GitInstallRepository = GitInstallRepositoryImpl(runner, neutralFolder)
     public val log: GitLogRepository = RecordedGitLogRepository(commandLog)
+    public val workingTree: WorkingTreeRepository = GitWorkingTreeRepository(runner)
 }
