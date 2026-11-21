@@ -22,6 +22,7 @@ import org.junit.jupiter.api.extension.ExtendWith
 import java.nio.file.Files
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
 import kotlin.test.assertIs
 import kotlin.test.assertTrue
 
@@ -51,13 +52,25 @@ class WorkingTreeRepositoryTest {
         val rename = by.getValue("new name.txt")
         assertEquals(ChangeStatus.RENAMED, rename.index)
         assertEquals("old name.txt", rename.originalPath)
-        assertTrue(by.getValue("run.sh").modes!!.stagedChange)
         // Untracked files are listed one by one, with their folder's other files, and ignored ones are left out.
         assertEquals(
             listOf("fresh/one.txt", "fresh/two.txt", "untracked file.txt"),
             tree.untracked.map { it.path }.sorted(),
         )
         assertTrue(tree.ignored.isEmpty())
+    }
+
+    @Test
+    fun `an executable bit changed in the index, or only on disk, is a mode change on that side`() {
+        val by = recorded("mode").byPath()
+        val staged = by.getValue("staged.sh")
+        assertEquals(ChangeStatus.MODIFIED to null, staged.index to staged.worktree)
+        assertTrue(staged.modes!!.stagedChange)
+        assertFalse(staged.modes!!.unstagedChange)
+        val unstaged = by.getValue("unstaged.sh")
+        assertEquals(null to ChangeStatus.MODIFIED, unstaged.index to unstaged.worktree)
+        assertTrue(unstaged.modes!!.unstagedChange)
+        assertFalse(unstaged.modes!!.stagedChange)
     }
 
     @Test

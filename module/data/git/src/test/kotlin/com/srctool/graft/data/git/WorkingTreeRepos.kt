@@ -23,9 +23,11 @@ object WorkingTreeRepos {
             },
         )
         put("clean", sandbox.repo("clean") { commit("one") { file("a.txt", "1") } })
+        // Windows has no executable bit, so a mode change can only be built (and read live) where there is one.
+        if (GitSandbox.isPosix) put("mode", mode(sandbox))
     }
 
-    /** Staged, unstaged and both; a staged delete and an unstaged one; a rename; a mode change; untracked; ignored. */
+    /** Staged, unstaged and both; a staged delete and an unstaged one; a rename; untracked; ignored. */
     private fun mixed(sandbox: GitSandbox): Path {
         val repo =
             sandbox.repo("mixed") {
@@ -37,7 +39,6 @@ object WorkingTreeRepos {
                     file("gone staged.txt", "1\n")
                     file("gone unstaged.txt", "1\n")
                     file("old name.txt", "same content\nsecond line\nthird line\n")
-                    file("run.sh", "#!/bin/sh\n")
                     file("dir/inner.txt", "1\n")
                 }
             }
@@ -51,7 +52,6 @@ object WorkingTreeRepos {
         sandbox.git(repo, "rm", "--quiet", "gone staged.txt")
         Files.delete(repo.resolve("gone unstaged.txt"))
         sandbox.git(repo, "mv", "old name.txt", "new name.txt")
-        sandbox.git(repo, "update-index", "--chmod=+x", "run.sh")
         write("added.txt", "new\n")
         sandbox.git(repo, "add", "added.txt")
         write("untracked file.txt", "u\n")
@@ -61,6 +61,22 @@ object WorkingTreeRepos {
         write("debug.log", "ignored\n")
         Files.createDirectories(repo.resolve("build"))
         write("build/out.bin", "ignored\n")
+        return repo
+    }
+
+    /** The executable bit changed: staged for one file, and in the working tree only for another. */
+    private fun mode(sandbox: GitSandbox): Path {
+        val repo =
+            sandbox.repo("mode") {
+                commit("one") {
+                    file("staged.sh", "#!/bin/sh\n")
+                    file("unstaged.sh", "#!/bin/sh\n")
+                }
+            }
+        val executable = java.nio.file.attribute.PosixFilePermissions.fromString("rwxr-xr-x")
+        Files.setPosixFilePermissions(repo.resolve("staged.sh"), executable)
+        sandbox.git(repo, "add", "staged.sh")
+        Files.setPosixFilePermissions(repo.resolve("unstaged.sh"), executable)
         return repo
     }
 
