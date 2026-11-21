@@ -131,7 +131,11 @@ internal class GitLocalHistoryRepository(
 
     private suspend fun copyIndex(from: Path, to: Path): Result<Unit> = withContext(Dispatchers.IO) {
         try {
-            if (Files.exists(from)) Files.copy(from, to, StandardCopyOption.REPLACE_EXISTING)
+            // The copy keeps the index's modification time: git decides whether a file edited right after the index was
+            // written is "racily clean" by comparing against it, and a newer copy would hide such an edit.
+            if (Files.exists(from)) {
+                Files.copy(from, to, StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.COPY_ATTRIBUTES)
+            }
             Result.Success(Unit)
         } catch (e: IOException) {
             Result.Failure(GitExitException("LHST", listOf("copy index"), null, e.message.orEmpty()))

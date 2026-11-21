@@ -64,6 +64,19 @@ class LocalHistoryRepositoryTest {
     }
 
     @Test
+    fun `an edit made right after the index was written is not missed`(sandbox: GitSandbox) = runBlocking {
+        val repo = base(sandbox)
+        // Compare only the modification second and the size, as git on a coarse clock effectively does.
+        sandbox.git(repo, "config", "core.checkStat", "minimal")
+        sandbox.git(repo, "config", "core.trustCtime", "false")
+        sandbox.git(repo, "status", "--porcelain")
+        write(repo, "tracked.txt", "2\n") // same size as "1\n"
+        Files.setLastModifiedTime(repo.resolve("tracked.txt"), Files.getLastModifiedTime(repo.resolve(".git/index")))
+        val id = history(sandbox).snapshot(repo).getOrThrow().snapshot.id
+        assertEquals("2\n", sandbox.git(repo, "show", "${id.hex}:tracked.txt"))
+    }
+
+    @Test
     fun `a snapshot leaves the index, the files and the status exactly as they were`(sandbox: GitSandbox) =
         runBlocking {
             val repo = base(sandbox)
