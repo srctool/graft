@@ -3,6 +3,7 @@
 
 package com.srctool.graft.navigation
 
+import com.srctool.graft.feature.graph.di.graphFeatureKoin
 import com.srctool.graft.feature.home.di.homeFeatureKoin
 import com.srctool.graft.navigation.about.AboutViewModel
 import com.srctool.graft.navigation.about.BuildVersion
@@ -22,13 +23,12 @@ import org.koin.dsl.module
  * The Koin modules of the features this module hosts (ADR-28), plus the Settings and About hosts' own view models and
  * sources (D1), for the app to start with.
  */
-public val navigationKoin: Module =
-    module {
-        includes(homeFeatureKoin)
-        single<LicenseSource> { BundledLicenseSource() }
-        single<BuildVersion> { BundledBuildVersion() }
-        single<SearchSource>(named("host.actions")) { HostActionSearchSource() }
-        viewModel { SettingsViewModel(get()) }
-        viewModel { p -> SearchViewModel(getAll<SearchSource>(), p.get()) }
-        viewModel { AboutViewModel(install = get(), licenses = get(), build = get()) }
-    }
+public fun navigationKoin(): Module = module {
+    includes(homeFeatureKoin(), graphFeatureKoin())
+    single<LicenseSource> { BundledLicenseSource() }
+    single<BuildVersion> { BundledBuildVersion() }
+    single<SearchSource>(named("host.actions")) { HostActionSearchSource() }
+    viewModel { SettingsViewModel(get()) }
+    viewModel { p -> SearchViewModel(getAll<SearchSource>(), p.get()) }
+    viewModel { AboutViewModel(install = get(), licenses = get(), build = get()) }
+}

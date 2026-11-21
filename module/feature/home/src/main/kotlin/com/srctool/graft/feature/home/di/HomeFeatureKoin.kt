@@ -31,20 +31,19 @@ import org.koin.dsl.module
  * The home feature for Koin (ADR-28): its use cases and view models. The summaries' four-at-a-time limit is one
  * `single`, so every row of every list shares it. A dialog's optional folder comes as a parameter (`Path?`).
  */
-public val homeFeatureKoin: Module =
-    module {
-        factory<OpenRepositoryUseCase> { GitOpenRepositoryUseCase(get(), get()) }
-        factory<ScanFolderUseCase> { GitScanFolderUseCase(get(), get(), get()) }
-        factory<CloneRepositoryUseCase> { GitCloneRepositoryUseCase(get(), get()) }
-        factory<InitRepositoryUseCase> { GitInitRepositoryUseCase(get(), get(), get()) }
-        single<RepositorySummaryUseCase> { GitRepositorySummaryUseCase(get()) }
-        single<InitTemplates> { BundledInitTemplates }
+public fun homeFeatureKoin(): Module = module {
+    factory<OpenRepositoryUseCase> { GitOpenRepositoryUseCase(get(), get()) }
+    factory<ScanFolderUseCase> { GitScanFolderUseCase(get(), get(), get()) }
+    factory<CloneRepositoryUseCase> { GitCloneRepositoryUseCase(get(), get()) }
+    factory<InitRepositoryUseCase> { GitInitRepositoryUseCase(get(), get(), get()) }
+    single<RepositorySummaryUseCase> { GitRepositorySummaryUseCase(get()) }
+    single<InitTemplates> { BundledInitTemplates }
 
-        single<SearchSource>(named("home.repositories")) { RepositorySearchSource(get()) }
-        single<SearchSource>(named("home.actions")) { HomeActionSearchSource() }
+    single<SearchSource>(named("home.repositories")) { RepositorySearchSource(get()) }
+    single<SearchSource>(named("home.actions")) { HomeActionSearchSource() }
 
-        viewModel { HomeViewModel(get(), get(), get(), get(), get(), get()) }
-        viewModel { OnboardingViewModel(install = get(), identity = get(), settings = get()) }
-        viewModel { p -> CloneViewModel(folder = p.getOrNull(), clone = get()) }
-        viewModel { p -> InitViewModel(folder = p.getOrNull(), init = get(), identity = get(), templates = get()) }
-    }
+    viewModel { HomeViewModel(get(), get(), get(), get(), get(), get()) }
+    viewModel { OnboardingViewModel(install = get(), identity = get(), settings = get()) }
+    viewModel { p -> CloneViewModel(folder = p.getOrNull(), clone = get()) }
+    viewModel { p -> InitViewModel(folder = p.getOrNull(), init = get(), identity = get(), templates = get()) }
+}

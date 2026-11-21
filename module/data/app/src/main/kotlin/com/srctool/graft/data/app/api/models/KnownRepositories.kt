@@ -18,8 +18,20 @@ public data class KnownRepository(
     val missing: Boolean,
 )
 
-/** A window's saved place on screen; the app state keeps one per open window, the main window first. */
-public data class SavedWindow(val x: Int, val y: Int, val width: Int, val height: Int, val maximized: Boolean)
+/**
+ * A window's saved place on screen and its repository tabs; the app state keeps one per open window, the main window
+ * first. [tabs] are the repositories' folders in tab order (Home is always there and isn't saved) and [activeTab] is
+ * the one in front: an index into [tabs], or -1 for Home.
+ */
+public data class SavedWindow(
+    val x: Int,
+    val y: Int,
+    val width: Int,
+    val height: Int,
+    val maximized: Boolean,
+    val tabs: List<String> = emptyList(),
+    val activeTab: Int = -1,
+)
 
 /** A named group of repositories (Repositories and Workspaces). G1 has local workspaces only. */
 public data class Workspace(val id: String, val name: String, val repositories: List<Path>)

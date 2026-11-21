@@ -17,6 +17,23 @@ public data class RepositoryUiState(
     val graph: GraphViewState = GraphViewState(),
     /** The graph table's column widths in dp by column id; null for a hidden column (ADR-27). */
     val columns: Map<String, Float?> = emptyMap(),
+    /** Which tool window is docked where and open, and the docks' sizes (Task 20, UI Design "Layouts"). */
+    val panels: PanelLayout = PanelLayout(),
+)
+
+/**
+ * The window's panel layout for one repository, by tool-window id and dock name (`left`, `right`, `bottom`). An empty
+ * layout means the screen's defaults; an id this Graft doesn't know is ignored when the layout is applied.
+ */
+public data class PanelLayout(
+    /** Tool windows moved off their default dock. */
+    val sides: Map<String, String> = emptyMap(),
+    /** The tool window open in each dock; a dock missing here is closed. */
+    val open: Map<String, String> = emptyMap(),
+    /** Each dock's size in dp. */
+    val sizes: Map<String, Float> = emptyMap(),
+    /** True once the user changed anything, so an untouched repository keeps following the defaults. */
+    val saved: Boolean = false,
 )
 
 /** Which history the graph walks when nothing is soloed: every branch, or the current one's. */

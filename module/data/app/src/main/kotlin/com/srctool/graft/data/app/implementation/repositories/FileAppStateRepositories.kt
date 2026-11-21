@@ -108,11 +108,11 @@ internal class FileKnownRepositoryRepository(
 
 internal class FileWindowStateRepository(private val store: JsonStore<AppStateRecord>) : WindowStateRepository {
     override suspend fun windows(): Result<List<SavedWindow>> = store.read().map { saved ->
-        saved.value.windows.map { SavedWindow(it.x, it.y, it.width, it.height, it.maximized) }
+        saved.value.windows.map { SavedWindow(it.x, it.y, it.width, it.height, it.maximized, it.tabs, it.activeTab) }
     }
 
     override suspend fun save(windows: List<SavedWindow>): Result<Unit> {
-        val records = windows.map { WindowRecord(it.x, it.y, it.width, it.height, it.maximized) }
+        val records = windows.map { WindowRecord(it.x, it.y, it.width, it.height, it.maximized, it.tabs, it.activeTab) }
         return store.update { it.copy(windows = records) }.map { }
     }
 }

@@ -28,6 +28,8 @@ import com.srctool.graft.feature.graph.presentation.details.DetailsDestination
 import com.srctool.graft.feature.graph.presentation.details.DetailsRoute
 import com.srctool.graft.feature.graph.presentation.diff.DiffDestination
 import com.srctool.graft.feature.graph.presentation.diff.DiffRoute
+import com.srctool.graft.feature.graph.presentation.gitlog.GitLogDestination
+import com.srctool.graft.feature.graph.presentation.gitlog.GitLogRoute
 import com.srctool.graft.feature.graph.presentation.graph.GraphDestination
 import com.srctool.graft.feature.graph.presentation.graph.GraphRoute
 import com.srctool.graft.feature.graph.presentation.operations.OperationsDestination
@@ -38,12 +40,18 @@ import com.srctool.graft.presentation.view.RepositoryViewState
 import org.koin.compose.koinInject
 
 /**
- * Temporary (G1 Task 14, question 4): one repository's left panel, graph or diff, and commit details in a
- * [DockLayout], sharing a [RepositoryViewState]. Task 20's main window host in :module:navigation replaces it and
- * keeps the screens. [onViewState] hands the host the shared state while the screen is shown. The graph stays composed under a diff, so going back keeps its selection and scroll.
+ * One open repository's panes (the main window's tab for it): the left panel, the graph or the diff, commit details and
+ * the Operations and Git log tool windows in a [DockLayout], sharing a [RepositoryViewState]. [dock] belongs to the
+ * host, so its shortcuts and focus mode reach it; the screen restores the repository's saved layout into it and saves
+ * the user's changes (`state.json`). [onViewState] hands the host the shared state while the screen is shown. The graph
+ * stays composed under a diff, so going back keeps its selection and scroll.
  */
 @Composable
-public fun RepositoryScreen(session: RepositorySession, onViewState: (RepositoryViewState?) -> Unit = {}) {
+public fun RepositoryScreen(
+    session: RepositorySession,
+    onViewState: (RepositoryViewState?) -> Unit = {},
+    dock: DockLayoutState = remember(session.location) { defaultDock() },
+) {
     val location = session.location
     val folder = (location.workTree ?: location.gitDir).toString()
     val uiState = koinInject<RepositoryUiStateRepository>()
@@ -53,13 +61,7 @@ public fun RepositoryScreen(session: RepositorySession, onViewState: (Repository
         onViewState(shared)
         onDispose { onViewState(null) }
     }
-    val dock =
-        remember(location) {
-            DockLayoutState().apply {
-                show(BRANCHES, DockSide.LEFT)
-                show(DETAILS, DockSide.RIGHT)
-            }
-        }
+    PanelLayoutKeeper(dock, location.commonDir, uiState)
     val center by shared.center.collectAsState()
     val windows =
         listOf(
@@ -77,6 +79,10 @@ public fun RepositoryScreen(session: RepositorySession, onViewState: (Repository
                 DockSide.BOTTOM,
             ) {
                 OperationsDestination(OperationsRoute(folder), session, shared)
+            },
+            // Every git command the repository ran; closed until opened from its stripe icon or Mod+3 (Task 20).
+            ToolWindow(GIT_LOG, graftText("gitlog.title", "Git log"), GraftIcon.LIST, DockSide.BOTTOM) {
+                GitLogDestination(GitLogRoute(folder))
             },
         )
     DockLayout(dock, windows) {
@@ -98,6 +104,21 @@ public fun RepositoryScreen(session: RepositorySession, onViewState: (Repository
     }
 }
 
-private const val BRANCHES = "branches"
-private const val DETAILS = "details"
-private const val OPERATIONS = "operations"
+/** The layout a repository starts with: branches on the left, details on the right. */
+public fun defaultDock(): DockLayoutState = DockLayoutState().apply {
+    show(BRANCHES, DockSide.LEFT)
+    show(DETAILS, DockSide.RIGHT)
+}
+
+/** The ids of the repository screen's tool windows, for the host's panel shortcuts and menus. */
+public object PanelIds {
+    public const val BRANCHES: String = "branches"
+    public const val DETAILS: String = "details"
+    public const val OPERATIONS: String = "operations"
+    public const val GIT_LOG: String = "gitlog"
+}
+
+private const val BRANCHES = PanelIds.BRANCHES
+private const val DETAILS = PanelIds.DETAILS
+private const val OPERATIONS = PanelIds.OPERATIONS
+private const val GIT_LOG = PanelIds.GIT_LOG

@@ -16,6 +16,7 @@ import com.srctool.graft.feature.graph.presentation.branches.BranchesViewModel
 import com.srctool.graft.feature.graph.presentation.compare.CompareViewModel
 import com.srctool.graft.feature.graph.presentation.details.DetailsViewModel
 import com.srctool.graft.feature.graph.presentation.diff.DiffScreenViewModel
+import com.srctool.graft.feature.graph.presentation.gitlog.GitLogViewModel
 import com.srctool.graft.feature.graph.presentation.graph.GraphViewModel
 import com.srctool.graft.feature.graph.presentation.operations.OperationsViewModel
 import com.srctool.graft.feature.graph.search.CommitSearchSource
@@ -32,22 +33,22 @@ import org.koin.dsl.module
  * parameters, in this order: the folder git runs in (`Path`), the tab's `RepositorySession` (except the diff screen),
  * and its `RepositoryViewState`. The data modules' Koin modules provide the repositories.
  */
-public val graphFeatureKoin: Module =
-    module {
-        factory<LoadGraphUseCase> { GitLoadGraphUseCase(get(), ::LaneLayout) }
-        factory<SearchGraphUseCase> { GitSearchGraphUseCase(get()) }
-        factory<CompareSummaryUseCase> { GitCompareSummaryUseCase(get()) }
-        factory<ReflogTimelineUseCase> { GitReflogTimelineUseCase(get(), get()) }
+public fun graphFeatureKoin(): Module = module {
+    factory<LoadGraphUseCase> { GitLoadGraphUseCase(get(), ::LaneLayout) }
+    factory<SearchGraphUseCase> { GitSearchGraphUseCase(get()) }
+    factory<CompareSummaryUseCase> { GitCompareSummaryUseCase(get()) }
+    factory<ReflogTimelineUseCase> { GitReflogTimelineUseCase(get(), get()) }
 
-        // Search Everywhere's contributions (D1): the open repository's refs, commits and files.
-        single<SearchSource>(named("graph.refs")) { RefSearchSource() }
-        single<SearchSource>(named("graph.commits")) { CommitSearchSource(get()) }
-        single<SearchSource>(named("graph.files")) { FileSearchSource(get()) }
+    // Search Everywhere's contributions (D1): the open repository's refs, commits and files.
+    single<SearchSource>(named("graph.refs")) { RefSearchSource() }
+    single<SearchSource>(named("graph.commits")) { CommitSearchSource(get()) }
+    single<SearchSource>(named("graph.files")) { FileSearchSource(get()) }
 
-        viewModel { p -> GraphViewModel(p.get(), p.get(), get(), get(), get(), get(), p.get()) }
-        viewModel { p -> BranchesViewModel(p.get(), p.get(), p.get(), get()) }
-        viewModel { p -> DetailsViewModel(p.get(), p.get(), p.get(), get()) }
-        viewModel { p -> CompareViewModel(p.get(), p.get(), p.get(), get(), get(), get(), get()) }
-        viewModel { p -> DiffScreenViewModel(p.get(), p.get(), get(), get()) }
-        viewModel { p -> OperationsViewModel(p.get(), p.get(), p.get(), get()) }
-    }
+    viewModel { p -> GraphViewModel(p.get(), p.get(), get(), get(), get(), get(), p.get()) }
+    viewModel { p -> BranchesViewModel(p.get(), p.get(), p.get(), get()) }
+    viewModel { p -> DetailsViewModel(p.get(), p.get(), p.get(), get()) }
+    viewModel { p -> CompareViewModel(p.get(), p.get(), p.get(), get(), get(), get(), get()) }
+    viewModel { p -> DiffScreenViewModel(p.get(), p.get(), get(), get()) }
+    viewModel { p -> OperationsViewModel(p.get(), p.get(), p.get(), get()) }
+    viewModel { p -> GitLogViewModel(p.get(), get()) }
+}

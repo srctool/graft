@@ -66,6 +66,9 @@ internal data class WindowRecord(
     val width: Int,
     val height: Int,
     val maximized: Boolean = false,
+    // Added to version 1 without a bump: older files lack them and read as no tabs, Home in front.
+    val tabs: List<String> = emptyList(),
+    val activeTab: Int = -1,
 )
 
 /** `workspace.json` v1. */
@@ -83,6 +86,16 @@ internal data class RepositoryStateRecord(
     val pinnedRefs: List<String> = emptyList(),
     val graph: GraphViewRecord = GraphViewRecord(),
     val columns: Map<String, Float?> = emptyMap(),
+    // Added to version 1 without a bump (Task 20): an older file has no layout and reads as the defaults.
+    val panels: PanelsRecord = PanelsRecord(),
+)
+
+@Serializable
+internal data class PanelsRecord(
+    val sides: Map<String, String> = emptyMap(),
+    val open: Map<String, String> = emptyMap(),
+    val sizes: Map<String, Float> = emptyMap(),
+    val saved: Boolean = false,
 )
 
 /** ADR-27's `graph` object. Values are strings so an unknown one from a newer Graft reads as the default. */
