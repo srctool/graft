@@ -51,6 +51,7 @@ No open-source client combines a full graph, hosting integration (PRs, issues), 
 | **Commit guards** | block secrets, keys, `.env`, huge files before commit and push, including agents' commits | [Commit Guards](02%20-%20Features/19%20-%20Commit%20Guards.md) |
 | **Ignore and clean** | ignore from the changes panel, `.gitignore` editor, previewed `git clean` | [Ignore and Clean](02%20-%20Features/20%20-%20Ignore%20and%20Clean.md) |
 | **Compare** | what's in B not in A, merge preview, compare worktrees | [Compare Branches](02%20-%20Features/21%20-%20Compare%20Branches.md) |
+| **Markdown preview** | read `.md` files rendered in changes, commits, compare and history; mark what changed in place | [Markdown Preview](02%20-%20Features/33%20-%20Markdown%20Preview.md) |
 | **Onboarding** | first-run setup: Git, profiles, SSH, GitHub, CLI, AI tools | [Onboarding](02%20-%20Features/22%20-%20Onboarding.md) |
 | **Agent worktrees** | launch agents in parallel worktrees, watch them, review hunk by hunk | [Agent Worktrees and Review](02%20-%20Features/23%20-%20Agent%20Worktrees%20and%20Review.md) |
 | **CI** | Actions runs, logs, annotations, re-run, workflow dispatch | [CI and Actions](02%20-%20Features/24%20-%20CI%20and%20Actions.md) |
@@ -129,6 +130,7 @@ flowchart TB
 30. [History Rewriting](02%20-%20Features/30%20-%20History%20Rewriting.md)
 31. [CLI](02%20-%20Features/31%20-%20CLI.md)
 32. [MCP Server](02%20-%20Features/32%20-%20MCP%20Server.md)
+33. [Markdown Preview](02%20-%20Features/33%20-%20Markdown%20Preview.md)
 
 **Development**
 - [Project Setup](04%20-%20Development/01%20-%20Project%20Setup.md): toolchain, Gradle layout, convention plugins, build checks, commands.

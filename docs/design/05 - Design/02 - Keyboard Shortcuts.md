@@ -65,6 +65,7 @@ The default keymap follows JetBrains IDEs where an equivalent exists. **Mod** = 
 | Stage / unstage file or hunk | `Space` |
 | Discard (with confirmation) | `Mod+Alt+Z` |
 | Next / previous change | `F7` / `Shift+F7` |
+| Markdown file: cycle Diff / Preview / Changes | `Mod+Alt+M` |
 | Next / previous file | `Alt+Shift+→` / `Alt+Shift+←` |
 | Move change to other side (`>>`) | `Mod+Shift+→` / `Mod+Shift+←` |
 | Toggle side-by-side / unified | `Mod+Alt+D` |

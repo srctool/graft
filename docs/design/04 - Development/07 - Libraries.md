@@ -30,7 +30,7 @@ Agents and contributors shouldn't pick libraries ad hoc. This note fixes the cho
 | System info (battery, sleep) | OSHI | MIT | n/a (app only) | background fetch is off on battery |
 | Word-level diff | `java-diff-utils` | Apache-2.0 | yes | line diffs come from `git diff` |
 | Syntax highlighting | `dev.snipme:highlights` (decided in the G1 plan, D7), behind a `Highlighter` interface so TextMate grammars (`tm4e`) or tree-sitter can replace it | Apache-2.0 | n/a | pure Kotlin; fewer languages than the alternatives |
-| Markdown (PRs, issues) | `multiplatform-markdown-renderer` (mikepenz) on JetBrains' `markdown` parser | Apache-2.0 | n/a | raw HTML not rendered ([Threat Model](../01%20-%20Foundations/07%20-%20Threat%20Model.md) T5) |
+| Markdown (file preview, PRs, issues, commit messages) | `multiplatform-markdown-renderer` (mikepenz) on JetBrains' `markdown` parser | Apache-2.0 | n/a | raw HTML not rendered ([Threat Model](../01%20-%20Foundations/07%20-%20Threat%20Model.md) T5) |
 | Images (avatars) | Coil 3 | Apache-2.0 | n/a | disk cache in the OS cache dir |
 | Logging | `kotlin-logging` + SLF4J + Logback | Apache-2.0; Logback EPL-1.0 / **LGPL-2.1** (use under LGPL) | yes | redaction in a Logback encoder ([Conventions](02%20-%20Conventions.md)) |
 | CLI parsing | Clikt | Apache-2.0 | yes | |
