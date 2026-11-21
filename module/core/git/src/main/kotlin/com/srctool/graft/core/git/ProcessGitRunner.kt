@@ -189,7 +189,7 @@ public class ProcessGitRunner(
         }
 
     private fun start(cmd: GitInvocation, argv: List<String>, cwd: Path): Process = try {
-        config.launcher.start(argv, cwd, environment(cmd.mutates))
+        config.launcher.start(argv, cwd, environment(cmd))
     } catch (e: IOException) {
         throw GitNotFoundException(cmd.function, argv, exitCode = null, stderr = e.message.orEmpty(), cause = e)
     }
@@ -198,9 +198,11 @@ public class ProcessGitRunner(
 
     // Inherited variables, then the caller's overrides, then Graft's own settings last: an override (or the user's
     // shell) must never undo LC_ALL, the prompt rules or the helpers.
-    internal fun environment(mutates: Boolean): Map<String, String> {
+    internal fun environment(cmd: GitInvocation): Map<String, String> {
+        val mutates = cmd.mutates
         val env = HashMap(System.getenv())
         config.environment.forEach { (key, value) -> if (value == null) env.remove(key) else env[key] = value }
+        cmd.environment.forEach { (key, value) -> if (value == null) env.remove(key) else env[key] = value }
         env["LC_ALL"] = "C"
         env["GIT_TERMINAL_PROMPT"] = "0"
         if (mutates) env.remove("GIT_OPTIONAL_LOCKS") else env["GIT_OPTIONAL_LOCKS"] = "0"
