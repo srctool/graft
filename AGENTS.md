@@ -108,8 +108,8 @@ Before reporting a task done: `./gradlew check` passes. Say so with the output; 
 
 | | |
 |---|---|
-| Milestone | **G1 Read-only browser**: plan in `plans/G1.md` (G0 done, ADR-1 confirmed 2026-11-15) |
-| Next | G1 is built; what is left is the author's: screen-reader and keyboard passes, the idle-machine measurements, the D10 decision, daily use (see Task 22 in `plans/progress.md`) |
+| Milestone | **G2 Working copy**: plan in `plans/G2.md` (approved 2026-11-21); G1 is built, with its hands-on checks left for the author |
+| Next | G2 Task 0: the author edits the notes for E1, E2 and E4 (see `plans/progress.md`); then Task 1 |
 | Open decisions | final name checks (Naming); from the G0 spike: writing a commit-graph file on open, and the first-screen and frame-time gaps (`plans/progress.md`) |
 
 <!-- gitnexus:start -->
