@@ -37,7 +37,7 @@ No open-source client combines a full graph, hosting integration (PRs, issues), 
 | **Stash** | push (partial), apply, pop, drop, view as graph nodes | [Stash](02%20-%20Features/05%20-%20Stash.md) |
 | **Shelves** | named, independent, partial change sets; unshelve per file; shared across worktrees | [Shelves](02%20-%20Features/06%20-%20Shelves.md) |
 | **Worktrees** | list, create, open, lock, remove, prune; see which branch lives where | [Worktrees](02%20-%20Features/07%20-%20Worktrees.md) |
-| **Submodules** | status, init, update, sync, add, remove; open a submodule as a nested repo | [Submodules](02%20-%20Features/08%20-%20Submodules.md) |
+| **Submodules** | status, init, update, sync, add, remove; open a submodule as a nested repo; review a submodule's changes from the parent's Changes panel | [Submodules](02%20-%20Features/08%20-%20Submodules.md) |
 | **Pull requests** | list, review, comment, create, checkout, merge (GitHub first) | [Pull Requests](02%20-%20Features/09%20-%20Pull%20Requests.md) |
 | **Issues** | list, filter, create, comment, start a branch from an issue | [Issues](02%20-%20Features/10%20-%20Issues.md) |
 | **Profiles** | several identities (Personal, Work): git name/email, accounts, SSH key, tabs; auto-picked per repo | [Profiles](02%20-%20Features/11%20-%20Profiles.md) |
