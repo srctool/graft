@@ -13,6 +13,7 @@ import com.srctool.graft.data.git.api.repositories.RefRepository
 import com.srctool.graft.data.git.api.repositories.ReflogRepository
 import com.srctool.graft.data.git.api.repositories.RemoteRepository
 import com.srctool.graft.data.git.api.repositories.RepositoryAccessRepository
+import com.srctool.graft.data.git.api.repositories.StagingRepository
 import com.srctool.graft.data.git.api.repositories.StashRepository
 import com.srctool.graft.data.git.api.repositories.TreeRepository
 import com.srctool.graft.data.git.api.repositories.WorkingTreeRepository
@@ -38,4 +39,5 @@ public fun gitDataKoin(): Module = module {
     single<GitInstallRepository> { get<GitDataModule>().install }
     single<GitLogRepository> { get<GitDataModule>().log }
     single<WorkingTreeRepository> { get<GitDataModule>().workingTree }
+    single<StagingRepository> { get<GitDataModule>().staging }
 }
