@@ -37,6 +37,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.emptyFlow
 import kotlinx.coroutines.launch
@@ -131,6 +132,50 @@ class MainWindowTest {
             assertEquals(listOf(TabContent.Home), windows.windows.value.single().tabs.map { it.content })
         }
         scope.cancel()
+        stopKoin()
+    }
+
+    @Test
+    fun `a request from another launch opens its folder as a tab`() {
+        assumeFalse(System.getProperty("os.name").startsWith("Windows"), "wedges the Windows CI runner")
+        val sandbox = GitSandbox(java.nio.file.Files.createTempDirectory("graft-request"))
+        val repo = sandbox.repo { commit("first commit") { file("a.txt", "a") } }
+        val folders = sandbox.root.resolve("graft-app")
+        startKoin {
+            allowOverride(true)
+            modules(
+                desktopModules() +
+                    module {
+                        single<GitRunner> { sandbox.runner() }
+                        single { AppFolders(folders, folders, folders.resolve("cache"), folders.resolve("logs")) }
+                    },
+            )
+        }
+        runBlocking {
+            org.koin.mp.KoinPlatform.getKoin().get<SettingsRepository>().update { it.copy(onboarded = true) }
+        }
+        val windows = WindowState()
+        val windowId = windows.openWindow()
+        val sessions =
+            object : RepositorySessions {
+                override val sessions =
+                    MutableStateFlow<Map<com.srctool.graft.data.git.api.models.RepositoryLocation, RepositorySession>>(
+                        emptyMap(),
+                    )
+            }
+        val requests = MutableSharedFlow<List<java.nio.file.Path>>(extraBufferCapacity = 1)
+        runDesktopComposeUiTest(1280, 800) {
+            setContent { GraftTheme { MainWindow(windows, windowId, sessions, requests = requests) } }
+            waitForIdle()
+            assertEquals(listOf(TabContent.Home), windows.windows.value.single().tabs.map { it.content })
+            // Collection starts with the composition; the request is sent once someone listens.
+            waitUntil(timeoutMillis = 10_000) { requests.subscriptionCount.value > 0 }
+            requests.tryEmit(listOf(repo))
+            waitUntil(timeoutMillis = 20_000) {
+                windows.windows.value.single().activeTab.content is TabContent.Repository
+            }
+            assertEquals(2, windows.windows.value.single().tabs.size)
+        }
         stopKoin()
     }
 }
