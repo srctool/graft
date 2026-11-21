@@ -17,6 +17,13 @@ public interface GitInvocation {
     public val mutates: Boolean
 
     /**
+     * Variables for this command alone (null removes one), such as `GIT_INDEX_FILE` for a [TempIndex]. They win over
+     * the runner's configured environment but never over Graft's own settings (`LC_ALL`, the prompt rules, the
+     * helpers).
+     */
+    public val environment: Map<String, String?> get() = emptyMap()
+
+    /**
      * Exit codes that are answers, not failures, for commands that report through them: `merge-tree` exits 1 when
      * the merge would conflict, `merge-base` when there's no common ancestor. Their output is parsed as usual.
      */
