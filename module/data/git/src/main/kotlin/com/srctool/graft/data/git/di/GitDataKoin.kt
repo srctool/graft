@@ -15,6 +15,7 @@ import com.srctool.graft.data.git.api.repositories.RemoteRepository
 import com.srctool.graft.data.git.api.repositories.RepositoryAccessRepository
 import com.srctool.graft.data.git.api.repositories.StashRepository
 import com.srctool.graft.data.git.api.repositories.TreeRepository
+import com.srctool.graft.data.git.api.repositories.WorkingTreeRepository
 import org.koin.core.module.Module
 import org.koin.dsl.module
 
@@ -36,4 +37,5 @@ public fun gitDataKoin(): Module = module {
     single<TreeRepository> { get<GitDataModule>().trees }
     single<GitInstallRepository> { get<GitDataModule>().install }
     single<GitLogRepository> { get<GitDataModule>().log }
+    single<WorkingTreeRepository> { get<GitDataModule>().workingTree }
 }

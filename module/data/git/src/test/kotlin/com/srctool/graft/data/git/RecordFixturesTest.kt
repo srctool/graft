@@ -16,6 +16,7 @@ import com.srctool.graft.data.git.implementation.source.local.RefsCommand
 import com.srctool.graft.data.git.implementation.source.local.RemotesCommand
 import com.srctool.graft.data.git.implementation.source.local.StashListCommand
 import com.srctool.graft.data.git.implementation.source.local.StatusSummaryCommand
+import com.srctool.graft.data.git.implementation.source.local.WorkingTreeCommand
 import com.srctool.sinew.models.getOrThrow
 import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.Assumptions.assumeTrue
@@ -78,5 +79,21 @@ class RecordFixturesTest {
             "credentials",
             runner.run(RawBytesCommand(RemotesCommand().args), remotes).getOrThrow(),
         )
+    }
+
+    @Test
+    fun `record working tree status`(sandbox: GitSandbox) = runBlocking {
+        assumeTrue(Fixtures.recording, "set -PrecordFixtures to re-record")
+        val runner = sandbox.runner()
+        suspend fun record(case: String, repo: java.nio.file.Path, includeIgnored: Boolean) = Fixtures.write(
+            "worktree",
+            case,
+            runner.run(RawBytesCommand(WorkingTreeCommand(includeIgnored).args), repo).getOrThrow(),
+        )
+        WorkingTreeRepos.build(sandbox).forEach { (case, repo) ->
+            record(case, repo, includeIgnored = false)
+            // The same mixed repository with its ignored paths listed.
+            if (case == "mixed") record("mixed-ignored", repo, includeIgnored = true)
+        }
     }
 }
