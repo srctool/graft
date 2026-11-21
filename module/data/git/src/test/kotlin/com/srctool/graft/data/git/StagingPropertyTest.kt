@@ -10,6 +10,7 @@ import com.srctool.graft.data.git.api.models.ChangeSelection
 import com.srctool.graft.data.git.api.models.FileSelection
 import com.srctool.graft.data.git.api.models.FileSelection.Scope
 import com.srctool.graft.data.git.api.models.LineRange
+import com.srctool.graft.data.git.implementation.repositories.GitLocalHistoryRepository
 import com.srctool.graft.data.git.implementation.repositories.GitStagingRepository
 import com.srctool.graft.data.git.implementation.source.local.RawLine
 import com.srctool.graft.data.git.implementation.source.local.RawPatchParser
@@ -74,7 +75,7 @@ class StagingPropertyTest {
     fun `staging random lines gives exactly those changes, and unstaging them all gives HEAD back`(
         sandbox: GitSandbox,
     ) = runBlocking {
-        val staging = GitStagingRepository(sandbox.runner())
+        val staging = GitStagingRepository(sandbox.runner(), GitLocalHistoryRepository(sandbox.runner()))
         repeat(30) { round ->
             val random = Random(round)
             val old = (1..random.nextInt(15, 60)).map { "line $it" }

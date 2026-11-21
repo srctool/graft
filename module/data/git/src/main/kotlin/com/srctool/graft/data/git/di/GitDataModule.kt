@@ -11,6 +11,7 @@ import com.srctool.graft.data.git.api.repositories.DiffRepository
 import com.srctool.graft.data.git.api.repositories.GitInstallRepository
 import com.srctool.graft.data.git.api.repositories.GitLogRepository
 import com.srctool.graft.data.git.api.repositories.IdentityRepository
+import com.srctool.graft.data.git.api.repositories.LocalHistoryRepository
 import com.srctool.graft.data.git.api.repositories.RefRepository
 import com.srctool.graft.data.git.api.repositories.ReflogRepository
 import com.srctool.graft.data.git.api.repositories.RemoteRepository
@@ -24,6 +25,7 @@ import com.srctool.graft.data.git.implementation.repositories.GitCompareReposito
 import com.srctool.graft.data.git.implementation.repositories.GitDiffRepository
 import com.srctool.graft.data.git.implementation.repositories.GitIdentityRepository
 import com.srctool.graft.data.git.implementation.repositories.GitInstallRepositoryImpl
+import com.srctool.graft.data.git.implementation.repositories.GitLocalHistoryRepository
 import com.srctool.graft.data.git.implementation.repositories.GitRefRepository
 import com.srctool.graft.data.git.implementation.repositories.GitReflogRepository
 import com.srctool.graft.data.git.implementation.repositories.GitRemoteRepository
@@ -60,5 +62,6 @@ public class GitDataModule(
     public val install: GitInstallRepository = GitInstallRepositoryImpl(runner, neutralFolder)
     public val log: GitLogRepository = RecordedGitLogRepository(commandLog)
     public val workingTree: WorkingTreeRepository = GitWorkingTreeRepository(runner)
-    public val staging: StagingRepository = GitStagingRepository(runner)
+    public val history: LocalHistoryRepository = GitLocalHistoryRepository(runner)
+    public val staging: StagingRepository = GitStagingRepository(runner, history)
 }

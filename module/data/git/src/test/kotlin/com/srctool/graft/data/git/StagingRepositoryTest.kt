@@ -11,6 +11,7 @@ import com.srctool.graft.data.git.api.models.ChangeSelection
 import com.srctool.graft.data.git.api.models.FileSelection
 import com.srctool.graft.data.git.api.models.FileSelection.Scope
 import com.srctool.graft.data.git.api.models.LineRange
+import com.srctool.graft.data.git.implementation.repositories.GitLocalHistoryRepository
 import com.srctool.graft.data.git.implementation.repositories.GitStagingRepository
 import com.srctool.sinew.models.Result
 import com.srctool.sinew.models.getOrThrow
@@ -51,7 +52,8 @@ class StagingRepositoryTest {
     private fun lines(path: String, vararg ranges: LineRange) =
         ChangeSelection(listOf(FileSelection(path, Scope.Lines(ranges.toList()))))
 
-    private fun repository(sandbox: GitSandbox) = GitStagingRepository(sandbox.runner())
+    private fun repository(sandbox: GitSandbox) =
+        GitStagingRepository(sandbox.runner(), GitLocalHistoryRepository(sandbox.runner()))
 
     /** Two hunks, far enough apart not to merge: line 2 and line 18 changed. */
     private fun twoHunks(sandbox: GitSandbox): Path {
