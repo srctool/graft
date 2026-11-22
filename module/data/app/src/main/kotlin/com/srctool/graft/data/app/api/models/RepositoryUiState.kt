@@ -19,6 +19,8 @@ public data class RepositoryUiState(
     val columns: Map<String, Float?> = emptyMap(),
     /** Which tool window is docked where and open, and the docks' sizes (Task 20, UI Design "Layouts"). */
     val panels: PanelLayout = PanelLayout(),
+    /** How this repository groups uncommitted changes; the same for every worktree (Changelists, "Mode"). */
+    val changesView: ChangesView = ChangesView.INHERIT,
 )
 
 /**

@@ -5,6 +5,7 @@ package com.srctool.graft.data.git.di
 
 import com.srctool.graft.core.git.CommandLog
 import com.srctool.graft.core.git.GitRunner
+import com.srctool.graft.data.git.api.repositories.ChangeBlocksRepository
 import com.srctool.graft.data.git.api.repositories.CommitRepository
 import com.srctool.graft.data.git.api.repositories.CommittingRepository
 import com.srctool.graft.data.git.api.repositories.CompareRepository
@@ -22,6 +23,7 @@ import com.srctool.graft.data.git.api.repositories.StagingRepository
 import com.srctool.graft.data.git.api.repositories.StashRepository
 import com.srctool.graft.data.git.api.repositories.TreeRepository
 import com.srctool.graft.data.git.api.repositories.WorkingTreeRepository
+import com.srctool.graft.data.git.implementation.repositories.GitChangeBlocksRepository
 import com.srctool.graft.data.git.implementation.repositories.GitCommitRepository
 import com.srctool.graft.data.git.implementation.repositories.GitCommittingRepository
 import com.srctool.graft.data.git.implementation.repositories.GitCompareRepository
@@ -75,4 +77,5 @@ public class GitDataModule(
     private val stagingImpl = GitStagingRepository(runner, history, recorder)
     public val staging: StagingRepository = stagingImpl
     public val committing: CommittingRepository = GitCommittingRepository(runner, stagingImpl, recorder)
+    public val changeBlocks: ChangeBlocksRepository = GitChangeBlocksRepository(runner)
 }

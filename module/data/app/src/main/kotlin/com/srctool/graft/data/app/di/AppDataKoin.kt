@@ -3,6 +3,7 @@
 
 package com.srctool.graft.data.app.di
 
+import com.srctool.graft.data.app.api.repositories.ChangelistRepository
 import com.srctool.graft.data.app.api.repositories.FolderScanRepository
 import com.srctool.graft.data.app.api.repositories.KnownRepositoryRepository
 import com.srctool.graft.data.app.api.repositories.RepositoryUiStateRepository
@@ -24,4 +25,5 @@ public fun appDataKoin(): Module = module {
     single<WorkspaceRepository> { get<AppDataModule>().workspaces }
     single<FolderScanRepository> { get<AppDataModule>().folderScan }
     single<RepositoryUiStateRepository> { get<AppDataModule>().repositoryUiState }
+    single<ChangelistRepository> { get<AppDataModule>().changelists }
 }

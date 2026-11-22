@@ -20,6 +20,8 @@ public data class AppSettings(
     val inlineDiffLimitBytes: Long = 2L * 1024 * 1024,
     /** The welcome steps were finished or skipped; they open by themselves only until then (Onboarding). */
     val onboarded: Boolean = false,
+    /** The default for repositories that don't choose (Settings Reference: Changes view). */
+    val changesView: ChangesMode = ChangesMode.STAGING_AREA,
 )
 
 @Serializable
