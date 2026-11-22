@@ -59,11 +59,28 @@ internal class GitStagingRepository(
         DISCARD(diffCached = false, toIndex = false, applyTo = ApplyTo.NEW),
     }
 
+    /**
+     * Puts the selection into a scratch index (a [com.srctool.graft.core.git.TempIndex]'s environment) instead of the
+     * repository's, for a commit of a selection. Nothing is recorded: the scratch index is not the repository's state.
+     */
+    internal suspend fun stageInto(
+        repository: Path,
+        selection: ChangeSelection,
+        contextLines: Int,
+        index: Map<String, String?>,
+    ): Result<Unit> = move(repository, selection, contextLines, Direction.STAGE, index) { command, input ->
+        runner.run(command, repository, input)
+    }
+
     private suspend fun move(
         repository: Path,
         selection: ChangeSelection,
         contextLines: Int,
         direction: Direction,
+        index: Map<String, String?> = emptyMap(),
+        write: suspend (GitCommand<Unit>, ByteArray) -> Result<Unit> = { command, input ->
+            recorder.run(command, repository, input = input)
+        },
     ): Result<Unit> {
         val files = selection.files
         if (files.isEmpty()) return Result.Success(Unit)
@@ -76,7 +93,7 @@ internal class GitStagingRepository(
             if (partial.isEmpty() && direction != Direction.DISCARD) {
                 emptySet()
             } else {
-                when (val r = runner.run(TrackedPathsCommand(files.map { it.path }), repository)) {
+                when (val r = runner.run(TrackedPathsCommand(files.map { it.path }, index), repository)) {
                     is Result.Success -> r.data
                     is Result.Failure -> return r
                 }
@@ -86,7 +103,7 @@ internal class GitStagingRepository(
         val patch = java.io.ByteArrayOutputStream()
         for (file in partial) {
             val built =
-                when (val r = patchFor(repository, file, direction, tracked, contextLines)) {
+                when (val r = patchFor(repository, file, direction, tracked, contextLines, index)) {
                     is Result.Success -> r.data
                     is Result.Failure -> return r
                 }
@@ -98,14 +115,15 @@ internal class GitStagingRepository(
             (history.snapshot(repository, "before discard") as? Result.Failure)?.let { return it }
         }
         if (patch.size() > 0) {
-            val command = ApplyPatchCommand(cached = direction.toIndex, reverse = direction.applyTo == ApplyTo.NEW)
-            val applied = recorder.run(command, repository, input = patch.toByteArray())
+            val command =
+                ApplyPatchCommand(cached = direction.toIndex, reverse = direction.applyTo == ApplyTo.NEW, index = index)
+            val applied = write(command, patch.toByteArray())
             if (applied is Result.Failure) return applied
         }
         if (whole.isEmpty()) return Result.Success(Unit)
         return when (direction) {
-            Direction.STAGE -> recorder.run(AddCommand(), repository, input = paths(whole))
-            Direction.UNSTAGE -> recorder.run(ResetPathsCommand(), repository, input = paths(whole))
+            Direction.STAGE -> write(AddCommand(index), paths(whole))
+            Direction.UNSTAGE -> write(ResetPathsCommand(), paths(whole))
             Direction.DISCARD -> discardWhole(repository, whole, tracked)
         }
     }
@@ -150,6 +168,7 @@ internal class GitStagingRepository(
         direction: Direction,
         tracked: Set<String>,
         contextLines: Int,
+        index: Map<String, String?>,
     ): Result<ByteArray?> {
         val isNew = file.path !in tracked
         if (isNew && direction != Direction.STAGE) {
@@ -159,7 +178,12 @@ internal class GitStagingRepository(
             if (isNew) {
                 NewFileDiffCommand(file.path, contextLines)
             } else {
-                StagingDiffCommand(direction.diffCached, listOfNotNull(file.path, file.originalPath), contextLines)
+                StagingDiffCommand(
+                    direction.diffCached,
+                    listOfNotNull(file.path, file.originalPath),
+                    contextLines,
+                    index,
+                )
             }
         val bytes =
             when (val r = runner.run(diff, repository)) {

@@ -33,10 +33,13 @@ public object GraftCodes {
         /** Undo or redo refused: the branch has moved since, so going back would lose commits. */
         public const val MOVED: String = "MOVD"
 
+        /** A commit Graft won't make: nothing to commit, no summary, or a co-author that isn't `Name <email>`. */
+        public const val REFUSED: String = "REFU"
+
         public val all: List<String> =
             listOf(
                 REJECTED, AUTH, CONFLICT, LOCKED, NOT_FOUND, NETWORK, TIMEOUT, VERSION, EXIT,
-                UNSAFE_OWNER, PATCH, MOVED,
+                UNSAFE_OWNER, PATCH, MOVED, REFUSED,
             )
     }
 
