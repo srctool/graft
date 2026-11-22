@@ -25,17 +25,23 @@ internal class InsideRepositoryCommand : GitCommand<Unit>() {
 }
 
 /** The paths git has an entry for (tracked or intent-to-add); anything else is untracked. */
-internal class TrackedPathsCommand(paths: List<String>) : GitCommand<Set<String>>() {
+internal class TrackedPathsCommand(paths: List<String>, index: Map<String, String?> = emptyMap()) :
+    GitCommand<Set<String>>() {
     override val function = "LSF"
     override val args = listOf("ls-files", "-z", "--") + paths
-    override val environment = LITERAL
+    override val environment = LITERAL + index
 
     override fun parse(stdout: ByteArray): Set<String> =
         stdout.toString(Charsets.UTF_8).split('\u0000').filter { it.isNotEmpty() }.toSet()
 }
 
 /** A diff as bytes, fixed so user config can't change it: [cached] is HEAD against the index, else index against files. */
-internal class StagingDiffCommand(cached: Boolean, paths: List<String>, contextLines: Int) : GitCommand<ByteArray>() {
+internal class StagingDiffCommand(
+    cached: Boolean,
+    paths: List<String>,
+    contextLines: Int,
+    index: Map<String, String?> = emptyMap(),
+) : GitCommand<ByteArray>() {
     override val function = "DIFF"
     override val args =
         buildList {
@@ -45,7 +51,7 @@ internal class StagingDiffCommand(cached: Boolean, paths: List<String>, contextL
             addAll(listOf("--submodule=short", "--unified=$contextLines", "-M", "--"))
             addAll(paths)
         }
-    override val environment = LITERAL
+    override val environment = LITERAL + index
 
     override fun parse(stdout: ByteArray): ByteArray = stdout
 }
@@ -64,9 +70,11 @@ internal class NewFileDiffCommand(path: String, contextLines: Int) : GitCommand<
 }
 
 /** Applies a patch from stdin to the index ([cached]) or the files; [reverse] undoes it instead (`-R`). */
-internal class ApplyPatchCommand(cached: Boolean, reverse: Boolean) : GitCommand<Unit>() {
+internal class ApplyPatchCommand(cached: Boolean, reverse: Boolean, index: Map<String, String?> = emptyMap()) :
+    GitCommand<Unit>() {
     override val function = "APLY"
     override val mutates = true
+    override val environment = index
     override val args =
         buildList {
             add("apply")
@@ -82,11 +90,11 @@ internal class ApplyPatchCommand(cached: Boolean, reverse: Boolean) : GitCommand
 }
 
 /** `git add` for whole files: new, changed and deleted alike. Paths come on stdin. */
-internal class AddCommand : GitCommand<Unit>() {
+internal class AddCommand(index: Map<String, String?> = emptyMap()) : GitCommand<Unit>() {
     override val function = "ADD"
     override val mutates = true
     override val args = listOf("add", "-A") + PATHSPEC_FROM_STDIN
-    override val environment = LITERAL
+    override val environment = LITERAL + index
 
     override fun parse(stdout: ByteArray) = Unit
 }

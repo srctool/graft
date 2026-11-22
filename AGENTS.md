@@ -109,7 +109,7 @@ Before reporting a task done: `./gradlew check` passes. Say so with the output; 
 | | |
 |---|---|
 | Milestone | **G2 Working copy**: plan in `plans/G2.md` (approved 2026-11-21); G1 is built, with its hands-on checks left for the author |
-| Next | G2 Task 6 (Commit and amend), after Task 5 is reviewed; Task 0's note edits are still missing from the author's notes |
+| Next | G2 Task 7 (Changelists), after Task 6 is reviewed; Task 0's note edits are still missing from the author's notes |
 | Open decisions | final name checks (Naming); from the G0 spike: writing a commit-graph file on open, and the first-screen and frame-time gaps (`plans/progress.md`) |
 
 <!-- gitnexus:start -->
