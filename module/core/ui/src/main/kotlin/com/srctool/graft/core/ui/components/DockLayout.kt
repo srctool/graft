@@ -64,6 +64,13 @@ public class ToolWindow(
     public val content: @Composable () -> Unit,
 )
 
+/**
+ * A tool window a feature adds to a screen's dock (E3: the Changes panel is built in `:module:feature:workingcopy`,
+ * which can't import the screen that owns the dock, so `:module:navigation` hands the screen its contributions).
+ * Same shape as the screen's own windows, so it docks, moves and is remembered by [ToolWindow.id] like they are.
+ */
+public typealias ToolWindowContribution = ToolWindow
+
 /** What a [DockLayoutState] saves: where each tool window docks, which is open per side, and each dock's size. */
 public data class DockLayoutSnapshot(
     val sides: Map<String, DockSide>,
