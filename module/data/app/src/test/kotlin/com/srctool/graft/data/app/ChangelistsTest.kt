@@ -8,6 +8,7 @@ import com.srctool.graft.data.app.api.models.AppSettings
 import com.srctool.graft.data.app.api.models.ChangelistBook
 import com.srctool.graft.data.app.api.models.ChangelistNameProblem
 import com.srctool.graft.data.app.api.models.ChangesMode
+import com.srctool.graft.data.app.api.models.ChangesPanelState
 import com.srctool.graft.data.app.api.models.ChangesView
 import com.srctool.graft.data.app.api.models.CurrentFile
 import com.srctool.graft.data.app.api.models.CurrentHunk
@@ -280,5 +281,30 @@ class ChangelistsTest {
         Files.writeString(common.resolve("graft/state.json"), """{"version":1,"changesView":"quantum"}""")
         assertEquals(ChangesView.INHERIT, module.repositoryUiState.read(common).getOrThrow().value.changesView)
         assertEquals(ChangesMode.STAGING_AREA, AppSettings().changesView)
+    }
+
+    @Test
+    fun `the Changes panel's choices and per-branch drafts are kept in state json, sorted`() = runBlocking<Unit> {
+        val common = gitDir("common")
+        assertEquals(ChangesPanelState(), module.repositoryUiState.read(common).getOrThrow().value.changes)
+        val panel =
+            ChangesPanelState(
+                tree = false,
+                collapsed = setOf("src/b", "src/a"),
+                drafts = mapOf("refs/heads/main" to "Fix login\n\nBody", "refs/heads/feat" to "WIP"),
+            )
+        module.repositoryUiState.update(common) { it.copy(changes = panel) }.getOrThrow()
+        assertEquals(panel, module.repositoryUiState.read(common).getOrThrow().value.changes)
+        val text = Files.readString(common.resolve("graft/state.json"))
+        assertTrue(text.indexOf("refs/heads/feat") < text.indexOf("refs/heads/main"), text)
+        assertTrue(text.indexOf("src/a") < text.indexOf("src/b"), text)
+    }
+
+    @Test
+    fun `a state file from before the panel state reads as the defaults`() = runBlocking<Unit> {
+        val common = gitDir("common")
+        Files.createDirectories(common.resolve("graft"))
+        Files.writeString(common.resolve("graft/state.json"), """{"version":1,"pinnedRefs":["refs/heads/main"]}""")
+        assertEquals(ChangesPanelState(), module.repositoryUiState.read(common).getOrThrow().value.changes)
     }
 }

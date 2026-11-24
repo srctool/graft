@@ -21,6 +21,21 @@ public data class RepositoryUiState(
     val panels: PanelLayout = PanelLayout(),
     /** How this repository groups uncommitted changes; the same for every worktree (Changelists, "Mode"). */
     val changesView: ChangesView = ChangesView.INHERIT,
+    /** The Changes panel's own choices and the commit box's drafts (Working Copy and Commit). */
+    val changes: ChangesPanelState = ChangesPanelState(),
+)
+
+/**
+ * The Changes panel for one repository. [drafts] is the commit message typed for each branch and not committed yet,
+ * keyed by the full ref (`refs/heads/main`), so switching branches brings back what was written there; a changelist's
+ * draft lives with the list (Changelists, "Model"), not here.
+ */
+public data class ChangesPanelState(
+    /** Folders as a tree (true) or one flat list. */
+    val tree: Boolean = true,
+    /** Folders the user folded, by path from the repository root (a chain of single folders is one entry, named by its deepest folder). */
+    val collapsed: Set<String> = emptySet(),
+    val drafts: Map<String, String> = emptyMap(),
 )
 
 /**

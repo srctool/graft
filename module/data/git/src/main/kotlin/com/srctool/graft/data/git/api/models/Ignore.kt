@@ -33,8 +33,12 @@ public object IgnorePatterns {
         return "*." + escape(name.substring(dot + 1))
     }
 
-    /** `/build/`: this folder and everything in it. */
-    public fun folder(path: String, base: String = ""): String = "/" + escape(relativeTo(path.trimEnd('/'), base)) + "/"
+    /** `/build/`: this folder and everything in it. The repository's own folder has no pattern, so [path] can't be empty. */
+    public fun folder(path: String, base: String = ""): String {
+        val relative = relativeTo(path.trimEnd('/'), base)
+        require(relative.isNotEmpty()) { "a folder pattern needs a folder" }
+        return "/" + escape(relative) + "/"
+    }
 
     private fun relativeTo(path: String, base: String): String {
         val folder = base.trim('/')

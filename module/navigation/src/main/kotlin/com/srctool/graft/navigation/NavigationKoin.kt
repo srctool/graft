@@ -5,6 +5,7 @@ package com.srctool.graft.navigation
 
 import com.srctool.graft.feature.graph.di.graphFeatureKoin
 import com.srctool.graft.feature.home.di.homeFeatureKoin
+import com.srctool.graft.feature.workingcopy.di.workingCopyFeatureKoin
 import com.srctool.graft.navigation.about.AboutViewModel
 import com.srctool.graft.navigation.about.BuildVersion
 import com.srctool.graft.navigation.about.BundledBuildVersion
@@ -24,7 +25,7 @@ import org.koin.dsl.module
  * sources (D1), for the app to start with.
  */
 public fun navigationKoin(): Module = module {
-    includes(homeFeatureKoin(), graphFeatureKoin())
+    includes(homeFeatureKoin(), graphFeatureKoin(), workingCopyFeatureKoin())
     single<LicenseSource> { BundledLicenseSource() }
     single<BuildVersion> { BundledBuildVersion() }
     single<SearchSource>(named("host.actions")) { HostActionSearchSource() }

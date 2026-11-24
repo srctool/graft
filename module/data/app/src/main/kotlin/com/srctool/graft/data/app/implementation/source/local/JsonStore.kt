@@ -90,6 +90,15 @@ internal data class RepositoryStateRecord(
     val panels: PanelsRecord = PanelsRecord(),
     // Added to version 1 without a bump (G2 Task 7): a string, so a value from a newer Graft reads as "inherit".
     val changesView: String = "inherit",
+    // Added to version 1 without a bump (G2 Task 10): an older file has no panel state and reads as the defaults.
+    val changes: ChangesPanelRecord = ChangesPanelRecord(),
+)
+
+@Serializable
+internal data class ChangesPanelRecord(
+    val tree: Boolean = true,
+    val collapsed: List<String> = emptyList(),
+    val drafts: Map<String, String> = emptyMap(),
 )
 
 @Serializable
