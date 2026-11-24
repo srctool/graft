@@ -12,4 +12,6 @@ dependencies {
     implementation(projects.module.data.hosting)
     implementation(projects.module.core.ui)
     implementation(projects.module.core.exception)
+
+    testImplementation(libs.kotlinx.coroutines.test)
 }

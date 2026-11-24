@@ -70,6 +70,8 @@ class IgnoreCleanTest {
         assertEquals("*.log", IgnorePatterns.extension("logs/app.log"))
         assertEquals("/build/", IgnorePatterns.folder("build"))
         assertEquals("/build/", IgnorePatterns.folder("build/"))
+        assertFailsWith<IllegalArgumentException> { IgnorePatterns.folder("") }
+        assertFailsWith<IllegalArgumentException> { IgnorePatterns.folder("/") }
         assertNull(IgnorePatterns.extension("Makefile"))
         assertNull(IgnorePatterns.extension(".env"))
         assertNull(IgnorePatterns.extension("name."))

@@ -3,6 +3,7 @@
 
 package com.srctool.graft.data.app.implementation.repositories
 
+import com.srctool.graft.data.app.api.models.ChangesPanelState
 import com.srctool.graft.data.app.api.models.ChangesView
 import com.srctool.graft.data.app.api.models.GraphAuthorKind
 import com.srctool.graft.data.app.api.models.GraphBranches
@@ -11,6 +12,7 @@ import com.srctool.graft.data.app.api.models.PanelLayout
 import com.srctool.graft.data.app.api.models.RepositoryUiState
 import com.srctool.graft.data.app.api.models.Saved
 import com.srctool.graft.data.app.api.repositories.RepositoryUiStateRepository
+import com.srctool.graft.data.app.implementation.source.local.ChangesPanelRecord
 import com.srctool.graft.data.app.implementation.source.local.GraphViewRecord
 import com.srctool.graft.data.app.implementation.source.local.JsonStore
 import com.srctool.graft.data.app.implementation.source.local.PanelsRecord
@@ -49,6 +51,7 @@ internal class FileRepositoryUiStateRepository : RepositoryUiStateRepository {
         columns,
         panels.toState(),
         CHANGES_VIEWS.entries.firstOrNull { it.value == changesView }?.key ?: ChangesView.INHERIT,
+        ChangesPanelState(changes.tree, changes.collapsed.toSet(), changes.drafts.toSortedMap()),
     )
 
     private fun RepositoryUiState.toRecord() = RepositoryStateRecord(
@@ -59,6 +62,7 @@ internal class FileRepositoryUiStateRepository : RepositoryUiStateRepository {
         columns,
         panels.toRecord(),
         CHANGES_VIEWS.getValue(changesView),
+        ChangesPanelRecord(changes.tree, changes.collapsed.sorted(), changes.drafts.toSortedMap()),
     )
 
     private fun PanelsRecord.toState() =
