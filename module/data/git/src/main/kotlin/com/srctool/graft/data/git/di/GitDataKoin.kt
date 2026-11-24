@@ -3,6 +3,7 @@
 
 package com.srctool.graft.data.git.di
 
+import com.srctool.graft.data.git.api.repositories.ChangeBlocksRepository
 import com.srctool.graft.data.git.api.repositories.CommitRepository
 import com.srctool.graft.data.git.api.repositories.CommittingRepository
 import com.srctool.graft.data.git.api.repositories.CompareRepository
@@ -46,4 +47,5 @@ public fun gitDataKoin(): Module = module {
     single<LocalHistoryRepository> { get<GitDataModule>().history }
     single<OperationLogRepository> { get<GitDataModule>().operations }
     single<CommittingRepository> { get<GitDataModule>().committing }
+    single<ChangeBlocksRepository> { get<GitDataModule>().changeBlocks }
 }

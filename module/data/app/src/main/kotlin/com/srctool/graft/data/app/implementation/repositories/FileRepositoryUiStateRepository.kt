@@ -3,6 +3,7 @@
 
 package com.srctool.graft.data.app.implementation.repositories
 
+import com.srctool.graft.data.app.api.models.ChangesView
 import com.srctool.graft.data.app.api.models.GraphAuthorKind
 import com.srctool.graft.data.app.api.models.GraphBranches
 import com.srctool.graft.data.app.api.models.GraphViewState
@@ -47,6 +48,7 @@ internal class FileRepositoryUiStateRepository : RepositoryUiStateRepository {
         graph.toState(),
         columns,
         panels.toState(),
+        CHANGES_VIEWS.entries.firstOrNull { it.value == changesView }?.key ?: ChangesView.INHERIT,
     )
 
     private fun RepositoryUiState.toRecord() = RepositoryStateRecord(
@@ -56,6 +58,7 @@ internal class FileRepositoryUiStateRepository : RepositoryUiStateRepository {
         graph.toRecord(),
         columns,
         panels.toRecord(),
+        CHANGES_VIEWS.getValue(changesView),
     )
 
     private fun PanelsRecord.toState() =
@@ -86,6 +89,13 @@ internal class FileRepositoryUiStateRepository : RepositoryUiStateRepository {
 
     private companion object {
         const val VERSION = 1
+
+        val CHANGES_VIEWS =
+            mapOf(
+                ChangesView.INHERIT to "inherit",
+                ChangesView.STAGING_AREA to "staging",
+                ChangesView.CHANGELISTS to "changelists",
+            )
 
         /** ADR-27's names for the author kinds. */
         val KINDS =

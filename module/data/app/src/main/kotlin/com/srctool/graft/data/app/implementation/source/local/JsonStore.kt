@@ -88,6 +88,8 @@ internal data class RepositoryStateRecord(
     val columns: Map<String, Float?> = emptyMap(),
     // Added to version 1 without a bump (Task 20): an older file has no layout and reads as the defaults.
     val panels: PanelsRecord = PanelsRecord(),
+    // Added to version 1 without a bump (G2 Task 7): a string, so a value from a newer Graft reads as "inherit".
+    val changesView: String = "inherit",
 )
 
 @Serializable
@@ -106,4 +108,36 @@ internal data class GraphViewRecord(
     val firstParent: Boolean = false,
     val authorTypes: List<String> = listOf("person", "aiAssisted", "bot"),
     val commitGraphOffered: Boolean = false,
+)
+
+/** `$GIT_DIR/graft/changelists.json` v1, one per worktree. */
+@Serializable
+internal data class ChangelistsRecord(
+    val lists: List<ChangelistRecord> = listOf(ChangelistRecord("default", "Default")),
+    val active: String = "default",
+    val files: List<FileAssignmentRecord> = emptyList(),
+    val hunks: List<HunkAssignmentRecord> = emptyList(),
+)
+
+@Serializable
+internal data class ChangelistRecord(
+    val id: String,
+    val name: String,
+    val description: String = "",
+    val draft: String = "",
+)
+
+@Serializable
+internal data class FileAssignmentRecord(val path: String, val list: String)
+
+@Serializable
+internal data class HunkAssignmentRecord(
+    val path: String,
+    val list: String,
+    val oldStart: Int,
+    val oldCount: Int,
+    val change: String,
+    val removed: String,
+    val base: String,
+    val removedCount: Int,
 )

@@ -5,12 +5,14 @@ package com.srctool.graft.data.app.di
 
 import com.srctool.graft.core.configuration.AppFolders
 import com.srctool.graft.data.app.api.models.AppSettings
+import com.srctool.graft.data.app.api.repositories.ChangelistRepository
 import com.srctool.graft.data.app.api.repositories.FolderScanRepository
 import com.srctool.graft.data.app.api.repositories.KnownRepositoryRepository
 import com.srctool.graft.data.app.api.repositories.RepositoryUiStateRepository
 import com.srctool.graft.data.app.api.repositories.SettingsRepository
 import com.srctool.graft.data.app.api.repositories.WindowStateRepository
 import com.srctool.graft.data.app.api.repositories.WorkspaceRepository
+import com.srctool.graft.data.app.implementation.repositories.FileChangelistRepository
 import com.srctool.graft.data.app.implementation.repositories.FileFolderScanRepository
 import com.srctool.graft.data.app.implementation.repositories.FileKnownRepositoryRepository
 import com.srctool.graft.data.app.implementation.repositories.FileRepositoryUiStateRepository
@@ -24,7 +26,7 @@ import java.time.Instant
 
 /**
  * Graft's own data: `settings.json` and `app-state.json` in [folders]' data folder, workspaces in the default
- * profile's `workspace.json` (moved into real profiles in G3), and each repository's `graft/state.json`.
+ * profile's `workspace.json` (moved into real profiles in G3), each repository's `graft/state.json`, and each worktree's `graft/changelists.json`.
  */
 public class AppDataModule(folders: AppFolders, clock: () -> Instant = Instant::now) {
     private val appState =
@@ -47,6 +49,7 @@ public class AppDataModule(folders: AppFolders, clock: () -> Instant = Instant::
         )
     public val folderScan: FolderScanRepository = FileFolderScanRepository()
     public val repositoryUiState: RepositoryUiStateRepository = FileRepositoryUiStateRepository()
+    public val changelists: ChangelistRepository = FileChangelistRepository()
 
     private companion object {
         const val DEFAULT_PROFILE = "default"
