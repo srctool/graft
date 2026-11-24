@@ -12,6 +12,7 @@ import com.srctool.graft.data.git.api.repositories.CompareRepository
 import com.srctool.graft.data.git.api.repositories.DiffRepository
 import com.srctool.graft.data.git.api.repositories.GitInstallRepository
 import com.srctool.graft.data.git.api.repositories.GitLogRepository
+import com.srctool.graft.data.git.api.repositories.GuardRepository
 import com.srctool.graft.data.git.api.repositories.IdentityRepository
 import com.srctool.graft.data.git.api.repositories.LocalHistoryRepository
 import com.srctool.graft.data.git.api.repositories.OperationLogRepository
@@ -28,6 +29,7 @@ import com.srctool.graft.data.git.implementation.repositories.GitCommitRepositor
 import com.srctool.graft.data.git.implementation.repositories.GitCommittingRepository
 import com.srctool.graft.data.git.implementation.repositories.GitCompareRepository
 import com.srctool.graft.data.git.implementation.repositories.GitDiffRepository
+import com.srctool.graft.data.git.implementation.repositories.GitGuardRepository
 import com.srctool.graft.data.git.implementation.repositories.GitIdentityRepository
 import com.srctool.graft.data.git.implementation.repositories.GitInstallRepositoryImpl
 import com.srctool.graft.data.git.implementation.repositories.GitLocalHistoryRepository
@@ -78,4 +80,5 @@ public class GitDataModule(
     public val staging: StagingRepository = stagingImpl
     public val committing: CommittingRepository = GitCommittingRepository(runner, stagingImpl, recorder)
     public val changeBlocks: ChangeBlocksRepository = GitChangeBlocksRepository(runner)
+    public val guard: GuardRepository = GitGuardRepository(runner, stagingImpl, recorder)
 }

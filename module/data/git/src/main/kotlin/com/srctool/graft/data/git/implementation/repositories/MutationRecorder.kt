@@ -75,6 +75,36 @@ internal class MutationRecorder(
         }
     }
 
+    /**
+     * Records something Graft did that isn't a git command (a guard exception the user allowed once) as an `OTHER`
+     * entry that succeeded, on the same queue so its refs are not another operation's. Never fails the caller.
+     */
+    suspend fun note(repository: Path, argv: List<String>) {
+        val where = locate(repository) ?: return
+        queue.withWrite(where.commonDir.toString()) {
+            val refs = refs(repository)
+            withContext(NonCancellable) {
+                val entry =
+                    OperationEntry(
+                        time = now(),
+                        worktree = where.worktreeId,
+                        kind = OperationKind.OTHER,
+                        argv = argv.map(Redaction::redact),
+                        exitCode = 0,
+                        outcome = OperationOutcome.SUCCEEDED,
+                        stderrTail = "",
+                        before = refs,
+                        after = refs,
+                    )
+                try {
+                    store.append(where.commonDir, entry)
+                } catch (_: IOException) {
+                    // See the class comment.
+                }
+            }
+        }
+    }
+
     /** The refs now. A ref that can't be read is recorded as absent: the entry is still worth having. */
     suspend fun refs(repository: Path): RefState {
         val branch = (runner.run(HeadBranchCommand(), repository) as? Result.Success)?.data
