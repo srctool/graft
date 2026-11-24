@@ -38,7 +38,18 @@ jobs:
       # as it starts, so the live log shows where. Parallelism is off there because it was the first suspect.
       - run: ./gradlew check --continue ${{ runner.os == 'Windows' && '--no-parallel -PtestVerbose' || '' }}
         shell: bash
-      - if: failure()
+        # A hang ends here, not at the job limit, so the step below still runs and the reports are kept.
+        timeout-minutes: 30
+      # Windows git has failed to start (0xC0000142) for the rest of a build, then hung. Record what the machine
+      # looked like: process and handle counts, and any git or java left over.
+      - if: always() && runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          Get-Process | Group-Object ProcessName | Sort-Object Count -Descending | Select-Object -First 15 Count, Name | Format-Table | Out-String
+          Get-Process | Sort-Object Handles -Descending | Select-Object -First 10 Id, ProcessName, Handles | Format-Table | Out-String
+          Get-Process git*, java*, conhost -ErrorAction SilentlyContinue | Select-Object Id, ProcessName, StartTime, Handles | Format-Table | Out-String
+          (Get-Process).Count
+      - if: failure() || cancelled()
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: reports-${{ matrix.os }}
