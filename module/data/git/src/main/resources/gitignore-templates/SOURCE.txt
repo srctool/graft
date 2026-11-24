@@ -1,0 +1,2 @@
+Templates from https://github.com/github/gitignore at commit eeb775f7cbd229e8cd487ef06a1176dc239201d9 (CC0 1.0, see LICENSE).
+Refresh by downloading the same files from a newer commit and updating this line.
