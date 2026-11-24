@@ -17,6 +17,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListState
@@ -273,8 +274,9 @@ private fun androidx.compose.ui.semantics.SemanticsPropertyReceiver.toggles(
 @Composable
 private fun RowCheckbox(checked: Boolean, onChange: () -> Unit) {
     // The row carries the semantics; the box is for the pointer, 24 px wide like the other dense controls.
+    // One code line high: Carbon's checkbox is 48 px unless its parent is tighter, which would stretch every row.
     Box(
-        Modifier.width(24.dp).fillMaxHeight().clearAndSetSemantics {
+        Modifier.size(width = 24.dp, height = 20.dp).clearAndSetSemantics {
         },
         contentAlignment = androidx.compose.ui.Alignment.Center,
     ) {
