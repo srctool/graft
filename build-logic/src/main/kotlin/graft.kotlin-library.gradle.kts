@@ -45,7 +45,15 @@ tasks.withType<Test>().configureEach {
     useJUnitPlatform()
     // CI logs then show why a test failed, not only which one. Assertion messages never contain the environment.
     testLogging {
-        events(org.gradle.api.tasks.testing.logging.TestLogEvent.FAILED)
+        // -PtestVerbose also names each test as it starts, so a stalled run's live log shows which one it is stuck in.
+        if (providers.gradleProperty("testVerbose").isPresent) {
+            events(
+                org.gradle.api.tasks.testing.logging.TestLogEvent.STARTED,
+                org.gradle.api.tasks.testing.logging.TestLogEvent.FAILED,
+            )
+        } else {
+            events(org.gradle.api.tasks.testing.logging.TestLogEvent.FAILED)
+        }
         exceptionFormat = org.gradle.api.tasks.testing.logging.TestExceptionFormat.FULL
     }
     // A hung git process fails its test after two minutes instead of holding CI until the job times out.
