@@ -4,6 +4,7 @@
 package com.srctool.graft.data.git.di
 
 import com.srctool.graft.data.git.api.repositories.ChangeBlocksRepository
+import com.srctool.graft.data.git.api.repositories.CleanRepository
 import com.srctool.graft.data.git.api.repositories.CommitRepository
 import com.srctool.graft.data.git.api.repositories.CommittingRepository
 import com.srctool.graft.data.git.api.repositories.CompareRepository
@@ -12,6 +13,7 @@ import com.srctool.graft.data.git.api.repositories.GitInstallRepository
 import com.srctool.graft.data.git.api.repositories.GitLogRepository
 import com.srctool.graft.data.git.api.repositories.GuardRepository
 import com.srctool.graft.data.git.api.repositories.IdentityRepository
+import com.srctool.graft.data.git.api.repositories.IgnoreRepository
 import com.srctool.graft.data.git.api.repositories.LocalHistoryRepository
 import com.srctool.graft.data.git.api.repositories.OperationLogRepository
 import com.srctool.graft.data.git.api.repositories.RefRepository
@@ -50,4 +52,6 @@ public fun gitDataKoin(): Module = module {
     single<CommittingRepository> { get<GitDataModule>().committing }
     single<ChangeBlocksRepository> { get<GitDataModule>().changeBlocks }
     single<GuardRepository> { get<GitDataModule>().guard }
+    single<IgnoreRepository> { get<GitDataModule>().ignore }
+    single<CleanRepository> { get<GitDataModule>().clean }
 }

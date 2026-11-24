@@ -6,6 +6,7 @@ package com.srctool.graft.data.git.di
 import com.srctool.graft.core.git.CommandLog
 import com.srctool.graft.core.git.GitRunner
 import com.srctool.graft.data.git.api.repositories.ChangeBlocksRepository
+import com.srctool.graft.data.git.api.repositories.CleanRepository
 import com.srctool.graft.data.git.api.repositories.CommitRepository
 import com.srctool.graft.data.git.api.repositories.CommittingRepository
 import com.srctool.graft.data.git.api.repositories.CompareRepository
@@ -14,6 +15,7 @@ import com.srctool.graft.data.git.api.repositories.GitInstallRepository
 import com.srctool.graft.data.git.api.repositories.GitLogRepository
 import com.srctool.graft.data.git.api.repositories.GuardRepository
 import com.srctool.graft.data.git.api.repositories.IdentityRepository
+import com.srctool.graft.data.git.api.repositories.IgnoreRepository
 import com.srctool.graft.data.git.api.repositories.LocalHistoryRepository
 import com.srctool.graft.data.git.api.repositories.OperationLogRepository
 import com.srctool.graft.data.git.api.repositories.RefRepository
@@ -25,12 +27,14 @@ import com.srctool.graft.data.git.api.repositories.StashRepository
 import com.srctool.graft.data.git.api.repositories.TreeRepository
 import com.srctool.graft.data.git.api.repositories.WorkingTreeRepository
 import com.srctool.graft.data.git.implementation.repositories.GitChangeBlocksRepository
+import com.srctool.graft.data.git.implementation.repositories.GitCleanRepository
 import com.srctool.graft.data.git.implementation.repositories.GitCommitRepository
 import com.srctool.graft.data.git.implementation.repositories.GitCommittingRepository
 import com.srctool.graft.data.git.implementation.repositories.GitCompareRepository
 import com.srctool.graft.data.git.implementation.repositories.GitDiffRepository
 import com.srctool.graft.data.git.implementation.repositories.GitGuardRepository
 import com.srctool.graft.data.git.implementation.repositories.GitIdentityRepository
+import com.srctool.graft.data.git.implementation.repositories.GitIgnoreRepository
 import com.srctool.graft.data.git.implementation.repositories.GitInstallRepositoryImpl
 import com.srctool.graft.data.git.implementation.repositories.GitLocalHistoryRepository
 import com.srctool.graft.data.git.implementation.repositories.GitOperationLogRepository
@@ -58,6 +62,7 @@ public class GitDataModule(
     runner: GitRunner,
     neutralFolder: Path = Paths.get(System.getProperty("java.io.tmpdir")),
     commandLog: CommandLog = CommandLog(),
+    defaultGlobalExcludes: Path = GlobalExcludesLocation.default(),
 ) {
     public val commits: CommitRepository = GitCommitRepository(runner)
     public val refs: RefRepository = GitRefRepository(runner)
@@ -81,4 +86,17 @@ public class GitDataModule(
     public val committing: CommittingRepository = GitCommittingRepository(runner, stagingImpl, recorder)
     public val changeBlocks: ChangeBlocksRepository = GitChangeBlocksRepository(runner)
     public val guard: GuardRepository = GitGuardRepository(runner, stagingImpl, recorder)
+    public val ignore: IgnoreRepository = GitIgnoreRepository(runner, recorder, defaultGlobalExcludes)
+    public val clean: CleanRepository = GitCleanRepository(runner, history, recorder)
+}
+
+/** Where git reads global excludes with no `core.excludesFile`: `$XDG_CONFIG_HOME/git/ignore`, else `~/.config/git/ignore`. */
+public object GlobalExcludesLocation {
+    public fun default(
+        xdgConfigHome: String? = System.getenv("XDG_CONFIG_HOME"),
+        home: String = System.getProperty("user.home"),
+    ): Path {
+        val config = xdgConfigHome?.takeIf { it.isNotBlank() }?.let(Paths::get) ?: Paths.get(home, ".config")
+        return config.resolve("git").resolve("ignore")
+    }
 }
