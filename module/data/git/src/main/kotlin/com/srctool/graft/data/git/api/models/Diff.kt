@@ -13,6 +13,15 @@ public sealed interface DiffTarget {
 
     /** What [tip] introduces since it forked from [base]: `git diff A...B`, what a pull request shows. */
     public data class Since(val base: String, val tip: String) : DiffTarget
+
+    /** What is staged: `HEAD` against the index (`git diff --cached`). Before the first commit, against nothing. */
+    public data object Staged : DiffTarget
+
+    /**
+     * What isn't staged yet: the index against the files (`git diff`). An untracked file is all of it added, but only
+     * when its path is asked for (`DiffRepository.diff`'s `paths`); the file list leaves untracked files out.
+     */
+    public data object Unstaged : DiffTarget
 }
 
 /** How a diff is computed. Defaults match the Settings Reference; callers pass the user's settings. */
