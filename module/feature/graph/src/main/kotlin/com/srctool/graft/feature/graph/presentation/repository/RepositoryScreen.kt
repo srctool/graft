@@ -45,14 +45,14 @@ import org.koin.compose.koinInject
  * the Operations and Git log tool windows in a [DockLayout], sharing a [RepositoryViewState]. [dock] belongs to the
  * host, so its shortcuts and focus mode reach it; the screen restores the repository's saved layout into it and saves
  * the user's changes (`state.json`). [onViewState] hands the host the shared state while the screen is shown. The graph
- * stays composed under a diff, so going back keeps its selection and scroll. [contributions] are tool windows other
+ * stays composed under a diff, so going back keeps its selection and scroll. [contribute] gives the tool windows and center views other
  * features add (the Changes panel); they dock, move and are remembered like the screen's own.
  */
 @Composable
 public fun RepositoryScreen(
     session: RepositorySession,
     onViewState: (RepositoryViewState?) -> Unit = {},
-    contributions: List<ToolWindowContribution> = emptyList(),
+    contribute: @Composable (RepositoryViewState) -> RepositoryContributions = { RepositoryContributions() },
     dock: DockLayoutState = remember(session.location) { defaultDock() },
 ) {
     val location = session.location
@@ -66,6 +66,7 @@ public fun RepositoryScreen(
     }
     PanelLayoutKeeper(dock, location.commonDir, uiState)
     val center by shared.center.collectAsState()
+    val contributions = contribute(shared)
     val windows =
         withContributions(
             listOf(
@@ -89,7 +90,7 @@ public fun RepositoryScreen(
                     GitLogDestination(GitLogRoute(folder))
                 },
             ),
-            contributions,
+            contributions.windows,
         )
     DockLayout(dock, windows) {
         Box(Modifier.fillMaxSize()) {
@@ -101,6 +102,11 @@ public fun RepositoryScreen(
                     CompareDestination(CompareRoute(folder), session, shared)
                 }
             }
+            (center as? CenterView.Contributed)?.let { contributed ->
+                contributions.centers[contributed.id]?.let { draw ->
+                    Box(Modifier.fillMaxSize().background(Camouflage.colors.surface)) { draw(contributed) }
+                }
+            }
             if (center is CenterView.Diff) {
                 Box(Modifier.fillMaxSize().background(Camouflage.colors.surface)) {
                     DiffDestination(DiffRoute(folder), shared)
@@ -109,6 +115,15 @@ public fun RepositoryScreen(
         }
     }
 }
+
+/**
+ * What other features add to a repository tab (E3, features never import each other): tool [windows] for the dock, and
+ * the content of each `CenterView.Contributed` by its id ([centers]).
+ */
+public class RepositoryContributions(
+    public val windows: List<ToolWindowContribution> = emptyList(),
+    public val centers: Map<String, @Composable (CenterView.Contributed) -> Unit> = emptyMap(),
+)
 
 /**
  * The screen's own windows, then [contributions]. A contribution whose id is already taken is left out, so one can

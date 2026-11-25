@@ -25,6 +25,12 @@ import com.srctool.graft.data.git.api.models.Trailer
  * must be resolved to its merge base first ([MergeBaseCommand]).
  */
 private fun diffArgs(target: DiffTarget, options: List<String>, paths: List<String>): List<String> {
+    if (target == DiffTarget.Staged || target == DiffTarget.Unstaged) {
+        // `git diff`, not `diff-tree`: the working tree isn't a tree. The caller checks it's inside a repository first,
+        // since outside one `git diff` turns into `--no-index`.
+        val cached = if (target == DiffTarget.Staged) listOf("--cached") else emptyList()
+        return listOf("diff") + cached + options + "--" + paths
+    }
     val revisions =
         when (target) {
             is DiffTarget.Commit -> listOf("--root", "--diff-merges=first-parent", target.id.hex)
@@ -34,6 +40,8 @@ private fun diffArgs(target: DiffTarget, options: List<String>, paths: List<Stri
             is DiffTarget.Since -> throw IllegalArgumentException(
                 "resolve ${target.base}...${target.tip} to its merge base first",
             )
+
+            DiffTarget.Staged, DiffTarget.Unstaged -> error("handled above")
         }
     return listOf("diff-tree", "-r", "--no-commit-id") + options + revisions + "--" + paths
 }

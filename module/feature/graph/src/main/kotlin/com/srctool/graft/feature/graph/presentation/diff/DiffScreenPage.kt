@@ -216,6 +216,9 @@ private fun Breadcrumb(state: DiffScreenState, onEvent: (DiffScreenEvent) -> Uni
 
                 is DiffTarget.Between -> "${shortRev(target.from)} ${shortRev(target.to)}"
 
+                // The working tree's diffs are drawn by the Changes panel's own center view, never this screen.
+                DiffTarget.Staged, DiffTarget.Unstaged -> null
+
                 null -> null
             }
         if (what != null) {

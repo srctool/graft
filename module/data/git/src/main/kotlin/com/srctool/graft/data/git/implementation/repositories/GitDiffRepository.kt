@@ -11,14 +11,18 @@ import com.srctool.graft.data.git.api.models.DiffOptions
 import com.srctool.graft.data.git.api.models.DiffTarget
 import com.srctool.graft.data.git.api.models.FileContent
 import com.srctool.graft.data.git.api.models.FileDiff
+import com.srctool.graft.data.git.api.models.FileStatus
 import com.srctool.graft.data.git.api.models.ObjectId
 import com.srctool.graft.data.git.api.repositories.DiffRepository
 import com.srctool.graft.data.git.api.repositories.FileContents
 import com.srctool.graft.data.git.implementation.source.local.ChangedFilesCommand
 import com.srctool.graft.data.git.implementation.source.local.GitText
+import com.srctool.graft.data.git.implementation.source.local.InsideRepositoryCommand
 import com.srctool.graft.data.git.implementation.source.local.MergeBaseCommand
+import com.srctool.graft.data.git.implementation.source.local.NewFileDiffCommand
 import com.srctool.graft.data.git.implementation.source.local.PatchCommand
 import com.srctool.graft.data.git.implementation.source.local.PatchParser
+import com.srctool.graft.data.git.implementation.source.local.TrackedPathsCommand
 import com.srctool.sinew.models.Result
 import com.srctool.sinew.models.map
 import java.nio.file.Path
@@ -44,6 +48,7 @@ internal class GitDiffRepository(private val runner: GitRunner) : DiffRepository
                 is Result.Success -> r.data
                 is Result.Failure -> return r
             }
+        if (resolved == DiffTarget.Unstaged && paths.isNotEmpty()) return unstaged(repository, options, paths)
         // Two commands: the file list for exact paths and line counts, the patch for the lines. Same order in both.
         val files =
             when (val r = runner.run(ChangedFilesCommand(resolved, options, paths), repository)) {
@@ -54,6 +59,48 @@ internal class GitDiffRepository(private val runner: GitRunner) : DiffRepository
         return runner.run(patch, repository).map { bytes -> PatchParser.parse(bytes, files) }
     }
 
+    /** The index against the files for [paths]; a path git has no entry for is a new file, shown all added. */
+    private suspend fun unstaged(repository: Path, options: DiffOptions, paths: List<String>): Result<List<FileDiff>> {
+        val tracked =
+            when (val r = runner.run(TrackedPathsCommand(paths), repository)) {
+                is Result.Success -> r.data
+                is Result.Failure -> return r
+            }
+        val out = ArrayList<FileDiff>()
+        val known = paths.filter { it in tracked }
+        if (known.isNotEmpty()) {
+            val files =
+                when (val r = runner.run(ChangedFilesCommand(DiffTarget.Unstaged, options, known), repository)) {
+                    is Result.Success -> r.data
+                    is Result.Failure -> return r
+                }
+            when (val r = runner.run(PatchCommand(DiffTarget.Unstaged, options, known), repository)) {
+                is Result.Success -> out += PatchParser.parse(r.data, files)
+                is Result.Failure -> return r
+            }
+        }
+        for (path in paths.filter { it !in tracked }) {
+            val bytes =
+                when (val r = runner.run(NewFileDiffCommand(path, options.contextLines), repository)) {
+                    is Result.Success -> r.data
+                    is Result.Failure -> return r
+                }
+            val binary = String(bytes, Charsets.ISO_8859_1).contains("\nBinary files ")
+            val placeholder =
+                ChangedFile(FileStatus.ADDED, path, null, null, "000000", "100644", if (binary) null else 0, 0)
+            val parsed =
+                PatchParser.parse(bytes, listOf(placeholder)).firstOrNull() ?: FileDiff(placeholder, emptyList())
+            val added = parsed.hunks.sumOf { h ->
+                h.lines.count {
+                    it.kind ==
+                        com.srctool.graft.data.git.api.models.DiffLine.Kind.ADDED
+                }
+            }
+            out += FileDiff(if (binary) parsed.file else parsed.file.copy(additions = added), parsed.hunks)
+        }
+        return Result.Success(out)
+    }
+
     override fun contents(repository: Path): FileContents = GitFileContents(runner.objectReader(repository))
 
     /** `A...B` becomes "from the merge base to B"; the other targets pass through. */
@@ -62,6 +109,9 @@ internal class GitDiffRepository(private val runner: GitRunner) : DiffRepository
             runner.run(MergeBaseCommand(target.base, target.tip), repository).map { base ->
                 DiffTarget.Between(base.hex, target.tip)
             }
+
+        // Without this, `git diff` outside a repository would quietly compare two files on disk.
+        DiffTarget.Staged, DiffTarget.Unstaged -> runner.run(InsideRepositoryCommand(), repository).map { target }
 
         else -> Result.Success(target)
     }

@@ -36,6 +36,13 @@ sealed interface CenterView {
 
     /** [path] as [target] changes it; the diff screen steps through the target's files and goes [back] when closed. */
     data class Diff(val target: DiffTarget, val path: String, val back: CenterView = Graph) : CenterView
+
+    /**
+     * Something a feature draws in the center that the graph feature can't know about (features never import each
+     * other): [id] names the contribution (`RepositoryScreen`'s `centers`), [key] says what it shows, and [back] is
+     * where closing it goes. The Changes panel's working-tree diff is the first one.
+     */
+    data class Contributed(val id: String, val key: String, val back: CenterView = Graph) : CenterView
 }
 
 /**

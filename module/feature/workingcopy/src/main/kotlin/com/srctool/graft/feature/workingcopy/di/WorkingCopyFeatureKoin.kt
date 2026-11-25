@@ -11,16 +11,22 @@ import com.srctool.graft.feature.workingcopy.domain.api.usecases.IgnoreUseCase
 import com.srctool.graft.feature.workingcopy.domain.api.usecases.LoadChangesUseCase
 import com.srctool.graft.feature.workingcopy.domain.api.usecases.LocalHistoryUseCase
 import com.srctool.graft.feature.workingcopy.domain.api.usecases.PanelStateUseCase
+import com.srctool.graft.feature.workingcopy.domain.api.usecases.StageChangesUseCase
 import com.srctool.graft.feature.workingcopy.domain.api.usecases.UndoRedoUseCase
+import com.srctool.graft.feature.workingcopy.domain.api.usecases.WorkingDiffUseCase
 import com.srctool.graft.feature.workingcopy.domain.implementation.usecases.FileDraftsUseCase
 import com.srctool.graft.feature.workingcopy.domain.implementation.usecases.FilePanelStateUseCase
 import com.srctool.graft.feature.workingcopy.domain.implementation.usecases.GitCleanUseCase
 import com.srctool.graft.feature.workingcopy.domain.implementation.usecases.GitIgnoreUseCase
 import com.srctool.graft.feature.workingcopy.domain.implementation.usecases.GitLoadChangesUseCase
+import com.srctool.graft.feature.workingcopy.domain.implementation.usecases.GitStageChangesUseCase
+import com.srctool.graft.feature.workingcopy.domain.implementation.usecases.GitWorkingDiffUseCase
 import com.srctool.graft.feature.workingcopy.domain.implementation.usecases.GuardedCommitUseCase
 import com.srctool.graft.feature.workingcopy.domain.implementation.usecases.LoggedUndoRedoUseCase
 import com.srctool.graft.feature.workingcopy.domain.implementation.usecases.SnapshotUseCase
+import com.srctool.graft.feature.workingcopy.presentation.changes.ChangesViewModel
 import org.koin.core.module.Module
+import org.koin.core.module.dsl.viewModel
 import org.koin.dsl.module
 
 /**
@@ -38,4 +44,7 @@ public fun workingCopyFeatureKoin(): Module = module {
     factory<BeforeRiskyOperation> { get<SnapshotUseCase>() }
     factory<IgnoreUseCase> { GitIgnoreUseCase(get()) }
     factory<CleanUseCase> { GitCleanUseCase(get()) }
+    viewModel { p -> ChangesViewModel(p.get(), p.get(), p.get(), get(), get(), get(), get()) }
+    factory<StageChangesUseCase> { GitStageChangesUseCase(get(), get()) }
+    factory<WorkingDiffUseCase> { GitWorkingDiffUseCase(get()) }
 }

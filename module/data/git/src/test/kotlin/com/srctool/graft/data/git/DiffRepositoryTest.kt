@@ -144,6 +144,49 @@ class DiffRepositoryTest {
         val since = sandbox.data().diffs.files(sandbox.dir("plain"), DiffTarget.Since("a", "b")).errorOrNull
         assertEquals("GIT-R-MBAS-NF", since?.code)
     }
+
+    @Test
+    fun `staged and unstaged diffs, and a new file named by path`(sandbox: GitSandbox) = runBlocking<Unit> {
+        val repo = sandbox.repo("working")
+        java.nio.file.Files.writeString(repo.resolve("a.txt"), "one\ntwo\nthree\n")
+        sandbox.git(repo, "add", "a.txt")
+        sandbox.git(repo, "commit", "--quiet", "-m", "Base")
+        java.nio.file.Files.writeString(repo.resolve("a.txt"), "one\nTWO\nthree\n")
+        sandbox.git(repo, "add", "a.txt")
+        java.nio.file.Files.writeString(repo.resolve("a.txt"), "one\nTWO\nthree\nfour\n")
+        java.nio.file.Files.writeString(repo.resolve("new.txt"), "x\ny\n")
+        val diffs = sandbox.data().diffs
+
+        val staged = diffs.diff(repo, DiffTarget.Staged).getOrThrow().single()
+        assertEquals("a.txt", staged.file.path)
+        assertEquals(
+            listOf(DiffLine.Kind.CONTEXT, DiffLine.Kind.REMOVED, DiffLine.Kind.ADDED, DiffLine.Kind.CONTEXT),
+            staged.hunks.single().lines.map {
+                it.kind
+            },
+        )
+
+        val unstaged = diffs.diff(repo, DiffTarget.Unstaged).getOrThrow().single()
+        assertEquals(
+            listOf("four"),
+            unstaged.hunks.single().lines.filter {
+                it.kind == DiffLine.Kind.ADDED
+            }.map { it.text },
+        )
+
+        // An untracked file is only in the diff when its path is asked for, and it's all added.
+        val fresh = diffs.diff(repo, DiffTarget.Unstaged, paths = listOf("new.txt")).getOrThrow().single()
+        assertEquals(FileStatus.ADDED, fresh.file.status)
+        assertEquals(2, fresh.file.additions)
+        assertEquals(2, fresh.hunks.single().lines.size)
+    }
+
+    @Test
+    fun `a working tree diff outside a repository is refused, not a no-index compare`(sandbox: GitSandbox) =
+        runBlocking<Unit> {
+            val error = sandbox.data().diffs.diff(sandbox.dir("plain"), DiffTarget.Unstaged).errorOrNull
+            assertTrue(error != null)
+        }
 }
 
 /** The recorded file list for `change`, shared with the integration test to show live git agrees with the fixture. */

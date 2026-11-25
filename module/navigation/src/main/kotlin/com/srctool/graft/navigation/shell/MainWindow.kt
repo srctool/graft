@@ -55,10 +55,12 @@ import com.srctool.graft.data.git.api.models.RepositoryLocation
 import com.srctool.graft.data.git.api.repositories.CommitRepository
 import com.srctool.graft.data.git.api.repositories.RepositoryAccessRepository
 import com.srctool.graft.feature.graph.presentation.repository.PanelIds
+import com.srctool.graft.feature.graph.presentation.repository.RepositoryContributions
 import com.srctool.graft.feature.graph.presentation.repository.RepositoryScreen
 import com.srctool.graft.feature.home.presentation.home.HomeDestination
 import com.srctool.graft.feature.home.search.HomeActions
 import com.srctool.graft.feature.home.search.HomeCommand
+import com.srctool.graft.feature.workingcopy.presentation.changes.rememberWorkingCopyContributions
 import com.srctool.graft.navigation.about.AboutDialog
 import com.srctool.graft.navigation.search.DoubleShift
 import com.srctool.graft.navigation.search.HostActions
@@ -412,6 +414,19 @@ private fun TabScreen(
                     RepositoryScreen(
                         session,
                         onViewState = { view -> onScope(view?.let { RepositoryScope(session, it) }) },
+                        contribute = { shared ->
+                            // The working copy's Changes window and its diff in the center (E3): features never
+                            // import each other, so the tab's host joins them.
+                            val working = rememberWorkingCopyContributions(session, shared, onOpen)
+                            if (working == null) {
+                                RepositoryContributions()
+                            } else {
+                                RepositoryContributions(
+                                    listOf(working.window),
+                                    mapOf(working.centerId to { contributed -> working.center(contributed.key) }),
+                                )
+                            }
+                        },
                         dock = shell.dock(tab),
                     )
                 }
