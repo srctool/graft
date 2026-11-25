@@ -30,12 +30,17 @@ internal sealed interface DiffRow {
     /** The change block this row is in, or -1 for unchanged rows and headers. */
     val change: Int
 
-    data class Header(val text: String) : DiffRow {
+    data class Header(val text: String, val hunk: Int = -1) : DiffRow {
         override val change: Int get() = -1
     }
 
     /** A unified line. [words] are the ranges that changed within it, when it pairs with a line on the other side. */
-    data class Unified(val line: DiffLineView, val words: List<IntRange>, override val change: Int) : DiffRow
+    data class Unified(
+        val line: DiffLineView,
+        val words: List<IntRange>,
+        override val change: Int,
+        val ref: DiffLineRef? = null,
+    ) : DiffRow
 
     /** A side-by-side pair; either side is null where the other side has a line the first doesn't. */
     data class Split(
@@ -44,7 +49,11 @@ internal sealed interface DiffRow {
         val leftWords: List<IntRange>,
         val rightWords: List<IntRange>,
         override val change: Int,
-    ) : DiffRow
+        val leftRef: DiffLineRef? = null,
+        val rightRef: DiffLineRef? = null,
+    ) : DiffRow {
+        val refs: List<DiffLineRef> get() = listOfNotNull(leftRef, rightRef)
+    }
 }
 
 /**
@@ -55,8 +64,8 @@ internal sealed interface DiffRow {
 internal fun diffRows(document: DiffDocument, mode: DiffMode): List<DiffRow> {
     val rows = ArrayList<DiffRow>()
     var change = 0
-    for (hunk in document.hunks) {
-        rows += DiffRow.Header(hunk.header)
+    for ((hunkIndex, hunk) in document.hunks.withIndex()) {
+        rows += DiffRow.Header(hunk.header, hunkIndex)
         val lines = hunk.lines
         var i = 0
         while (i < lines.size) {
@@ -71,17 +80,25 @@ internal fun diffRows(document: DiffDocument, mode: DiffMode): List<DiffRow> {
             }
             val removed = ArrayList<DiffLineView>()
             val added = ArrayList<DiffLineView>()
-            while (i < lines.size && lines[i].kind == DiffLineKind.REMOVED) removed += lines[i++]
-            while (i < lines.size && lines[i].kind == DiffLineKind.ADDED) added += lines[i++]
+            val removedAt = ArrayList<DiffLineRef>()
+            val addedAt = ArrayList<DiffLineRef>()
+            while (i < lines.size && lines[i].kind == DiffLineKind.REMOVED) {
+                removedAt += DiffLineRef(hunkIndex, i)
+                removed += lines[i++]
+            }
+            while (i < lines.size && lines[i].kind == DiffLineKind.ADDED) {
+                addedAt += DiffLineRef(hunkIndex, i)
+                added += lines[i++]
+            }
             val words = (0 until minOf(removed.size, added.size)).map {
                 WordDiff.diff(removed[it].text, added[it].text)
             }
             if (mode == DiffMode.UNIFIED) {
                 removed.forEachIndexed { n, l ->
-                    rows += DiffRow.Unified(l, words.getOrNull(n)?.first.orEmpty(), change)
+                    rows += DiffRow.Unified(l, words.getOrNull(n)?.first.orEmpty(), change, removedAt[n])
                 }
                 added.forEachIndexed { n, l ->
-                    rows += DiffRow.Unified(l, words.getOrNull(n)?.second.orEmpty(), change)
+                    rows += DiffRow.Unified(l, words.getOrNull(n)?.second.orEmpty(), change, addedAt[n])
                 }
             } else {
                 for (n in 0 until maxOf(removed.size, added.size)) {
@@ -92,6 +109,8 @@ internal fun diffRows(document: DiffDocument, mode: DiffMode): List<DiffRow> {
                         w?.first.orEmpty(),
                         w?.second.orEmpty(),
                         change,
+                        removedAt.getOrNull(n),
+                        addedAt.getOrNull(n),
                     )
                 }
             }

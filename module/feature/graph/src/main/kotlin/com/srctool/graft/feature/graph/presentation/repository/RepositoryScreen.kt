@@ -17,6 +17,7 @@ import com.srctool.graft.core.ui.components.DockLayout
 import com.srctool.graft.core.ui.components.DockLayoutState
 import com.srctool.graft.core.ui.components.DockSide
 import com.srctool.graft.core.ui.components.ToolWindow
+import com.srctool.graft.core.ui.components.ToolWindowContribution
 import com.srctool.graft.core.ui.l10n.graftText
 import com.srctool.graft.core.ui.theme.GraftIcon
 import com.srctool.graft.data.app.api.repositories.RepositoryUiStateRepository
@@ -44,12 +45,14 @@ import org.koin.compose.koinInject
  * the Operations and Git log tool windows in a [DockLayout], sharing a [RepositoryViewState]. [dock] belongs to the
  * host, so its shortcuts and focus mode reach it; the screen restores the repository's saved layout into it and saves
  * the user's changes (`state.json`). [onViewState] hands the host the shared state while the screen is shown. The graph
- * stays composed under a diff, so going back keeps its selection and scroll.
+ * stays composed under a diff, so going back keeps its selection and scroll. [contributions] are tool windows other
+ * features add (the Changes panel); they dock, move and are remembered like the screen's own.
  */
 @Composable
 public fun RepositoryScreen(
     session: RepositorySession,
     onViewState: (RepositoryViewState?) -> Unit = {},
+    contributions: List<ToolWindowContribution> = emptyList(),
     dock: DockLayoutState = remember(session.location) { defaultDock() },
 ) {
     val location = session.location
@@ -64,26 +67,29 @@ public fun RepositoryScreen(
     PanelLayoutKeeper(dock, location.commonDir, uiState)
     val center by shared.center.collectAsState()
     val windows =
-        listOf(
-            ToolWindow(BRANCHES, graftText("branches.title", "Branches"), GraftIcon.BRANCH, DockSide.LEFT) {
-                BranchesDestination(BranchesRoute(folder), session, shared)
-            },
-            ToolWindow(DETAILS, graftText("details.title", "Details"), GraftIcon.INFORMATION, DockSide.RIGHT) {
-                DetailsDestination(DetailsRoute(folder), session, shared)
-            },
-            // Closed until opened from its stripe icon (Task 16 wireframe).
-            ToolWindow(
-                OPERATIONS,
-                graftText("operations.title", "Operations"),
-                GraftIcon.RECENTLY_VIEWED,
-                DockSide.BOTTOM,
-            ) {
-                OperationsDestination(OperationsRoute(folder), session, shared)
-            },
-            // Every git command the repository ran; closed until opened from its stripe icon or Mod+3 (Task 20).
-            ToolWindow(GIT_LOG, graftText("gitlog.title", "Git log"), GraftIcon.LIST, DockSide.BOTTOM) {
-                GitLogDestination(GitLogRoute(folder))
-            },
+        withContributions(
+            listOf(
+                ToolWindow(BRANCHES, graftText("branches.title", "Branches"), GraftIcon.BRANCH, DockSide.LEFT) {
+                    BranchesDestination(BranchesRoute(folder), session, shared)
+                },
+                ToolWindow(DETAILS, graftText("details.title", "Details"), GraftIcon.INFORMATION, DockSide.RIGHT) {
+                    DetailsDestination(DetailsRoute(folder), session, shared)
+                },
+                // Closed until opened from its stripe icon (Task 16 wireframe).
+                ToolWindow(
+                    OPERATIONS,
+                    graftText("operations.title", "Operations"),
+                    GraftIcon.RECENTLY_VIEWED,
+                    DockSide.BOTTOM,
+                ) {
+                    OperationsDestination(OperationsRoute(folder), session, shared)
+                },
+                // Every git command the repository ran; closed until opened from its stripe icon or Mod+3 (Task 20).
+                ToolWindow(GIT_LOG, graftText("gitlog.title", "Git log"), GraftIcon.LIST, DockSide.BOTTOM) {
+                    GitLogDestination(GitLogRoute(folder))
+                },
+            ),
+            contributions,
         )
     DockLayout(dock, windows) {
         Box(Modifier.fillMaxSize()) {
@@ -102,6 +108,15 @@ public fun RepositoryScreen(
             }
         }
     }
+}
+
+/**
+ * The screen's own windows, then [contributions]. A contribution whose id is already taken is left out, so one can
+ * never replace a built-in window or another contribution (ids are what the saved layout is keyed by).
+ */
+internal fun withContributions(own: List<ToolWindow>, contributions: List<ToolWindowContribution>): List<ToolWindow> {
+    val taken = own.mapTo(HashSet()) { it.id }
+    return own + contributions.filter { taken.add(it.id) }
 }
 
 /** The layout a repository starts with: branches on the left, details on the right. */
