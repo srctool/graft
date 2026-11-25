@@ -578,4 +578,4 @@ Task 8 (G2): drafted (2026-11-24) — `:module:data:git` `GuardRepository` (Comm
 - Ruling (Task 13): `Mod+K` and `Mod+Shift+Alt+K` work when focus is in the Changes list; a window-wide binding belongs to the shell (Task 20). Cost if wrong: one binding in the shell.
 - Ruling (Task 13): an amend's message is not saved as the branch's draft (it belongs to the last commit), and the draft typed before the amend comes back when Amend is unticked. Cost if wrong: none.
 - Ruling (Task 13): `CommitChangesUseCase` gained `recentAuthors` and `allowAlways` (thin calls to the repositories), so the dialog's "Allow always" and the co-author suggestions need no new use case. Cost if wrong: none.
-- Not done (Task 13): the 22 screenshots (`commit-*`, `guard-*`, light and dark) have no goldens yet; they come from the first Ubuntu CI run, after a look, as in Task 12. Nothing has been run by hand in the app, and Windows-only behavior of the hooks isn't covered.
+- Not done (Task 13): nothing has been run by hand in the app, and Windows-only behavior of the hooks isn't covered. The 22 screenshots (`commit-*`, `guard-*`, light and dark) are the Linux renders from CI, after a look.
