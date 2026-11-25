@@ -25,6 +25,7 @@ import com.srctool.graft.feature.workingcopy.domain.implementation.usecases.Guar
 import com.srctool.graft.feature.workingcopy.domain.implementation.usecases.LoggedUndoRedoUseCase
 import com.srctool.graft.feature.workingcopy.domain.implementation.usecases.SnapshotUseCase
 import com.srctool.graft.feature.workingcopy.presentation.changes.ChangesViewModel
+import com.srctool.graft.feature.workingcopy.presentation.commit.CommitViewModel
 import org.koin.core.module.Module
 import org.koin.core.module.dsl.viewModel
 import org.koin.dsl.module
@@ -45,6 +46,7 @@ public fun workingCopyFeatureKoin(): Module = module {
     factory<IgnoreUseCase> { GitIgnoreUseCase(get()) }
     factory<CleanUseCase> { GitCleanUseCase(get()) }
     viewModel { p -> ChangesViewModel(p.get(), p.get(), p.get(), get(), get(), get(), get()) }
+    viewModel { p -> CommitViewModel(p.get(), p.get(), get(), get(), get(), get(), p.get(), p.get()) }
     factory<StageChangesUseCase> { GitStageChangesUseCase(get(), get()) }
     factory<WorkingDiffUseCase> { GitWorkingDiffUseCase(get()) }
 }

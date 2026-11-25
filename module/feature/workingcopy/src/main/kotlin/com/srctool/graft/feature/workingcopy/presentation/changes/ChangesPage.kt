@@ -40,6 +40,7 @@ import androidx.compose.ui.input.key.KeyEventType
 import androidx.compose.ui.input.key.isAltPressed
 import androidx.compose.ui.input.key.isCtrlPressed
 import androidx.compose.ui.input.key.isMetaPressed
+import androidx.compose.ui.input.key.isShiftPressed
 import androidx.compose.ui.input.key.key
 import androidx.compose.ui.input.key.onPreviewKeyEvent
 import androidx.compose.ui.input.key.type
@@ -78,10 +79,14 @@ import com.srctool.sinew.exception.displayMessage
 import com.srctool.sinew.models.SinewException
 
 @Composable
-internal fun ChangesPage(viewModel: ChangesViewModel, onOpenSubmodule: (path: String) -> Unit = {}) {
+internal fun ChangesPage(
+    viewModel: ChangesViewModel,
+    onOpenSubmodule: (path: String) -> Unit = {},
+    onCommitKey: (amend: Boolean) -> Unit = {},
+) {
     val state by viewModel.state.collectAsState()
     LaunchedEffect(viewModel) { viewModel.onEvent(ChangesEvent.Opened) }
-    ChangesContent(state, viewModel::onEvent, onOpenSubmodule)
+    ChangesContent(state, viewModel::onEvent, onOpenSubmodule, onCommitKey)
 }
 
 /** The Changes panel without its view model, for screenshot tests. */
@@ -90,6 +95,7 @@ internal fun ChangesContent(
     state: ChangesState,
     onEvent: (ChangesEvent) -> Unit,
     onOpenSubmodule: (path: String) -> Unit = {},
+    onCommitKey: (amend: Boolean) -> Unit = {},
 ) {
     val colors = Camouflage.colors
     Column(Modifier.fillMaxSize().background(colors.surface)) {
@@ -108,7 +114,7 @@ internal fun ChangesContent(
                     retry = false,
                 )
 
-                else -> Lines(state, onEvent, onOpenSubmodule)
+                else -> Lines(state, onEvent, onOpenSubmodule, onCommitKey)
             }
         }
         Footer(state, onEvent)
@@ -177,7 +183,12 @@ private fun Skeletons() {
 }
 
 @Composable
-private fun Lines(state: ChangesState, onEvent: (ChangesEvent) -> Unit, onOpenSubmodule: (String) -> Unit) {
+private fun Lines(
+    state: ChangesState,
+    onEvent: (ChangesEvent) -> Unit,
+    onOpenSubmodule: (String) -> Unit,
+    onCommitKey: (Boolean) -> Unit,
+) {
     val colors = Camouflage.colors
     val list = rememberLazyListState()
     val interaction = remember { MutableInteractionSource() }
@@ -197,7 +208,7 @@ private fun Lines(state: ChangesState, onEvent: (ChangesEvent) -> Unit, onOpenSu
         Modifier
             .fillMaxSize()
             .alpha(if (state.refreshing) DIMMED else 1f)
-            .onPreviewKeyEvent { event -> onListKey(event, state, onEvent) }
+            .onPreviewKeyEvent { event -> onListKey(event, state, onEvent, onCommitKey) }
             .focusable(interactionSource = interaction)
             .semantics { contentDescription = label }
             .drawWithContent {
@@ -224,9 +235,15 @@ private fun onListKey(
     event: androidx.compose.ui.input.key.KeyEvent,
     state: ChangesState,
     onEvent: (ChangesEvent) -> Unit,
+    onCommitKey: (Boolean) -> Unit,
 ): Boolean {
     if (event.type != KeyEventType.KeyDown) return false
     val mod = event.isMetaPressed || event.isCtrlPressed
+    // Mod+K focuses the commit box; Mod+Shift+Alt+K turns Amend on there (Keyboard Shortcuts, "Changes and diff").
+    if (mod && event.key == Key.K) {
+        onCommitKey(event.isShiftPressed && event.isAltPressed)
+        return true
+    }
     val index = state.cursor
     val line = state.lines.getOrNull(index)
     val handled: ChangesEvent =

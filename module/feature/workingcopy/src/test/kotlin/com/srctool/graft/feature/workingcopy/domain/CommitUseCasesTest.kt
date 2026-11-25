@@ -5,6 +5,7 @@ package com.srctool.graft.feature.workingcopy.domain
 
 import com.srctool.graft.data.app.api.models.ChangesMode
 import com.srctool.graft.data.git.api.models.ChangeSelection
+import com.srctool.graft.data.git.api.models.CoAuthor
 import com.srctool.graft.data.git.api.models.CommitDraft
 import com.srctool.graft.data.git.api.models.CommitMessageText
 import com.srctool.graft.data.git.api.models.FileSelection
@@ -72,6 +73,9 @@ class CommitUseCasesTest {
             Result.Success(CommitMessageText("Old", "body"))
 
         override suspend fun template(repository: Path): Result<String?> = Result.Success(null)
+
+        override suspend fun recentAuthors(repository: Path, limit: Int): Result<List<CoAuthor>> =
+            Result.Success(listOf(CoAuthor("Ann Lee", "ann@example.invalid")))
     }
 
     private class FakeGuard(var report: Result<GuardReport>) : GuardRepository by unsupported() {
@@ -84,6 +88,13 @@ class CommitUseCasesTest {
             scans += target
             this.options += options
             return report
+        }
+
+        val always = ArrayList<Pair<String, Boolean>>()
+
+        override suspend fun allowAlways(repository: Path, finding: GuardFinding, shared: Boolean): Result<Unit> {
+            always += finding.fingerprint to shared
+            return Result.Success(Unit)
         }
 
         override suspend fun allowOnce(repository: Path, finding: GuardFinding): Result<Unit> {
@@ -101,6 +112,16 @@ class CommitUseCasesTest {
 
     private fun rig(report: GuardReport = GuardReport(emptyList()), commit: Result<ObjectId> = Result.Success(newId)) =
         Rig(FakeCommitting(commit), FakeGuard(Result.Success(report)))
+
+    @Test
+    fun `recent authors come from the repository, and allow always goes to the guard as asked`() = runTest {
+        val rig = rig()
+        val authors = (rig.useCase.recentAuthors(COPY) as Result.Success).data
+        assertEquals(listOf(CoAuthor("Ann Lee", "ann@example.invalid")), authors)
+        val finding = GuardFinding(GuardRule.SECRET, GuardSeverity.BLOCK, "a.kt", 1, "ghp_****", "GitHub token", "fp1")
+        rig.useCase.allowAlways(COPY, finding, shared = true)
+        assertEquals(listOf("fp1" to true), rig.guard.always)
+    }
 
     @Test
     fun `a clean scan commits what is in the index`() = runTest {

@@ -117,6 +117,9 @@ internal sealed interface ChangesEvent {
     data object DiffClosed : ChangesEvent
 
     data class OutputShown(val shown: Boolean) : ChangesEvent
+
+    /** The staged diff of [path] in the center (the guard dialog's Open at line). */
+    data class StagedShown(val path: String) : ChangesEvent
 }
 
 internal sealed interface ChangesAction {
@@ -151,6 +154,8 @@ internal sealed interface ChangesAction {
     data object Close : ChangesAction
 
     data object Fold : ChangesAction
+
+    data class ShowStaged(val path: String) : ChangesAction
 }
 
 internal sealed interface ChangesEffect

@@ -3,7 +3,9 @@
 
 package com.srctool.graft.feature.workingcopy.domain.implementation.usecases
 
+import com.srctool.graft.data.git.api.models.CoAuthor
 import com.srctool.graft.data.git.api.models.CommitMessageText
+import com.srctool.graft.data.git.api.models.GuardFinding
 import com.srctool.graft.data.git.api.models.GuardReport
 import com.srctool.graft.data.git.api.models.GuardTarget
 import com.srctool.graft.data.git.api.models.OperationEntry
@@ -44,6 +46,12 @@ internal class GuardedCommitUseCase(
         committing.previousMessage(workingCopy.path)
 
     override suspend fun template(workingCopy: WorkingCopy): Result<String?> = committing.template(workingCopy.path)
+
+    override suspend fun recentAuthors(workingCopy: WorkingCopy): Result<List<CoAuthor>> =
+        committing.recentAuthors(workingCopy.path)
+
+    override suspend fun allowAlways(workingCopy: WorkingCopy, finding: GuardFinding, shared: Boolean): Result<Unit> =
+        guard.allowAlways(workingCopy.path, finding, shared)
 
     /** Scan, ask, record, run, then forget the draft; the order is what keeps a refused commit from changing anything. */
     private suspend fun guarded(
