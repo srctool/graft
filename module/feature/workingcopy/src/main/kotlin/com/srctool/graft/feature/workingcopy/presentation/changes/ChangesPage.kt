@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -435,7 +436,8 @@ private fun FileLine(
     Row(
         Modifier
             .fillMaxWidth()
-            .height(tokens.density.row)
+            // A submodule row has a second line for what changed in it.
+            .heightIn(min = tokens.density.row)
             .background(background)
             .then(tap)
             .padding(start = (8 + line.depth * INDENT).dp, end = 8.dp)
@@ -452,26 +454,38 @@ private fun FileLine(
         horizontalArrangement = Arrangement.spacedBy(6.dp),
     ) {
         StatusLetter(row)
-        CamoText(
-            name,
-            style = tokens.dense,
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis,
-            modifier = Modifier.weight(1f, fill = false),
-        )
-        folder?.let {
-            CamoText(
-                it,
-                style = tokens.dense,
-                color = colors.onSurfaceVariant,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-                modifier = Modifier.weight(1f, fill = false),
-            )
+        // One cell takes the room, so the checkbox and Open sit at the row's end whatever the name's length.
+        Column(Modifier.weight(1f).padding(vertical = if (moved != null) 3.dp else 0.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                CamoText(
+                    name,
+                    style = tokens.dense,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.weight(1f, fill = false),
+                )
+                folder?.let {
+                    CamoText(
+                        it,
+                        style = tokens.dense,
+                        color = colors.onSurfaceVariant,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        modifier = Modifier.weight(1f, fill = false),
+                    )
+                }
+                if (line.partly) CamoText("◐", style = tokens.dense, color = colors.onSurfaceVariant)
+            }
+            moved?.let {
+                CamoText(
+                    it,
+                    style = tokens.dense,
+                    color = colors.onSurfaceVariant,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+            }
         }
-        if (line.partly) CamoText("◐", style = tokens.dense, color = colors.onSurfaceVariant)
-        moved?.let { CamoText(it, style = tokens.dense, color = colors.onSurfaceVariant, maxLines = 1) }
-        Box(Modifier.weight(1f))
         if (row.submodule != null) {
             CamoButton(
                 graftText("changes.open", "Open"),
