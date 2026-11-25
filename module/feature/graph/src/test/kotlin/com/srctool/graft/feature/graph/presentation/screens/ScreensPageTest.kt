@@ -64,7 +64,14 @@ class ScreensPageTest {
     private fun ComposeUiTest.themed(mode: GraftThemeMode = GraftThemeMode.LIGHT, content: @Composable () -> Unit) =
         setContent { GraftTheme(mode) { content() } }
 
-    private fun ComposeUiTest.snapshot(name: String) = onRoot().captureRoboImage("src/test/snapshots/$name.png")
+    private fun ComposeUiTest.snapshot(name: String) {
+        // Syntax colors are computed off the main thread; without a moment the diff pictures race them on a slow runner.
+        if (name.startsWith("diff-screen")) {
+            Thread.sleep(400)
+            waitForIdle()
+        }
+        onRoot().captureRoboImage("src/test/snapshots/$name.png")
+    }
 
     private val refs =
         Sample.refs +

@@ -13,9 +13,9 @@ import androidx.compose.ui.test.ComposeUiTest
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.assert
+import androidx.compose.ui.test.isRoot
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
-import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performKeyInput
 import androidx.compose.ui.test.performSemanticsAction
@@ -258,8 +258,14 @@ class ChangesPageTest {
     private fun shot(name: String, mode: GraftThemeMode, width: Int, height: Int, content: @Composable () -> Unit) =
         runDesktopComposeUiTest(width, height) {
             setContent { GraftTheme(mode) { content() } }
+            // Syntax colors are computed off the main thread; give them a moment so every run draws the same picture.
+            Thread.sleep(SETTLE_MS)
             waitForIdle()
-            onRoot().captureRoboImage("src/test/snapshots/$name-${mode.name.lowercase()}.png")
+            // A dialog is a second root; it is the one drawn last, and the picture of it is the one to keep.
+            val roots = onAllNodes(isRoot())
+            roots[roots.fetchSemanticsNodes().lastIndex].captureRoboImage(
+                "src/test/snapshots/$name-${mode.name.lowercase()}.png",
+            )
         }
 
     private val open = OpenFile(Sample.login, DiffSide.UNSTAGED)
@@ -365,5 +371,9 @@ class ChangesPageTest {
 
     @Test fun `shot diff nothing dark`() = shot("working-diff-nothing", GraftThemeMode.DARK, 700, 220) {
         WorkingDiffContent(ready(open = open).copy(body = DiffBodyState.Ready(WorkingDiff.Nothing)), {})
+    }
+
+    private companion object {
+        const val SETTLE_MS = 400L
     }
 }
