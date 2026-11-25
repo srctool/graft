@@ -55,6 +55,7 @@ import com.srctool.graft.data.git.api.models.FileDiff
 import com.srctool.graft.data.git.api.models.Hunk
 import com.srctool.graft.feature.workingcopy.domain.api.models.DiffSide
 import com.srctool.graft.feature.workingcopy.domain.api.models.WorkingDiff
+import com.srctool.graft.feature.workingcopy.domain.api.usecases.WorkingDiffUseCase
 
 /** The diff of the file open in the Changes panel, in the center (Task 12 wireframe), with the action bar under it. */
 @Composable
@@ -140,9 +141,10 @@ internal fun WorkingDiffContent(state: ChangesState, onEvent: (ChangesEvent) -> 
 
                     is WorkingDiff.TooLarge -> Info(
                         graftText(
-                            "diff.tooLarge",
-                            "This file is over the {size} inline limit.",
+                            "changes.diff.tooLarge",
+                            "This file is {size}, over the {limit} inline limit.",
                             "size" to bytes(diff.size),
+                            "limit" to bytes(WorkingDiffUseCase.DEFAULT_LIMIT),
                         ),
                     ) {
                         CamoButton(

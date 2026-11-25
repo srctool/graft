@@ -230,6 +230,7 @@ class ChangesPageTest {
         val open = OpenFile(Sample.login, DiffSide.UNSTAGED)
         val state = ready(open = open).copy(body = DiffBodyState.Ready(WorkingDiff.TooLarge(3_200_000)))
         setContent { GraftTheme(GraftThemeMode.LIGHT) { WorkingDiffContent(state, { events += it }) } }
+        onNodeWithText("This file is 3.1 MB, over the 2.0 MB inline limit.").assertExists()
         onNodeWithText("Show diff anyway").performClick()
         assertEquals(listOf<ChangesEvent>(ChangesEvent.ShowAnyway), events)
     }
