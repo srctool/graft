@@ -262,67 +262,108 @@ class ChangesPageTest {
             onRoot().captureRoboImage("src/test/snapshots/$name-${mode.name.lowercase()}.png")
         }
 
-    private fun all(name: String, width: Int, height: Int, content: @Composable () -> Unit) {
-        shot(name, GraftThemeMode.LIGHT, width, height, content)
-        shot(name, GraftThemeMode.DARK, width, height, content)
+    private val open = OpenFile(Sample.login, DiffSide.UNSTAGED)
+    private val none =
+        ChangesState(
+            phase = ChangesState.Phase.Ready,
+            model = com.srctool.graft.feature.workingcopy.domain.api.models.ChangesModel(
+                com.srctool.graft.feature.workingcopy.domain.COPY,
+                emptyList(),
+            ),
+            branch = "main",
+        )
+    private val discardOne =
+        PendingDiscard(
+            ChangeSelection(listOf(FileSelection("src/login/Session.kt", FileSelection.Scope.WholeFile))),
+            listOf("src/login/Session.kt"),
+            false,
+        )
+    private val failed =
+        ChangesState(
+            phase = ChangesState.Phase.Failed,
+            error = (failure("STAT") as com.srctool.sinew.models.Result.Failure).error,
+        )
+
+    // One test per picture, so a missing golden in one doesn't hide the others.
+    @Test fun `shot tree light`() = shot("changes-tree", GraftThemeMode.LIGHT, 360, 440) {
+        ChangesContent(ready(cursor = 3, open = open), {})
     }
 
-    @Test
-    fun `screenshots, the panel`() {
-        val opened = ready(cursor = 3, open = OpenFile(Sample.login, DiffSide.UNSTAGED))
-        all("changes-tree", 360, 440) { ChangesContent(opened, {}) }
-        all("changes-flat", 360, 360) { ChangesContent(ready(tree = false), {}) }
-        all("changes-loading", 360, 200) { ChangesContent(ChangesState(), {}) }
-        all("changes-empty", 360, 200) {
-            ChangesContent(
-                ChangesState(
-                    phase = ChangesState.Phase.Ready,
-                    model = com.srctool.graft.feature.workingcopy.domain.api.models.ChangesModel(
-                        com.srctool.graft.feature.workingcopy.domain.COPY,
-                        emptyList(),
-                    ),
-                    branch = "main",
-                ),
-                {},
-            )
-        }
-        all("changes-error", 360, 200) {
-            ChangesContent(
-                ChangesState(
-                    phase = ChangesState.Phase.Failed,
-                    error = (failure("STAT") as com.srctool.sinew.models.Result.Failure).error,
-                ),
-                {
-                },
-            )
-        }
-        all("changes-busy", 360, 440) { ChangesContent(ready().copy(busy = "Staging 1 file…", refreshing = true), {}) }
-        all("changes-discard", 420, 300) {
-            ChangesContent(
-                ready().copy(
-                    discard = PendingDiscard(
-                        ChangeSelection(listOf(FileSelection("src/login/Session.kt", FileSelection.Scope.WholeFile))),
-                        listOf("src/login/Session.kt"),
-                        false,
-                    ),
-                ),
-                {},
-            )
-        }
-        all("changes-toast", 360, 440) {
-            ChangesContent(ready().copy(toast = Toast("Discarded Session.kt", DiscardRecord(null, emptyMap()))), {})
-        }
+    @Test fun `shot tree dark`() = shot("changes-tree", GraftThemeMode.DARK, 360, 440) {
+        ChangesContent(ready(cursor = 3, open = open), {})
     }
 
-    @Test
-    fun `screenshots, the diff`() {
-        val open = OpenFile(Sample.login, DiffSide.UNSTAGED)
-        all("working-diff-ticked", 700, 300) { WorkingDiffContent(diffState(open), {}) }
-        all("working-diff-large", 700, 220) {
-            WorkingDiffContent(ready(open = open).copy(body = DiffBodyState.Ready(WorkingDiff.TooLarge(3_200_000))), {})
-        }
-        all("working-diff-nothing", 700, 220) {
-            WorkingDiffContent(ready(open = open).copy(body = DiffBodyState.Ready(WorkingDiff.Nothing)), {})
-        }
+    @Test fun `shot flat light`() = shot("changes-flat", GraftThemeMode.LIGHT, 360, 360) {
+        ChangesContent(ready(tree = false), {})
+    }
+
+    @Test fun `shot flat dark`() = shot("changes-flat", GraftThemeMode.DARK, 360, 360) {
+        ChangesContent(ready(tree = false), {})
+    }
+
+    @Test fun `shot loading light`() = shot("changes-loading", GraftThemeMode.LIGHT, 360, 200) {
+        ChangesContent(ChangesState(), {})
+    }
+
+    @Test fun `shot loading dark`() = shot("changes-loading", GraftThemeMode.DARK, 360, 200) {
+        ChangesContent(ChangesState(), {})
+    }
+
+    @Test fun `shot empty light`() = shot("changes-empty", GraftThemeMode.LIGHT, 360, 200) { ChangesContent(none, {}) }
+
+    @Test fun `shot empty dark`() = shot("changes-empty", GraftThemeMode.DARK, 360, 200) { ChangesContent(none, {}) }
+
+    @Test fun `shot error light`() = shot("changes-error", GraftThemeMode.LIGHT, 360, 200) {
+        ChangesContent(failed, {})
+    }
+
+    @Test fun `shot error dark`() = shot("changes-error", GraftThemeMode.DARK, 360, 200) { ChangesContent(failed, {}) }
+
+    @Test fun `shot busy light`() = shot("changes-busy", GraftThemeMode.LIGHT, 360, 440) {
+        ChangesContent(ready().copy(busy = "Staging 1 file…", refreshing = true), {})
+    }
+
+    @Test fun `shot busy dark`() = shot("changes-busy", GraftThemeMode.DARK, 360, 440) {
+        ChangesContent(ready().copy(busy = "Staging 1 file…", refreshing = true), {})
+    }
+
+    @Test fun `shot discard light`() = shot("changes-discard", GraftThemeMode.LIGHT, 420, 300) {
+        ChangesContent(ready().copy(discard = discardOne), {})
+    }
+
+    @Test fun `shot discard dark`() = shot("changes-discard", GraftThemeMode.DARK, 420, 300) {
+        ChangesContent(ready().copy(discard = discardOne), {})
+    }
+
+    @Test fun `shot toast light`() = shot("changes-toast", GraftThemeMode.LIGHT, 360, 440) {
+        ChangesContent(ready().copy(toast = Toast("Discarded Session.kt", DiscardRecord(null, emptyMap()))), {})
+    }
+
+    @Test fun `shot toast dark`() = shot("changes-toast", GraftThemeMode.DARK, 360, 440) {
+        ChangesContent(ready().copy(toast = Toast("Discarded Session.kt", DiscardRecord(null, emptyMap()))), {})
+    }
+
+    @Test fun `shot diff ticked light`() = shot("working-diff-ticked", GraftThemeMode.LIGHT, 700, 300) {
+        WorkingDiffContent(diffState(open), {})
+    }
+
+    @Test fun `shot diff ticked dark`() = shot("working-diff-ticked", GraftThemeMode.DARK, 700, 300) {
+        WorkingDiffContent(diffState(open), {})
+    }
+
+    @Test fun `shot diff large light`() = shot("working-diff-large", GraftThemeMode.LIGHT, 700, 220) {
+        WorkingDiffContent(ready(open = open).copy(body = DiffBodyState.Ready(WorkingDiff.TooLarge(3_200_000))), {})
+    }
+
+    @Test fun `shot diff large dark`() = shot("working-diff-large", GraftThemeMode.DARK, 700, 220) {
+        WorkingDiffContent(ready(open = open).copy(body = DiffBodyState.Ready(WorkingDiff.TooLarge(3_200_000))), {})
+    }
+
+    @Test fun `shot diff nothing light`() = shot("working-diff-nothing", GraftThemeMode.LIGHT, 700, 220) {
+        WorkingDiffContent(ready(open = open).copy(body = DiffBodyState.Ready(WorkingDiff.Nothing)), {})
+    }
+
+    @Test fun `shot diff nothing dark`() = shot("working-diff-nothing", GraftThemeMode.DARK, 700, 220) {
+        WorkingDiffContent(ready(open = open).copy(body = DiffBodyState.Ready(WorkingDiff.Nothing)), {})
     }
 }
