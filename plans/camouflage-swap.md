@@ -1,6 +1,6 @@
 # Camouflage 0.2.0 swap: Graft's stopgaps against what shipped
 
-**Status: approved 2026-11-26 (drafted the same day). No task started; the decisions in section 5 are still open.**
+**Status: approved 2026-11-26 (drafted the same day). No task started. Density is decided (`Sm`); the other decisions in section 5 are still open.**
 
 **Updated 2026-11-26** after [PR #184](https://github.com/srctool/graft/pull/184): Local History already uses `CamoSegmentedControl`, so Task 4 covers Compare and the diff screen only, and the popover ruling is already corrected.
 
@@ -141,7 +141,7 @@ Menu submenus (camouflage#77) also shipped (`CamoMenuSubmenu`); Graft has no sto
 ## 5. For the author to decide
 
 1. **Wrappers.** ADR-22 says `:module:core:ui` wraps Camouflage behind `Graft*` names. Features import `Camo*` directly, which UI Design ("Components"), the 2026-11 ledger ruling and `checkImports` all follow, and ADR-24 removed `ui-kit`. Neither ADR-22 nor ADR-24 says that part is superseded. Recommendation: keep direct imports and mark it in ADR-22's heading.
-2. **Density** (Task 1): `Sm` (recommended) or `Xs`. `Sm` is 32 dp, matching `formControl` and `menuItem`; toolbar controls keep their 24 dp modifier. `Xs` makes 24 dp the default but draws control text at 12 sp.
+2. **Density** (Task 1): **decided 2026-11-26: `Sm`** (over `Xs`). `Sm` is 32 dp, matching `formControl` and `menuItem`; toolbar controls keep their 24 dp modifier. `Xs` makes 24 dp the default but draws control text at 12 sp.
 3. **Camouflage issues.** File these upstream? Nothing is filed without your say-so.
    - Document tabs: translatable strings.
    - Dock: sizes that can stay in dp; one open window per edge; heading semantics; focus mode.
@@ -161,7 +161,7 @@ For every task: run GitNexus impact before editing, write the test first where i
 - **Tests:** a theme test that the density token is the chosen one; the existing theme validator test; keyboard tests unchanged.
 - **Goldens:** possibly any with a button, checkbox, field or menu that Graft doesn't size; the CI run says which.
 - **Risk:** medium (wide visual change, no behavior change). Check dense rows don't grow, as `RowCheckbox` in `DiffViewer.kt` guards against.
-- **Done when:** unsized controls draw at the chosen size and the re-recorded goldens are reviewed by eye.
+- **Done when:** unsized controls draw at `Sm` (32 dp) and the re-recorded goldens are reviewed by eye.
 
 ### Task 2: Speed search on Camouflage's matcher and state
 
