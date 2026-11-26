@@ -593,3 +593,6 @@ Task 8 (G2): drafted (2026-11-24) — `:module:data:git` `GuardRepository` (Comm
 - Task 14: complete (reviewed: approved; merged as PR #183, closes #161, 2026-11-26)
 - Fix (Task 14, after the merge; branch `fix/g2-task14-camouflage-controls`): the Changes panel's row menu is `CamoContextMenuArea` (it was Compose's), and Local History's Timeline / Deleted files and Paths / Text switches are `CamoSegmentedControl` (they were pairs of buttons), as ADR-24 asks. The segmented control is one Tab stop and the arrows move and select. The `history-*` goldens change and are re-recorded from the Linux render.
 - Correction (Task 13): the ruling that Camouflage has no popover was wrong; 0.2.0 has `CamoPopover`. The Options section stays inline until the author asks otherwise.
+
+Camouflage swap: plan approved (2026-11-26), `plans/camouflage-swap.md` — adopt Carbon density, swap speed search, scrollbar, segmented buttons and the commit description; leave the rest. No task started; its section 5 decisions (wrappers, density Sm or Xs, upstream issues, note edits) are open.
+Ruling (author, 2026-11-26): Camouflage swap Task 1 sets Carbon density `Sm` (32 dp), not `Xs` — it matches `formControl` and `menuItem` and keeps control text at 14 sp; toolbar controls keep their 24 dp modifier — cost if wrong: one theme argument and re-recorded goldens.
