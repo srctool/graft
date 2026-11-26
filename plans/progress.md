@@ -612,3 +612,4 @@ ADR-29 (Fluent, Inter, one height per line): added to the notes at the author's 
 - Graph bugs (found by the author running Fluent Task 1, 2026-11-26; older code, not the skin): to fix as their own change after Task 1 merges. (1) With "First parent" on, `LaneLayout` opens a lane for every merged parent the log never lists, so the lines never end. (2) A lane that ends on a merge row can be reused on that row, so the corners overlap. (3) The WIP ring is only joined to HEAD when HEAD is the first row. Spacing: the author wants more on some screens; which ones is open.
 - Fluent Task 1: approved by the author (2026-11-26).
 - Shell Task 1: complete (reviewed: approved; merged as PR #186, 2026-11-26)
+- Fluent Task 1 (CI, PR #187): the Ubuntu and spaces-path checks failed only on screenshot comparisons; 145 goldens re-recorded from the Ubuntu job's renders after looking at them.
