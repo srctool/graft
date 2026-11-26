@@ -103,6 +103,8 @@ internal class ChangesViewModel(
         ChangesEvent.DiffClosed -> ChangesAction.Close
 
         is ChangesEvent.OutputShown -> ChangesAction.Local { it.copy(outputShown = event.shown) }
+
+        is ChangesEvent.StagedShown -> ChangesAction.ShowStaged(event.path)
     }
 
     override suspend fun onAction(action: ChangesAction) {
@@ -141,6 +143,8 @@ internal class ChangesViewModel(
             }
 
             ChangesAction.Close -> close()
+
+            is ChangesAction.ShowStaged -> showStaged(action.path)
         }
     }
 
@@ -317,6 +321,20 @@ internal class ChangesViewModel(
 
             is PanelLine.File -> openFile(line)
         }
+    }
+
+    private fun showStaged(path: String) {
+        val row = currentState.model?.sections?.firstOrNull { it.kind == SectionKind.Staged }?.rows?.firstOrNull {
+            it.path ==
+                path
+        }
+        if (row == null) return
+        val index = currentState.lines.indexOfFirst {
+            it is PanelLine.File && it.section == SectionKind.Staged &&
+                it.row.path == path
+        }
+        if (index >= 0) setState { copy(cursor = index) }
+        openFile(PanelLine.File(SectionKind.Staged, row, 0, false))
     }
 
     private fun openFile(line: PanelLine.File) {

@@ -4,8 +4,10 @@
 package com.srctool.graft.feature.workingcopy.domain.api.usecases
 
 import com.srctool.graft.data.git.api.models.ChangeSelection
+import com.srctool.graft.data.git.api.models.CoAuthor
 import com.srctool.graft.data.git.api.models.CommitDraft
 import com.srctool.graft.data.git.api.models.CommitMessageText
+import com.srctool.graft.data.git.api.models.GuardFinding
 import com.srctool.graft.data.git.api.models.GuardOptions
 import com.srctool.graft.data.git.api.models.GuardReport
 import com.srctool.graft.data.git.api.models.ObjectId
@@ -63,6 +65,15 @@ internal interface CommitChangesUseCase {
 
     /** `commit.template`'s text, to start the box from; null when none is set. */
     suspend fun template(workingCopy: WorkingCopy): Result<String?>
+
+    /** Recent authors of the repository, for the co-authors picker (E6). */
+    suspend fun recentAuthors(workingCopy: WorkingCopy): Result<List<CoAuthor>>
+
+    /**
+     * Lets [finding] through from now on: by fingerprint in `.git/graft/guard-allow.json`, or with [shared] in the
+     * committed `.graft/guard.toml` (Commit Guards, "When a check fires").
+     */
+    suspend fun allowAlways(workingCopy: WorkingCopy, finding: GuardFinding, shared: Boolean): Result<Unit>
 }
 
 /** Undo and Redo of the last commit or amend (Git Engine, "Operation log"). */
