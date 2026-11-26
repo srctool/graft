@@ -2,6 +2,8 @@
 
 **Status: approved 2026-11-26 (drafted the same day). No task started; the decisions in section 5 are still open.**
 
+**Updated 2026-11-26** after [PR #184](https://github.com/srctool/graft/pull/184): Local History already uses `CamoSegmentedControl`, so Task 4 covers Compare and the diff screen only, and the popover ruling is already corrected.
+
 **Goal:** per ADR-22, replace Graft's stopgap components with Camouflage's where that loses nothing the design asks for, and record why the rest stay.
 
 **Method:** read Graft's components and callers, and the `camouflage-core` and `camouflage-skin-carbon` 0.2.0 **sources jars** from the Gradle cache. Nothing was run, so every behavior below is read from source.
@@ -25,7 +27,7 @@
 | `TableColumns` | `CamoDataTable` + `CamoColumnState` | **Leave** | – |
 | breadcrumbs in screens | `CamoBreadcrumb` | **Leave** | – |
 | toast bars | `CamoMessenger` | **Leave** | – |
-| Options section in the commit box | `CamoPopover` | **Leave** (correct the ruling) | 6 |
+| Options section in the commit box | `CamoPopover` | **Leave** (ruling corrected in PR #184) | – |
 
 ## 2. The stopgaps
 
@@ -113,7 +115,7 @@ Callers: `GraphPage.kt`, `GraphRows.kt`. Tests: `ComponentStateTest`, `Component
 
 | Place | Where | Camouflage | Verdict |
 |---|---|---|---|
-| Segmented choices | `ComparePage.kt` `KindButton`, `DiffScreenPage.kt` `ModeButton`, `HistoryPage.kt` `Choice` (Outline/Ghost buttons) | `CamoSegmentedControl` | **Swap** (Task 4): a real selectable group with one Tab stop |
+| Segmented choices | `ComparePage.kt` `KindButton`, `DiffScreenPage.kt` `ModeButton` (Outline/Ghost buttons); `HistoryPage.kt` was done in PR #184 | `CamoSegmentedControl` | **Swap** (Task 4): a real selectable group with one Tab stop |
 | Search tabs | `SearchPalette.kt` | `CamoTabs` / segmented | Leave: every key is handled in the search box |
 | Breadcrumbs | `ComparePage.kt`, `DiffScreenPage.kt`, `WorkingDiffPage.kt` | `CamoBreadcrumb` | Leave: an item has only a visible label, so "Graph" would lose its spoken name "Back to the graph" |
 | Toasts with Undo | `ChangesPage.kt`, `CommitBox.kt`, `HistoryPage.kt` | `CamoMessenger` | Leave: the same bar shows busy and error states; the messenger is one app-wide popup with no 10 s duration (UX Writing), which would need `Indefinite` plus a cancel |
@@ -131,7 +133,7 @@ Callers: `GraphPage.kt`, `GraphRows.kt`. Tests: `ComponentStateTest`, `Component
 | G1 Task 11, scrollbar setting | no macOS "show scroll bars" | `visibility` parameter exists (Task 3) |
 | Search Everywhere, own palette | `CommandPalette` lacks tabs | still true of Camouflage's |
 | G2 Task 11, checkbox | no mixed state | **still true** (`checked: Boolean`) |
-| G2 Task 13, Options | "Camouflage has no popover" | **wrong:** `CamoPopover` exists |
+| G2 Task 13, Options | "Camouflage has no popover" | **wrong:** `CamoPopover` exists; corrected in the ledger by PR #184 |
 | G2 Task 13, description | "no multi-line mode" | **wrong:** `singleLine = false` exists |
 
 Menu submenus (camouflage#77) also shipped (`CamoMenuSubmenu`); Graft has no stopgap for them.
@@ -179,11 +181,11 @@ For every task: run GitNexus impact before editing, write the test first where i
 
 ### Task 4: Segmented controls
 
-- **Files:** `ComparePage.kt`, `DiffScreenPage.kt`, `HistoryPage.kt`.
+- **Files:** `ComparePage.kt`, `DiffScreenPage.kt`. Follow `HistoryPage.kt` (PR #184): `CamoSegmentedControl` with `Modifier.height(density.control)`.
 - **Tests:** their UI tests: each choice selects, reports selected, arrows move within the group.
-- **Goldens:** `compare-*`, `diff-screen-*`, `history-*`.
+- **Goldens:** `compare-*`, `diff-screen-*`.
 - **Risk:** low; Tab order changes (one stop per group). Do after Task 1.
-- **Done when:** the three hand-built pairs are gone.
+- **Done when:** both hand-built groups are gone.
 
 ### Task 5: Commit description as a `CamoTextField`
 
@@ -195,9 +197,9 @@ For every task: run GitNexus impact before editing, write the test first where i
 
 ### Task 6: Correct the record
 
-- **Files:** `plans/progress.md` (new lines replacing the out-of-date rulings in section 4; old lines stay), KDoc that names camouflage#70–#78 as pending in `GraftDensity.kt` and the components that stay.
+- **Files:** `plans/progress.md` (new lines replacing the out-of-date rulings in section 4, except the popover one, already done; old lines stay), KDoc that names camouflage#70–#78 as pending in `GraftDensity.kt` and the components that stay.
 - **Tests:** none beyond `./gradlew check`.
 - **Risk:** none.
 - **Done when:** no ledger line or KDoc claims Camouflage lacks something 0.2.0 has.
 
-**Order:** 1, then 2 to 5 in any order, then 6. Whether this runs before or after the rest of G2 is the author's call; G2 Task 14 waits for review now.
+**Order:** 1, then 2 to 5 in any order, then 6. Whether this runs before or after the rest of G2 is the author's call.
