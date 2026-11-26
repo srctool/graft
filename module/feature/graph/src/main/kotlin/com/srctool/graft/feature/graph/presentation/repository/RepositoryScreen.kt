@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
@@ -20,7 +21,6 @@ import com.srctool.graft.core.ui.components.ToolWindow
 import com.srctool.graft.core.ui.components.ToolWindowContribution
 import com.srctool.graft.core.ui.l10n.graftText
 import com.srctool.graft.core.ui.theme.GraftIcon
-import com.srctool.graft.data.app.api.repositories.RepositoryUiStateRepository
 import com.srctool.graft.feature.graph.presentation.branches.BranchesDestination
 import com.srctool.graft.feature.graph.presentation.branches.BranchesRoute
 import com.srctool.graft.feature.graph.presentation.compare.CompareDestination
@@ -35,10 +35,12 @@ import com.srctool.graft.feature.graph.presentation.graph.GraphDestination
 import com.srctool.graft.feature.graph.presentation.graph.GraphRoute
 import com.srctool.graft.feature.graph.presentation.operations.OperationsDestination
 import com.srctool.graft.feature.graph.presentation.operations.OperationsRoute
+import com.srctool.graft.feature.graph.presentation.rememberDestinationOwner
 import com.srctool.graft.presentation.session.RepositorySession
 import com.srctool.graft.presentation.view.CenterView
 import com.srctool.graft.presentation.view.RepositoryViewState
-import org.koin.compose.koinInject
+import org.koin.compose.viewmodel.koinViewModel
+import org.koin.core.parameter.parametersOf
 
 /**
  * One open repository's panes (the main window's tab for it): the left panel, the graph or the diff, commit details and
@@ -57,14 +59,19 @@ public fun RepositoryScreen(
 ) {
     val location = session.location
     val folder = (location.workTree ?: location.gitDir).toString()
-    val uiState = koinInject<RepositoryUiStateRepository>()
-    val shared = remember(location) { RepositoryViewState(location.commonDir, uiState) }
+    val viewModel =
+        koinViewModel<RepositoryViewModel>(viewModelStoreOwner = rememberDestinationOwner(location)) {
+            parametersOf(location.commonDir)
+        }
+    val shared = viewModel.shared
+    val state by viewModel.state.collectAsState()
+    LaunchedEffect(viewModel) { viewModel.onEvent(RepositoryScreenEvent.Opened) }
     // The host (Search Everywhere) selects commits through the same state the panes share.
     DisposableEffect(shared) {
         onViewState(shared)
         onDispose { onViewState(null) }
     }
-    PanelLayoutKeeper(dock, location.commonDir, uiState)
+    PanelLayoutKeeper(dock, state.restore) { viewModel.onEvent(RepositoryScreenEvent.LayoutChanged(it)) }
     val center by shared.center.collectAsState()
     val contributions = contribute(shared)
     val windows =

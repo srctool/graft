@@ -19,6 +19,7 @@ import com.srctool.graft.feature.graph.presentation.diff.DiffScreenViewModel
 import com.srctool.graft.feature.graph.presentation.gitlog.GitLogViewModel
 import com.srctool.graft.feature.graph.presentation.graph.GraphViewModel
 import com.srctool.graft.feature.graph.presentation.operations.OperationsViewModel
+import com.srctool.graft.feature.graph.presentation.repository.RepositoryViewModel
 import com.srctool.graft.feature.graph.search.CommitSearchSource
 import com.srctool.graft.feature.graph.search.FileSearchSource
 import com.srctool.graft.feature.graph.search.RefSearchSource
@@ -44,6 +45,7 @@ public fun graphFeatureKoin(): Module = module {
     single<SearchSource>(named("graph.commits")) { CommitSearchSource(get()) }
     single<SearchSource>(named("graph.files")) { FileSearchSource(get()) }
 
+    viewModel { p -> RepositoryViewModel(p.get(), get()) }
     viewModel { p -> GraphViewModel(p.get(), p.get(), get(), get(), get(), get(), p.get()) }
     viewModel { p -> BranchesViewModel(p.get(), p.get(), p.get(), get()) }
     viewModel { p -> DetailsViewModel(p.get(), p.get(), p.get(), get()) }
