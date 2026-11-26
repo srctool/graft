@@ -142,7 +142,7 @@ ADRs are never edited after acceptance; a later ADR supersedes. Status: **Propos
   - Graft's needs feed back into the Fluent skin, which is "Later" in Camouflage's roadmap, so Graft may be what brings it forward.
   - Acrylic and Mica wait until after 1.0.
 
-### ADR-22 Carbon look with Atom One colors, through Camouflage; `ui-kit` wraps Camouflage now (Accepted 2026-11-11; supersedes ADR-21 and ADR-20's Material 3 base; adopts ADR-9's `ui-kit` seam early)
+### ADR-22 Carbon look with Atom One colors, through Camouflage; `ui-kit` wraps Camouflage now (Accepted 2026-11-11; supersedes ADR-21 and ADR-20's Material 3 base; adopts ADR-9's `ui-kit` seam early; visual style and UI font superseded by ADR-29)
 - **Context:**
   - ADR-21 chose Fluent 2 drawn on Material 3, so a later switch to Camouflage's Fluent skin would change nothing visible. ADR-9 deferred Camouflage until it shipped a desktop skin.
   - Camouflage 0.1.0 is on Maven Central (Apache-2.0) with JVM builds of the core and all five skins, Carbon included, built on Compose 1.12.1 and Kotlin 2.4.20 (Graft: 1.12.2 and 2.4.21).
@@ -235,3 +235,24 @@ ADRs are never edited after acceptance; a later ADR supersedes. Status: **Propos
   - Graft's navigation matches the Kotlin guide's three levels, so the guide's rules (keys carry only IDs, view models never navigate, one store per entry) apply as written.
   - Navigation 3 and its view-model integration are new dependencies, pinned with Compose and Lifecycle; the license check covers them.
   - Navigation sees data `api` types, so a change to a data module's `api` can now break navigation's compile, not only features'.
+
+### ADR-29 Fluent look with Atom One colors and Inter, through Camouflage (Accepted 2026-11-26; supersedes ADR-22's visual style and UI font)
+- **Context:**
+  - G1 and most of G2 are built on Camouflage's Carbon skin.
+  - Camouflage 0.2.0 ships the Fluent Skin. Seen side by side on Graft's own screens, the author prefers it.
+  - The author wants a JetBrains look for text: Inter, the UI font of JetBrains IDEs.
+  - Controls on one line don't have one height today: a text field is 40 px beside a 32 px button.
+- **Decision:**
+  - **Structure:** Fluent 2 through `camouflage-skin-fluent`, `Solid` surfaces: 4 px control corners, 8 px dialogs, flyouts and cards, shadows on overlays, subtle hover and press steps, the double-stroke focus ring.
+  - **Colors:** unchanged, Atom One. Fluent takes button fills, state steps, strokes, focus and shadows from its own tokens, so Graft builds those tokens from the same palette: no Fluent blue or gray shows.
+  - **Type:** **Inter** (OFL-1.1, bundled) replaces IBM Plex Sans as the UI font. JetBrains Mono stays for code and diffs, with IBM Plex Mono as an option.
+  - **Icons:** unchanged, Carbon's icon set.
+  - **Density:** `FluentDensity.Medium` (32 px); toolbars, panels and rows keep their 24 px sizes.
+  - **One height per line:** controls on one line have the same height, top and bottom: 32 px in dialogs and forms, 24 px in toolbars and panels, also while a field shows an error.
+  - **Unchanged from ADR-22:** screens use Camouflage, Material 3 isn't a dependency, git widgets stay Graft's.
+  - **Timing:** before the rest of G2, so new screens are designed once.
+- **Consequences:**
+  - Every screenshot golden is re-recorded.
+  - Camouflage's theme validator checks the color roles only, so Graft's tests check the contrast of its Fluent tokens.
+  - A Camouflage update that adds a Fluent token breaks the build until Graft chooses its color.
+  - Acrylic and Mica wait. camouflage#70 (Carbon density) no longer matters to Graft.

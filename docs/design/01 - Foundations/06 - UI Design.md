@@ -6,44 +6,45 @@ status: seedling
 
 # 06 - UI Design
 
-**GitKraken's layout, JetBrains' behavior, IBM Carbon's look in Atom One colors.**
+**GitKraken's layout, JetBrains' behavior, Fluent's look in Atom One colors.**
 - **Layout** like GitKraken: refs on the left, the graph in the center, details on the right, and a toolbar with the everyday actions.
 - **Behavior** like a JetBrains IDE: tool windows, Search Everywhere, speed search, the diff and merge viewers ([ADR-20](../03%20-%20Project/02%20-%20Decisions.md)).
-- **Look:** IBM Carbon at desktop density, through Camouflage's Carbon Skin: square corners, flat layered surfaces, an inset focus border, productive type. The colors are Atom's **One Light** and **One Dark** ([ADR-22](../03%20-%20Project/02%20-%20Decisions.md)).
+- **Look:** Microsoft's Fluent 2 at desktop density, through Camouflage's Fluent Skin: gently rounded corners, neutral surfaces, shadows on overlays, a double-stroke focus ring. The colors are Atom's **One Light** and **One Dark** ([ADR-29](../03%20-%20Project/02%20-%20Decisions.md)).
 
-## Toolkit: Camouflage with the Carbon skin
+## Toolkit: Camouflage with the Fluent skin
 
-Graft's UI is built on Camouflage with its Carbon skin ([ADR-22](../03%20-%20Project/02%20-%20Decisions.md)). Camouflage draws on Compose foundation; Material 3 isn't a dependency. Screens use Camouflage components directly. `:module:core:ui` holds Graft's theme and the components only Graft needs, and `:app:desktop` sets up the Camouflage provider ([ADR-24](../03%20-%20Project/02%20-%20Decisions.md)).
+Graft's UI is built on Camouflage with its Fluent skin ([ADR-22](../03%20-%20Project/02%20-%20Decisions.md), [ADR-29](../03%20-%20Project/02%20-%20Decisions.md)). Camouflage draws on Compose foundation; Material 3 isn't a dependency. Screens use Camouflage components directly. `:module:core:ui` holds Graft's theme and the components only Graft needs, and `:app:desktop` sets up the Camouflage provider ([ADR-24](../03%20-%20Project/02%20-%20Decisions.md)).
 
-**Why Carbon.**
-- It's made for enterprise, data-heavy desktop tools, which is what a git client is: tables, trees, diffs and the graph.
-- Its structure keeps dense screens calm: a strong grid, square corners, flat layers instead of shadows, and a focus border drawn inside the control so focus never shifts the layout.
-- Camouflage ships it (0.1.0, JVM included), so Graft is the first real desktop app on it, and Graft's needs feed back into Camouflage.
+**Why Fluent.**
+- It's a desktop-first design language, calm on dense screens: neutral surfaces, subtle hover steps and a brand color used sparingly.
+- Seen side by side with Carbon on Graft's own screens, the author preferred it.
+- Camouflage ships it (0.2.0), so Graft's needs feed back into Camouflage.
 
-**Why Atom One colors.** One Light and One Dark are familiar from editors, readable for long sessions, and give one palette to the UI, the graph lanes and syntax highlighting. They replace Carbon's own theme families through the theme's color roles.
+**Why Atom One colors.** One Light and One Dark are familiar from editors, readable for long sessions, and give one palette to the UI, the graph lanes and syntax highlighting. They replace Fluent's own neutrals and brand color, through the theme's color roles and the skin's tokens.
 
 JetBrains' Jewel library was considered and not chosen. Its API still changes between releases, it ties Graft to IntelliJ Platform versions, and Camouflage has no IntelliJ skin ([ADR-20](../03%20-%20Project/02%20-%20Decisions.md)).
 
-### Carbon at Graft's density
+### Fluent at Graft's density
 
-| Camouflage Carbon default | Graft |
+| Part | Graft |
 |---|---|
-| Controls 48 px tall | **24 px** (toolbars, panels, inline) and **32 px** (dialogs, forms), Carbon's own `xs` and `sm` sizes. Camouflage builds only 48 px today, so `:module:core:ui` sets the sizes through component themes until the Carbon density option ships ([camouflage#70](https://github.com/srctool/camouflage/issues/70)) |
-| Button styles | Carbon's: primary (accent fill), secondary, tertiary (outline), ghost, danger |
-| Text fields 40 px | 24 / 32 px on the field fill with a **bottom border only**; the 2 px inset border on focus and in error; label above |
-| Tree and list rows 32–48 px | **24 px** rows in panels, trees and lists (28 px in comfortable density); 32 px menu items |
-| Type | Carbon's productive sets in **IBM Plex Sans**: body-compact-01 14, label-01 12, heading-02 16, heading-03 20. Dense panels and the graph use a 13 px Graft step between label-01 and body-compact-01 |
-| Shapes | **square** (0) everywhere, pills only for tags (ref chips) and toggles |
-| Surfaces | Carbon's **layers**: each nesting level one step, no shadows except the single overlay shadow on menus, popovers and dialogs |
-| Feedback | hover and active background steps (Carbon states); no ripple |
-| Focus | Carbon's **2 px inset border** in the accent color, shown on keyboard focus |
-| Colors | **Atom One**, below; Carbon's dark header (gray 100) becomes One's panel color |
+| Controls | **24 px** (toolbars, panels, inline) and **32 px** (dialogs, forms); the skin's density is `Medium` (32 px) |
+| One height per line | controls on one line (a field, a button, a select, a segmented control) have the same height, top and bottom, also while a field shows an error |
+| Button styles | Fluent's: primary (accent fill), default (neutral with a border), outline, subtle (ghost), link; danger for destructive actions. An action that only navigates is a link, so it still looks clickable |
+| Text fields | outlined, with the accent on the bottom edge on focus; label above |
+| Tree and list rows | **24 px** rows in panels, trees and lists (28 px in comfortable density); 32 px menu items |
+| Type | Fluent's ramp in **Inter**: body 14, caption 12, subtitle 16 semibold, title 20 semibold. Dense panels and the graph use a 13 px Graft step |
+| Shapes | **4 px** on controls, 8 px on dialogs, flyouts and cards; pills for tags (ref chips) and toggles |
+| Surfaces | `Solid`: neutral fills, shadows on menus, popovers and dialogs. Acrylic and Mica wait |
+| Feedback | subtle hover and pressed background steps; no ripple |
+| Focus | Fluent's **double stroke**, shown on keyboard focus; Graft's own components draw the same ring |
+| Colors | **Atom One**, below, including the skin's tokens: no Fluent blue or gray shows |
 | Tabs | line tabs with an accent underline |
 | Scrollbars | thin overlay scrollbars that widen on hover |
 
 ### Atom One colors
 
-Graft Light uses **One Light**, Graft Dark uses **One Dark** (Atom, MIT). Values are used as published where they pass WCAG 2.2 AA; where a color carries text and doesn't, a darker (light theme) or lighter (dark theme) step of the same hue is used. Camouflage's theme validator pins the final values ([Accessibility](05%20-%20Accessibility.md)).
+Graft Light uses **One Light**, Graft Dark uses **One Dark** (Atom, MIT). Values are used as published where they pass WCAG 2.2 AA; where a color carries text and doesn't, a darker (light theme) or lighter (dark theme) step of the same hue is used. Camouflage's theme validator pins the final color roles, and Graft's tests pin the skin's tokens ([Accessibility](05%20-%20Accessibility.md)).
 
 | Role | One Dark | One Light | Note |
 |---|---|---|---|
@@ -73,7 +74,7 @@ Camouflage covers trees (`CamoTree`), tables (`CamoDataTable`), menus, popovers,
 
 | Asset | Source |
 |---|---|
-| UI font | **IBM Plex Sans** (OFL-1.1), bundled on every OS: Camouflage skins never bundle fonts, so the app does |
+| UI font | **Inter** (OFL-1.1), bundled on every OS: Camouflage skins never bundle fonts, so the app does |
 | Code and diff font | JetBrains Mono, 13 px (OFL), ligatures off by default; IBM Plex Mono as an option |
 | Icons | **Carbon's icon set** (`@carbon/icons`, IBM, Apache-2.0), 16 px in panels and 20 px in the toolbar. Git icons it lacks (shelf, worktree, stack, stash, and any of branch, merge, commit, pull request, tag, fork it turns out not to have) drawn on its 16/20/32 grid |
 | Themes | Graft Light (One Light), Graft Dark (One Dark), High contrast (follows the OS high-contrast colors when the OS reports it) ([Accessibility](05%20-%20Accessibility.md)) |
@@ -144,12 +145,12 @@ Camouflage covers trees (`CamoTree`), tables (`CamoDataTable`), menus, popovers,
 
 - **Lanes:** 2 px lines with rounded corners for merges and forks; 10 px commit dots. Hollow dots for stashes, dashed for shelves and snapshots, a ring for the WIP node.
 - **Colors:** an 8-color lane palette from Atom One (blue, purple, green, red, orange, yellow, cyan, and the text gray), checked against both themes, and always paired with labels and marker shapes ([Accessibility](05%20-%20Accessibility.md)).
-- **Ref labels** like JetBrains' log tags: Carbon tags (pills, the one rounded element) with a branch, tag or remote icon, plus the PR and CI status chips.
+- **Ref labels** like JetBrains' log tags: tags (pills) with a branch, tag or remote icon, plus the PR and CI status chips.
 - **Rows:** 26 px tall, 22 px in compact mode.
 
 ## `:module:core:ui` components
 
-Screens use Camouflage's components directly (`CamoButton`, `CamoTree`, `CamoDataTable`, `CamoTabs`, `CamoDialog`, …), drawn by the Carbon skin with Graft's theme ([ADR-24](../03%20-%20Project/02%20-%20Decisions.md)). `:module:core:ui` holds only what Graft adds:
+Screens use Camouflage's components directly (`CamoButton`, `CamoTree`, `CamoDataTable`, `CamoTabs`, `CamoDialog`, …), drawn by the Fluent skin with Graft's theme ([ADR-24](../03%20-%20Project/02%20-%20Decisions.md)). `:module:core:ui` holds only what Graft adds:
 
 | Group | Components |
 |---|---|

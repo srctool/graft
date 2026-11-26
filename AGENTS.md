@@ -33,7 +33,7 @@ Rules:
 | Compose (and Camouflage) only in `:module:core:ui`, `:module:feature:*`, `:module:navigation`, `:app:desktop`; `:app:cli` never depends on them | Architecture, ADR-19, ADR-24 |
 | Features never import each other; shared UI lives in `:module:core:ui`, app-level state in `:module:presentation`, shared use cases in `:module:domain` | Architecture, ADR-24 |
 | Screens use Camouflage components and `:module:core:ui`; nothing imports `androidx.compose.material3` | ADR-22, ADR-24 |
-| Look: IBM Carbon through Camouflage's Carbon skin, in Atom One colors, at desktop density (24/32 px controls, square corners, layered surfaces, inset focus) | UI Design, ADR-22 |
+| Look: Fluent 2 through Camouflage's Fluent skin, in Atom One colors with Inter, at desktop density (24/32 px controls, one height per line, 4 px corners, double-stroke focus) | UI Design, ADR-29 |
 | **Git is only reached through `GitRunner`** in `:module:core:git`, running the `git` executable. No JGit, no libgit2, no shell (`sh -c`): argv only | Git Engine, ADR-2 |
 | Machine-readable git output only (`-z`, `--porcelain=v2`, `--format` with `%x00`); `LC_ALL=C`, `GIT_TERMINAL_PROMPT=0`, the askpass/editor helpers | Git Engine |
 | One mutating git operation at a time per repository (write queue); reads may run in parallel with `GIT_OPTIONAL_LOCKS=0` | ADR-3 |

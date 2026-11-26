@@ -11,7 +11,7 @@ status: seedling
 | Concern | Choice |
 |---|---|
 | Language | Kotlin (JVM 21) |
-| UI | Compose Multiplatform Desktop + Camouflage with the Carbon skin in Atom One colors, themed in `:module:core:ui` ([UI Design](06%20-%20UI%20Design.md), [ADR-22](../03%20-%20Project/02%20-%20Decisions.md)) |
+| UI | Compose Multiplatform Desktop + Camouflage with the Fluent skin in Atom One colors, themed in `:module:core:ui` ([UI Design](06%20-%20UI%20Design.md), [ADR-22](../03%20-%20Project/02%20-%20Decisions.md), [ADR-29](../03%20-%20Project/02%20-%20Decisions.md)) |
 | Presentation | Sinew's ViewModel base (`sinew-viewmodel`, on AndroidX `lifecycle-viewmodel`): Event → Action → State + Effect ([ADR-23](../03%20-%20Project/02%20-%20Decisions.md)) |
 | Errors | Sinew's `Result` + `SinewException` subclasses with Graft's codes ([ADR-23](../03%20-%20Project/02%20-%20Decisions.md)) |
 | Network | `sinew-network` on the Ktor Java engine, configured in `:module:core:network`, plus Graft's ETag cache ([ADR-23](../03%20-%20Project/02%20-%20Decisions.md)) |
@@ -54,7 +54,7 @@ flowchart TB
 | `:module:data:app` | profiles, settings, repositories and workspaces | no |
 | `:module:data:hosting` | provider-neutral repository interfaces and models (`ChangeRequest`, `Issue`, `Pipeline`, `Account`, `Notification`) and the contract test kit ([Provider Model](04%20-%20Provider%20Model.md)) | no |
 | `:module:data:hosting-github` | the GitHub implementation and its API source | no |
-| `:module:core:ui` | the theme (Carbon skin, Atom One colors, IBM Plex Sans, 24/32 px density), Graft-only shared components (diff viewer, ref chips, avatars), stopgap components until Camouflage ships them, the `Localizer` | yes |
+| `:module:core:ui` | the theme (Fluent skin, Atom One colors, Inter, 24/32 px density), Graft-only shared components (diff viewer, ref chips, avatars), stopgap components until Camouflage ships them, the `Localizer` | yes |
 | `:module:core:git` | `GitRunner`: the configured git process runner, its environment, the write queue, and the `GitException` family | no |
 | `:module:core:network` | the configured HTTP client on `sinew-network`, the token source, the ETag cache | no |
 | `:module:core:database` | the SQLDelight cache | no |

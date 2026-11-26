@@ -15,15 +15,15 @@ import com.srctool.camouflage.core.icon.IconSource
 
 /**
  * The bundled fonts (UI Design, "Assets"): Camouflage skins never bundle fonts, so Graft does, the same on every OS.
- * IBM Plex Sans and JetBrains Mono are under the SIL Open Font License 1.1 (NOTICE).
+ * Inter and JetBrains Mono are under the SIL Open Font License 1.1 (NOTICE).
  */
 public object GraftFonts {
-    /** The UI font: Carbon's productive type in IBM Plex Sans. */
+    /** The UI font: Inter, as in JetBrains IDEs (ADR-29). */
     public val sans: FontFamily =
         FontFamily(
-            Font("graft/fonts/IBMPlexSans-Regular.ttf", FontWeight.Normal),
-            Font("graft/fonts/IBMPlexSans-Medium.ttf", FontWeight.Medium),
-            Font("graft/fonts/IBMPlexSans-SemiBold.ttf", FontWeight.SemiBold),
+            Font("graft/fonts/Inter-Regular.ttf", FontWeight.Normal),
+            Font("graft/fonts/Inter-Medium.ttf", FontWeight.Medium),
+            Font("graft/fonts/Inter-SemiBold.ttf", FontWeight.SemiBold),
         )
 
     /** Code and diffs, 13 px, ligatures off (they're off by default in Compose text). */

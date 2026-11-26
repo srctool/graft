@@ -36,7 +36,7 @@ internal class BundledLicenseSource(
         /** The bundled fonts, icons, colors and templates (`NOTICE`). */
         val assets: List<LicenseEntry> =
             listOf(
-                LicenseEntry("IBM Plex Sans", null, "SIL Open Font License 1.1", "https://openfontlicense.org"),
+                LicenseEntry("Inter", "4.1", "SIL Open Font License 1.1", "https://openfontlicense.org"),
                 LicenseEntry("JetBrains Mono", null, "SIL Open Font License 1.1", "https://openfontlicense.org"),
                 LicenseEntry(
                     "Carbon icons",

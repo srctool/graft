@@ -18,7 +18,7 @@ Agents and contributors shouldn't pick libraries ad hoc. This note fixes the cho
 |---|---|---|---|---|
 | Language, coroutines | Kotlin stdlib, `kotlinx-coroutines` | Apache-2.0 | yes | |
 | JSON | `kotlinx-serialization-json` | Apache-2.0 | yes | no reflection, so native-image friendly |
-| UI | Compose Multiplatform (desktop) + Camouflage (`camouflage-bom`, `camouflage-core`, `camouflage-skin-carbon`) | Apache-2.0 | n/a | only in the Compose modules ([ADR-22](../03%20-%20Project/02%20-%20Decisions.md)); version pinned; Graft's Compose and Kotlin at or above Camouflage's |
+| UI | Compose Multiplatform (desktop) + Camouflage (`camouflage-bom`, `camouflage-core`, `camouflage-skin-fluent`) | Apache-2.0 | n/a | only in the Compose modules ([ADR-22](../03%20-%20Project/02%20-%20Decisions.md), [ADR-29](../03%20-%20Project/02%20-%20Decisions.md)); version pinned; Graft's Compose and Kotlin at or above Camouflage's |
 | Navigation | Navigation 3 for Compose Multiplatform: `org.jetbrains.androidx.navigation3:navigation3-ui` 1.2.0, and `org.jetbrains.androidx.lifecycle:lifecycle-viewmodel-navigation3` 2.11.0 for one `ViewModelStore` per entry | Apache-2.0 | n/a | Compose modules only ([ADR-26](../03%20-%20Project/02%20-%20Decisions.md)); keys are `@Serializable` (`kotlinx-serialization`) |
 | HTTP | Ktor client with the **Java** engine (JDK `HttpClient`), through `sinew-network`; OkHttp excluded | Apache-2.0 | yes | HTTP/2, no extra native code; ETag cache in `:module:core:network` ([ADR-23](../03%20-%20Project/02%20-%20Decisions.md)) |
 | Errors, view models, app services, network client, paging | Sinew 1.1: `sinew-models`, `sinew-exception` (`:module:core:*`, `:module:data:*`), `sinew-network` (`:module:core:network`), `sinew-presentation` (`AppService`, `AppServiceHost` in `:app:desktop`) + `sinew-viewmodel` and `sinew-l10n` (Compose modules), `sinew-paging` + `sinew-camouflage` (G6) | Apache-2.0 | yes for models, exception, network, paging | [ADR-23](../03%20-%20Project/02%20-%20Decisions.md); version pinned |
@@ -43,7 +43,8 @@ Agents and contributors shouldn't pick libraries ad hoc. This note fixes the cho
 
 | Asset | Source | License |
 |---|---|---|
-| IBM Plex Sans (UI font), IBM Plex Mono (optional code font) | IBM | OFL-1.1 |
+| Inter (UI font) | The Inter Project Authors | OFL-1.1 |
+| IBM Plex Mono (optional code font) | IBM | OFL-1.1 |
 | JetBrains Mono | JetBrains | OFL-1.1 |
 | Carbon icons (`@carbon/icons`) | IBM | Apache-2.0 |
 | Atom One color values (One Light, One Dark, their syntax colors) | Atom (`one-dark-ui`, `one-light-ui`, `one-dark-syntax`, `one-light-syntax`), credited in `NOTICE` | MIT |

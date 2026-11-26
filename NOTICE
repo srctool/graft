@@ -33,10 +33,10 @@ Copyright (c) GitHub Inc., MIT License.
 Third-party libraries and assets, and code adapted from other projects, are
 credited here and in the app's About > Licenses as they are added.
 
-IBM Plex Sans, the UI font, Copyright (c) 2017 IBM Corp. with Reserved Font
-Name "Plex", licensed under the SIL Open Font License, Version 1.1. Bundled
-unmodified; the license is in
-module/core/ui/src/main/resources/graft/licenses/IBMPlexSans-OFL.txt.
+Inter 4.1, the UI font, Copyright (c) 2016 The Inter Project Authors
+(https://github.com/rsms/inter), licensed under the SIL Open Font License,
+Version 1.1. Bundled unmodified; the license is in
+module/core/ui/src/main/resources/graft/licenses/Inter-OFL.txt.
 
 JetBrains Mono, the code font, Copyright 2020 The JetBrains Mono Project
 Authors, licensed under the SIL Open Font License, Version 1.1. Bundled

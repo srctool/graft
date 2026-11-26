@@ -42,7 +42,7 @@ class LicensesTest {
         assertEquals(emptyList(), BundledLicenseSource.parse("not json"))
         assertEquals(emptyList(), BundledLicenseSource.parse("""{"other":1}"""))
         val names = BundledLicenseSource { null }.load().map { it.name }
-        assertTrue("IBM Plex Sans" in names && "JetBrains Mono" in names)
+        assertTrue("Inter" in names && "JetBrains Mono" in names)
     }
 
     @Test
