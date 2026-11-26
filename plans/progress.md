@@ -598,3 +598,6 @@ Task 8 (G2): drafted (2026-11-24) — `:module:data:git` `GuardRepository` (Comm
 - Ruling (Shell Task 1): the 500 ms save pause moved from the keeper into the view model, where virtual time can test it; closing the tab within the pause still drops that last change, as before. Cost if wrong: one panel move.
 - Ruling (Shell Task 1): the view model is scoped like the other destinations (`rememberDestinationOwner`), so it lives exactly as long as the state it replaces did. Cost if wrong: none.
 - Not done (Shell Task 1): not run by hand.
+
+Camouflage swap: plan approved (2026-11-26), `plans/camouflage-swap.md` — adopt Carbon density, swap speed search, scrollbar, segmented buttons and the commit description; leave the rest. No task started; its section 5 decisions (wrappers, density Sm or Xs, upstream issues, note edits) are open.
+Ruling (author, 2026-11-26): Camouflage swap Task 1 sets Carbon density `Sm` (32 dp), not `Xs` — it matches `formControl` and `menuItem` and keeps control text at 14 sp; toolbar controls keep their 24 dp modifier — cost if wrong: one theme argument and re-recorded goldens.
