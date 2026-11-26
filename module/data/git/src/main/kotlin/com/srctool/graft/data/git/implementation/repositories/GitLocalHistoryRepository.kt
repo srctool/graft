@@ -9,8 +9,12 @@ import com.srctool.graft.core.git.GitRunner
 import com.srctool.graft.core.git.PatchProblem
 import com.srctool.graft.core.git.TempIndex
 import com.srctool.graft.data.git.api.models.ChangedFile
+import com.srctool.graft.data.git.api.models.DeletedFile
+import com.srctool.graft.data.git.api.models.DiffLine
 import com.srctool.graft.data.git.api.models.DiffTarget
+import com.srctool.graft.data.git.api.models.FileDiff
 import com.srctool.graft.data.git.api.models.FileSelection.Scope
+import com.srctool.graft.data.git.api.models.FileStatus
 import com.srctool.graft.data.git.api.models.FileVersion
 import com.srctool.graft.data.git.api.models.LocalHistoryLimits
 import com.srctool.graft.data.git.api.models.ObjectId
@@ -33,6 +37,7 @@ import com.srctool.graft.data.git.implementation.source.local.HistoryRefsCommand
 import com.srctool.graft.data.git.implementation.source.local.LocateHistoryCommand
 import com.srctool.graft.data.git.implementation.source.local.MissingPathsCommand
 import com.srctool.graft.data.git.implementation.source.local.PatchBuilder
+import com.srctool.graft.data.git.implementation.source.local.PatchParser
 import com.srctool.graft.data.git.implementation.source.local.RawPatchParser
 import com.srctool.graft.data.git.implementation.source.local.ReadTreeCommand
 import com.srctool.graft.data.git.implementation.source.local.ResolveCommand
@@ -42,6 +47,7 @@ import com.srctool.graft.data.git.implementation.source.local.SnapshotCandidates
 import com.srctool.graft.data.git.implementation.source.local.SnapshotDiffCommand
 import com.srctool.graft.data.git.implementation.source.local.SnapshotLogCommand
 import com.srctool.graft.data.git.implementation.source.local.SnapshotPathsCommand
+import com.srctool.graft.data.git.implementation.source.local.SnapshotStatusCommand
 import com.srctool.graft.data.git.implementation.source.local.UpdateIndexCommand
 import com.srctool.graft.data.git.implementation.source.local.UpdateRefCommand
 import com.srctool.graft.data.git.implementation.source.local.WriteTreeCommand
@@ -181,6 +187,77 @@ internal class GitLocalHistoryRepository(
         }
     }
 
+    override suspend fun deletedFiles(repository: Path): Result<List<DeletedFile>> {
+        val where = locate(repository).orReturn { return it }
+        val chain = list(repository, where, Int.MAX_VALUE).orReturn { return it }
+        val head = chain.firstOrNull() ?: return Result.Success(emptyList())
+        val byId = chain.associateBy { it.id }
+        val log = runner.run(SnapshotStatusCommand(where.ref), repository).orReturn { return it }
+        // Newest first, so a path's first record says where it was last: removed there, or still in the newest one.
+        val lastSeen = LinkedHashMap<String, Snapshot?>()
+        log.forEach { (id, changes) ->
+            changes.forEach { (status, path) ->
+                if (path !in lastSeen) {
+                    lastSeen[path] = if (status == 'D') byId[id]?.parent?.let(byId::get) else head
+                }
+            }
+        }
+        return withContext(Dispatchers.IO) {
+            val gone = lastSeen.mapNotNull { (path, snapshot) ->
+                snapshot?.takeIf { !Files.exists(repository.resolve(path), LinkOption.NOFOLLOW_LINKS) }
+                    ?.let { DeletedFile(path, it) }
+            }
+            Result.Success(gone.sortedWith(compareByDescending<DeletedFile> { it.lastSeen.time }.thenBy { it.path }))
+        }
+    }
+
+    override suspend fun diffToNow(
+        repository: Path,
+        snapshot: ObjectId,
+        path: String,
+        contextLines: Int,
+    ): Result<FileDiff?> {
+        val bytes = patchToNow(repository, snapshot, path, contextLines).orReturn { return it }
+        if (bytes.isEmpty()) return Result.Success(null)
+        // The header lines say what kind of change it is; the hunks start after them.
+        val header = String(bytes, Charsets.ISO_8859_1).substringBefore("\n@@")
+        val status = when {
+            "\nnew file mode " in header -> FileStatus.ADDED
+            "\ndeleted file mode " in header -> FileStatus.DELETED
+            else -> FileStatus.MODIFIED
+        }
+        val binary = "\nBinary files " in header
+        val file = ChangedFile(status, path, null, null, "100644", "100644", if (binary) null else 0, 0)
+        val parsed = PatchParser.parse(bytes, listOf(file)).firstOrNull() ?: FileDiff(file, emptyList())
+        if (binary) return Result.Success(parsed)
+        val lines = parsed.hunks.flatMap { it.lines }
+        return Result.Success(
+            parsed.copy(
+                file = parsed.file.copy(
+                    additions = lines.count { it.kind == DiffLine.Kind.ADDED },
+                    deletions = lines.count { it.kind == DiffLine.Kind.REMOVED },
+                ),
+            ),
+        )
+    }
+
+    /** The patch from [snapshot] to the working file, through a copy of the index updated for [path] alone. */
+    private suspend fun patchToNow(
+        repository: Path,
+        snapshot: ObjectId,
+        path: String,
+        contextLines: Int,
+    ): Result<ByteArray> {
+        val where = locate(repository).orReturn { return it }
+        return TempIndex.scope(where.gitDir) { index ->
+            val copied = copyIndex(where.gitDir.resolve("index"), index.file)
+            if (copied is Result.Failure) return@scope copied
+            runner.run(UpdateIndexCommand(index.environment), repository, pathspecInput(listOf(path)))
+                .orReturn { return@scope it }
+            runner.run(SnapshotDiffCommand(snapshot, path, contextLines, index.environment), repository)
+        }
+    }
+
     override suspend fun searchPaths(repository: Path, query: String): Result<List<SnapshotHit>> {
         val where = locate(repository).orReturn { return it }
         if (runner.run(ResolveCommand(where.ref), repository).orReturn { return it } == null) {
@@ -218,7 +295,7 @@ internal class GitLocalHistoryRepository(
         hunks: Set<Int>,
         contextLines: Int,
     ): Result<Unit> {
-        val diff = runner.run(SnapshotDiffCommand(snapshot, path, contextLines), repository).orReturn { return it }
+        val diff = patchToNow(repository, snapshot, path, contextLines).orReturn { return it }
         val section = RawPatchParser.parse(diff).firstOrNull() ?: return Result.Failure(refused("$path has no changes"))
         val patch =
             try {
@@ -239,12 +316,28 @@ internal class GitLocalHistoryRepository(
         }
         // Everything the snapshot has goes back, then what was made since goes away.
         val all = runner.run(MissingPathsCommand(before.snapshot.tree, target, "AM"), repository).orReturn { return it }
+        // A file the "before restore" snapshot couldn't hold (ignored, or over the limit) must not be written over.
+        val absent = runner.run(MissingPathsCommand(target, before.snapshot.tree, "D"), repository).orReturn {
+            return it
+        }
+        unprotected(repository, all, absent.toSet())?.let { path ->
+            val reason = "$path is on disk but not in Local History (ignored, or too large), so nothing was restored"
+            return Result.Failure(GitExitException("LHST", listOf("restore"), null, "error: $reason"))
+        }
         if (all.isNotEmpty()) {
             runner.run(RestoreFromCommand(snapshot), repository, pathspecInput(all)).orReturn { return it }
         }
         deleteAll(repository, added).orReturn { return it }
         return Result.Success(before)
     }
+
+    private suspend fun unprotected(repository: Path, restored: List<String>, notHeld: Set<String>): String? =
+        withContext(Dispatchers.IO) {
+            restored.firstOrNull { path ->
+                val file = repository.resolve(path)
+                Files.exists(file, LinkOption.NOFOLLOW_LINKS) && (path in notHeld || !fits(repository, path))
+            }
+        }
 
     /** Files made since the snapshot go away; links are removed, never followed, and nothing outside the tree is touched. */
     private suspend fun deleteAll(repository: Path, paths: List<String>): Result<Unit> = withContext(Dispatchers.IO) {

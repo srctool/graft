@@ -24,10 +24,12 @@ import com.srctool.sinew.models.Result
 import com.srctool.sinew.models.SinewException
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitCancellation
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.onCompletion
 import kotlinx.coroutines.flow.onStart
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
@@ -189,6 +191,45 @@ class RepositorySessionTest {
         assertEquals(emptyMap(), service.sessions.value)
         assertEquals(0, watcher.active[app])
         assertTrue(refs.cancelled, "the running git read was cancelled")
+    }
+
+    @Test
+    fun `file changes are reported for the working tree, not for refs`() = runTest {
+        val session = started()
+        var changes = 0
+        backgroundScope.launch { session.fileChanges.collect { changes++ } }
+        runCurrent()
+        watcher.emit(app, RepoChange.RefsChanged)
+        runCurrent()
+        assertEquals(0, changes)
+        watcher.emit(app, RepoChange.StatusChanged)
+        runCurrent()
+        assertEquals(1, changes)
+    }
+
+    @Test
+    fun `what runs beside a session stops with the repository's last tab`() = runTest {
+        val windows = WindowState()
+        val running = ArrayList<RepositoryLocation>()
+        val service = RepositorySessionsService(
+            windows,
+            whileOpen = { session ->
+                running += session.location
+                try {
+                    awaitCancellation()
+                } finally {
+                    running -= session.location
+                }
+            },
+        ) { session(it) }
+        service.listen(backgroundScope)
+        val window = windows.openWindow()
+        val tab = windows.openRepository(window, app)
+        runCurrent()
+        assertEquals(listOf(app), running.toList())
+        windows.closeTab(tab)
+        runCurrent()
+        assertEquals(emptyList(), running.toList())
     }
 
     @Test

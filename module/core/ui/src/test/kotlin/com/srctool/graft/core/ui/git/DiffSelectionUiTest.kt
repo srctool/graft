@@ -17,9 +17,11 @@ import androidx.compose.ui.test.ComposeUiTest
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.assert
+import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onRoot
+import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performKeyInput
 import androidx.compose.ui.test.performSemanticsAction
 import androidx.compose.ui.test.pressKey
@@ -182,6 +184,45 @@ class DiffSelectionUiTest {
         setContent { GraftTheme(GraftThemeMode.LIGHT) { DiffViewer(document, Modifier.fillMaxSize().testTag("diff")) } }
         onNodeWithContentDescription("Added line 11: ${document.hunks[0].lines[2].text}")
             .assert(SemanticsMatcher.keyNotDefined(androidx.compose.ui.semantics.SemanticsProperties.ToggleableState))
+    }
+
+    @Test
+    fun `with hunk ticks only, lines have none and each header runs its action`() {
+        val restored = ArrayList<Int>()
+        runDesktopComposeUiTest(640, 280) {
+            val selected = Selected()
+            setContent {
+                GraftTheme(GraftThemeMode.LIGHT) {
+                    DiffViewer(
+                        document,
+                        Modifier.fillMaxSize().testTag("diff"),
+                        state = selected.state,
+                        selection = DiffSelection(
+                            selected.set,
+                            onToggleHunk = { selected.set = document.toggleHunk(it, selected.set) },
+                            onToggleLine = { selected.set = toggleLine(it, selected.set) },
+                            lines = false,
+                            hunkAction = HunkAction("Restore hunk") { restored += it },
+                        ),
+                    )
+                }
+            }
+            onNodeWithContentDescription("Added line 11: ${document.hunks[0].lines[2].text}")
+                .assert(
+                    SemanticsMatcher.keyNotDefined(androidx.compose.ui.semantics.SemanticsProperties.ToggleableState),
+                )
+            val diff = onNodeWithTag("diff")
+            diff.requestFocus()
+            diff.performKeyInput {
+                pressKey(Key.DirectionDown)
+                pressKey(Key.DirectionDown)
+                pressKey(Key.Spacebar)
+            }
+            waitForIdle()
+            assertEquals(document.changedLines(1).toSet(), selected.set, "the cursor goes from header to header")
+            onAllNodesWithText("Restore hunk")[1].performClick()
+            assertEquals(listOf(1), restored)
+        }
     }
 
     @Test

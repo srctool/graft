@@ -17,22 +17,26 @@ import com.srctool.graft.feature.workingcopy.domain.api.usecases.WorkingDiffUseC
 import com.srctool.graft.feature.workingcopy.domain.implementation.usecases.FileDraftsUseCase
 import com.srctool.graft.feature.workingcopy.domain.implementation.usecases.FilePanelStateUseCase
 import com.srctool.graft.feature.workingcopy.domain.implementation.usecases.GitCleanUseCase
+import com.srctool.graft.feature.workingcopy.domain.implementation.usecases.GitHistoryUseCase
 import com.srctool.graft.feature.workingcopy.domain.implementation.usecases.GitIgnoreUseCase
 import com.srctool.graft.feature.workingcopy.domain.implementation.usecases.GitLoadChangesUseCase
 import com.srctool.graft.feature.workingcopy.domain.implementation.usecases.GitStageChangesUseCase
 import com.srctool.graft.feature.workingcopy.domain.implementation.usecases.GitWorkingDiffUseCase
 import com.srctool.graft.feature.workingcopy.domain.implementation.usecases.GuardedCommitUseCase
 import com.srctool.graft.feature.workingcopy.domain.implementation.usecases.LoggedUndoRedoUseCase
+import com.srctool.graft.feature.workingcopy.domain.implementation.usecases.ScheduledSnapshots
 import com.srctool.graft.feature.workingcopy.domain.implementation.usecases.SnapshotUseCase
 import com.srctool.graft.feature.workingcopy.presentation.changes.ChangesViewModel
 import com.srctool.graft.feature.workingcopy.presentation.commit.CommitViewModel
+import com.srctool.graft.feature.workingcopy.presentation.history.HistoryViewModel
+import com.srctool.graft.presentation.session.AutoSnapshots
 import org.koin.core.module.Module
 import org.koin.core.module.dsl.viewModel
 import org.koin.dsl.module
 
 /**
  * The working-copy feature for Koin (ADR-28): its use cases. The data modules' Koin modules provide the repositories.
- * The snapshot scheduler is not here: the app session owns its scope and clock and builds it.
+ * [AutoSnapshots] is run by the app, once for each open repository.
  */
 public fun workingCopyFeatureKoin(): Module = module {
     factory<LoadChangesUseCase> { GitLoadChangesUseCase(get(), get(), get(), get()) }
@@ -41,12 +45,14 @@ public fun workingCopyFeatureKoin(): Module = module {
     factory<CommitChangesUseCase> { GuardedCommitUseCase(get(), get(), get()) }
     factory<UndoRedoUseCase> { LoggedUndoRedoUseCase(get()) }
     factory { SnapshotUseCase(get()) }
-    factory<LocalHistoryUseCase> { get<SnapshotUseCase>() }
+    factory<LocalHistoryUseCase> { GitHistoryUseCase(get(), get(), get()) }
     factory<BeforeRiskyOperation> { get<SnapshotUseCase>() }
+    factory<AutoSnapshots> { ScheduledSnapshots(get()) }
     factory<IgnoreUseCase> { GitIgnoreUseCase(get()) }
     factory<CleanUseCase> { GitCleanUseCase(get()) }
     viewModel { p -> ChangesViewModel(p.get(), p.get(), p.get(), get(), get(), get(), get()) }
     viewModel { p -> CommitViewModel(p.get(), p.get(), get(), get(), get(), get(), p.get(), p.get()) }
+    viewModel { p -> HistoryViewModel(p.get(), p.get(), p.get(), get()) }
     factory<StageChangesUseCase> { GitStageChangesUseCase(get(), get()) }
     factory<WorkingDiffUseCase> { GitWorkingDiffUseCase(get()) }
 }

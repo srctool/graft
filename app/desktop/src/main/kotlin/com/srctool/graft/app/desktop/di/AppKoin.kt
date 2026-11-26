@@ -18,6 +18,7 @@ import com.srctool.graft.data.git.api.repositories.RefRepository
 import com.srctool.graft.data.git.api.repositories.RepositoryAccessRepository
 import com.srctool.graft.data.git.di.gitDataKoin
 import com.srctool.graft.navigation.navigationKoin
+import com.srctool.graft.presentation.session.AutoSnapshots
 import com.srctool.graft.presentation.session.RepositorySessions
 import com.srctool.graft.presentation.window.WindowState
 import org.koin.core.module.Module
@@ -37,7 +38,13 @@ internal fun appKoin(): Module = module {
         val access = get<RepositoryAccessRepository>()
         val watcher = get<FileWatcher>()
         val writes = get<WriteQueue>()
-        RepositorySessionsService(get()) { GitRepositorySession(it, refs, access, watcher, writes) }
+        val history = get<AutoSnapshots>()
+        RepositorySessionsService(
+            get(),
+            // A bare repository has no working tree to snapshot.
+            whileOpen = { session -> session.location.workTree?.let { history.run(it, session.fileChanges) } },
+            newSession = { GitRepositorySession(it, refs, access, watcher, writes) },
+        )
     }
     single<RepositorySessions> { get<RepositorySessionsService>() }
 }

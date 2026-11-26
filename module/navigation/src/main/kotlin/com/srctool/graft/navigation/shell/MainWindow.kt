@@ -423,7 +423,9 @@ private fun TabScreen(
                             } else {
                                 RepositoryContributions(
                                     listOf(working.window),
-                                    mapOf(working.centerId to { contributed -> working.center(contributed.key) }),
+                                    working.centers.mapValues { (_, center) ->
+                                        { contributed: CenterView.Contributed -> center(contributed.key) }
+                                    },
                                 )
                             }
                         },

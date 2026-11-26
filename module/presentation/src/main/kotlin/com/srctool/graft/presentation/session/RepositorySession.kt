@@ -7,7 +7,9 @@ import com.srctool.graft.data.git.api.models.Head
 import com.srctool.graft.data.git.api.models.Ref
 import com.srctool.graft.data.git.api.models.RepositoryLocation
 import com.srctool.graft.data.git.api.models.RepositorySummary
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.emptyFlow
 
 /** The parts of a [RepoSnapshot] that refresh on their own (Architecture, "Refresh"). */
 enum class SnapshotPart {
@@ -44,6 +46,12 @@ data class RepoSnapshot(
 interface RepositorySession {
     val location: RepositoryLocation
     val snapshot: StateFlow<RepoSnapshot>
+
+    /**
+     * One value each time files in the working tree (or the index) changed, even when [snapshot] stays the same: what
+     * Local History's automatic snapshots go by. A session that doesn't watch files never emits.
+     */
+    val fileChanges: Flow<Unit> get() = emptyFlow()
 
     /** Reads [parts] again now (after a change Graft made itself, or when the user asks). */
     fun refresh(parts: Set<SnapshotPart> = SnapshotPart.entries.toSet())
