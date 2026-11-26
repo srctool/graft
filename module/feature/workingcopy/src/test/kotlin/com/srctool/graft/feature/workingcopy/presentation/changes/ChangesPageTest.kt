@@ -18,9 +18,11 @@ import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performKeyInput
+import androidx.compose.ui.test.performMouseInput
 import androidx.compose.ui.test.performSemanticsAction
 import androidx.compose.ui.test.pressKey
 import androidx.compose.ui.test.requestFocus
+import androidx.compose.ui.test.rightClick
 import androidx.compose.ui.test.runDesktopComposeUiTest
 import com.github.takahirom.roborazzi.ExperimentalRoborazziApi
 import com.srctool.graft.core.ui.git.DiffLineRef
@@ -61,6 +63,23 @@ class ChangesPageTest {
     }
 
     private val fileCount = Sample.model().sections.sumOf { it.rows.size }
+
+    @Test
+    fun `a file row's menu opens its local history`() = runDesktopComposeUiTest(360, 520) {
+        val shown = ArrayList<String?>()
+        setContent {
+            GraftTheme(GraftThemeMode.LIGHT) {
+                ChangesContent(ready(tree = false), { events += it }, history = HistoryKeys(show = { shown += it }))
+            }
+        }
+        onNodeWithContentDescription("Session.kt, modified, in src/login, unstaged")
+            .performMouseInput { rightClick() }
+        waitForIdle()
+        onNodeWithText("Local History").performClick()
+        // The menu closes first and runs the item after.
+        waitForIdle()
+        assertEquals(listOf<String?>("src/login/Session.kt"), shown)
+    }
 
     @Test
     fun `each row reads as its name, status, folder and whether it is staged`() = runDesktopComposeUiTest(360, 520) {
