@@ -46,7 +46,7 @@ class AboutPageTest {
                 "https://www.apache.org/licenses/LICENSE-2.0",
             ),
             LicenseEntry("Compose Multiplatform", "1.12.2", "Apache License, Version 2.0", null),
-            LicenseEntry("IBM Plex Sans", null, "SIL Open Font License 1.1", "https://openfontlicense.org"),
+            LicenseEntry("Inter", "4.1", "SIL Open Font License 1.1", "https://openfontlicense.org"),
             LicenseEntry("example:no-license", "1", "", null),
         )
     private val ready =
@@ -63,7 +63,7 @@ class AboutPageTest {
         page(ready)
         onNodeWithContentDescription("Third-party licenses, 4").assertExists()
         onNode(hasContentDescription("Compose Multiplatform, 1.12.2, Apache License, Version 2.0")).assertExists()
-        onNode(hasContentDescription("IBM Plex Sans, SIL Open Font License 1.1")).assertExists()
+        onNode(hasContentDescription("Inter, 4.1, SIL Open Font License 1.1")).assertExists()
         onNodeWithText("Git 2.54.0 · JDK 21.0.12 · macOS 27.0 (aarch64)").assertExists()
     }
 

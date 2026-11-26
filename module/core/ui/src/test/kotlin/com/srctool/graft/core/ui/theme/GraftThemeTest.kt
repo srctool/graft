@@ -9,6 +9,7 @@ import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.res.loadSvgPainter
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.dp
+import com.srctool.camouflage.skin.fluent.FluentTokens
 import com.srctool.graft.core.ui.l10n.GraftLocalizer
 import java.util.Locale
 import kotlin.math.max
@@ -40,11 +41,67 @@ class GraftThemeTest {
     }
 
     @Test
-    fun `Carbon's square shapes and IBM Plex Sans`() {
+    fun `Fluent's rounded shapes, Medium buttons and Inter`() {
         val theme = graftTheme(GraftThemeMode.LIGHT)
         val probe = Size(100f, 100f)
-        assertEquals(0f, theme.shapes.medium.topStart.toPx(probe, Density(1f)))
+        assertEquals(4f, theme.shapes.small.topStart.toPx(probe, Density(1f)))
+        assertEquals(32.dp, theme.components.button?.height)
         assertEquals(GraftFonts.sans, theme.typography.bodyMedium.fontFamily)
+    }
+
+    @Test
+    fun `the skin's state tokens come from Graft's palette`() {
+        for (mode in modes) {
+            val theme = graftTheme(mode)
+            val c = theme.colors
+            val t = assertNotNull(theme.tokens<FluentTokens>(), "$mode")
+            assertEquals(c.primary, t.brandBackground, "$mode")
+            assertEquals(c.onPrimary, t.neutralForegroundOnBrand, "$mode")
+            assertEquals(c.surfaceContainerHigh, t.neutralBackground1Hover, "$mode")
+            assertEquals(c.surfaceContainerHigh, t.subtleBackgroundHover, "$mode")
+            assertEquals(c.onSurface, t.neutralForeground2Hover, "$mode")
+            assertEquals(c.outline, t.neutralStroke1, "$mode")
+            assertEquals(c.outlineVariant, t.neutralStroke2, "$mode")
+            assertEquals(c.onSurface, t.strokeFocus2, "$mode")
+            assertEquals(c.surface, t.strokeFocus1, "$mode")
+        }
+    }
+
+    // The pairs Fluent's renderers draw; Camouflage's validator only knows the color roles.
+    @Test
+    fun `text stays readable on every state the tokens draw`() {
+        for (mode in modes) {
+            val theme = graftTheme(mode)
+            val c = theme.colors
+            val t = assertNotNull(theme.tokens<FluentTokens>(), "$mode")
+            val text =
+                mapOf(
+                    "on the primary button" to (t.neutralForegroundOnBrand to t.brandBackground),
+                    "on its hover" to (t.neutralForegroundOnBrand to t.brandBackgroundHover),
+                    "on its press" to (t.neutralForegroundOnBrand to t.brandBackgroundPressed),
+                    "on a hovered button" to (c.onSurface to t.neutralBackground1Hover),
+                    "on a pressed button" to (c.onSurface to t.neutralBackground1Pressed),
+                    "on a hovered subtle button" to (t.neutralForeground2Hover to t.subtleBackgroundHover),
+                    "on a pressed subtle button" to (t.neutralForeground2Hover to t.subtleBackgroundPressed),
+                    "a hovered link" to (t.brandForegroundLinkHover to c.surface),
+                    "a pressed link" to (t.brandForegroundLinkPressed to c.surface),
+                )
+            for ((what, pair) in text) {
+                val ratio = contrast(pair.first, pair.second)
+                assertTrue(ratio >= 4.5, "$mode $what: ${"%.2f".format(ratio)}:1")
+            }
+            val lines =
+                mapOf(
+                    "control stroke" to t.neutralStroke1,
+                    "hovered stroke" to t.neutralStroke1Hover,
+                    "pressed stroke" to t.neutralStroke1Pressed,
+                    "focus ring" to t.strokeFocus2,
+                )
+            for ((what, color) in lines) {
+                val ratio = contrast(color, c.surface)
+                assertTrue(ratio >= 3.0, "$mode $what: ${"%.2f".format(ratio)}:1")
+            }
+        }
     }
 
     @Test
@@ -79,14 +136,14 @@ class GraftThemeTest {
         }
         val files =
             listOf(
-                "IBMPlexSans-Regular",
-                "IBMPlexSans-Medium",
-                "IBMPlexSans-SemiBold",
+                "Inter-Regular",
+                "Inter-Medium",
+                "Inter-SemiBold",
                 "JetBrainsMono-Regular",
                 "JetBrainsMono-Bold",
             )
         files.forEach { assertNotNull(loader.getResource("graft/fonts/$it.ttf"), it) }
-        listOf("IBMPlexSans-OFL.txt", "JetBrainsMono-OFL.txt", "CarbonIcons-Apache-2.0.txt").forEach {
+        listOf("Inter-OFL.txt", "JetBrainsMono-OFL.txt", "CarbonIcons-Apache-2.0.txt").forEach {
             assertNotNull(loader.getResource("graft/licenses/$it"), it)
         }
     }

@@ -26,7 +26,7 @@ navigation3-ui = { module = "org.jetbrains.androidx.navigation3:navigation3-ui",
 lifecycle-viewmodel-navigation3 = { module = "org.jetbrains.androidx.lifecycle:lifecycle-viewmodel-navigation3", version.ref = "lifecycle-navigation3" }
 camouflage-bom = { module = "com.srctool.camouflage:camouflage-bom", version.ref = "camouflage" }
 camouflage-core = { module = "com.srctool.camouflage:camouflage-core" }
-camouflage-skin-carbon = { module = "com.srctool.camouflage:camouflage-skin-carbon" }
+camouflage-skin-fluent = { module = "com.srctool.camouflage:camouflage-skin-fluent" }
 sinew-bom = { module = "com.srctool.sinew:sinew-bom", version.ref = "sinew" }
 sinew-models = { module = "com.srctool.sinew:sinew-models" }
 sinew-exception = { module = "com.srctool.sinew:sinew-exception" }

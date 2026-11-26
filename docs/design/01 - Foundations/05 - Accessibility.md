@@ -33,8 +33,8 @@ Accessibility is part of every feature, and verified in G8. The graph needs its 
 ## General
 
 - Every action reachable by keyboard and through the command palette; focus always visible; logical tab order per pane.
-- WCAG 2.2 AA contrast in all themes, plus a high-contrast theme. The themes use Atom One colors, with a darker or lighter step of a hue wherever the published value fails AA for text ([UI Design](06%20-%20UI%20Design.md)); Camouflage's theme validator checks every pair.
-- Keyboard focus is Carbon's 2 px inset border, drawn inside the control so it never shifts the layout.
+- WCAG 2.2 AA contrast in all themes, plus a high-contrast theme. The themes use Atom One colors, with a darker or lighter step of a hue wherever the published value fails AA for text ([UI Design](06%20-%20UI%20Design.md)); Camouflage's theme validator checks every color role pair, and Graft's tests check the pairs of the skin's tokens.
+- Keyboard focus is Fluent's double stroke (a 2 px outer and a 1 px inner line), and it never shifts the layout.
 - Follows the OS text size, reduce motion and high-contrast settings.
 - No information only on hover: tooltips are also reachable by focus.
 

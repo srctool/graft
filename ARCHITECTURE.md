@@ -43,7 +43,7 @@ The shape comes from the author's architecture board and matches Sinew's App Arc
 | `:module:data:app` | profiles, settings, repositories and workspaces | store secrets outside `SecretStore` |
 | `:module:data:hosting` | provider-neutral repository interfaces and models (`ChangeRequest`, `Issue`, `Pipeline`, …), the contract test kit | mention any concrete provider |
 | `:module:data:hosting-github` | the GitHub implementation (GraphQL + REST) | leak GitHub types outside the module |
-| `:module:core:ui` | the theme (Carbon, Atom One), Graft-only shared components, the `Localizer` | contain feature logic |
+| `:module:core:ui` | the theme (Fluent, Atom One), Graft-only shared components, the `Localizer` | contain feature logic |
 | `:module:core:git` | `GitRunner`: process control, environment, write queue; the `GitException` family | call git through a shell |
 | `:module:core:network` | the configured `sinew-network` client, token source, ETag cache | log secrets |
 | `:module:core:database`, `:module:core:security`, `:module:core:preference` | the SQLite cache, `SecretStore` on the OS keychain, versioned settings files | |

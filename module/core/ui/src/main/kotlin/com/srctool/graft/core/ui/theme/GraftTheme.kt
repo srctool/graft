@@ -14,9 +14,9 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.sp
 import com.srctool.camouflage.core.provider.CamouflageProvider
 import com.srctool.camouflage.core.theme.CamoTheme
-import com.srctool.camouflage.skin.carbon.CarbonSkin
-import com.srctool.camouflage.skin.carbon.CarbonThemeFamily
-import com.srctool.camouflage.skin.carbon.carbonTheme
+import com.srctool.camouflage.skin.fluent.FluentDensity
+import com.srctool.camouflage.skin.fluent.FluentSkin
+import com.srctool.camouflage.skin.fluent.fluentTheme
 import com.srctool.graft.core.ui.l10n.GraftLocalizer
 import com.srctool.sinew.exception.Localizer
 import com.srctool.sinew.l10n.rememberSinewLocalizer
@@ -36,7 +36,7 @@ public data class GraftTokens(
     val lanes: GraftLanes,
     /** Syntax colors for code in diffs. */
     val syntax: GraftSyntax,
-    /** The 13 px step between label-01 and body-compact-01, for dense panels and the graph (UI Design). */
+    /** The 13 px step between the caption and body sizes, for dense panels and the graph (UI Design). */
     val dense: TextStyle,
     val denseStrong: TextStyle,
     /** Code and diffs. */
@@ -56,17 +56,18 @@ public object Graft {
         @Composable get() = LocalGraftLocalizer.current
 }
 
-/** The Camouflage theme for [mode]: Carbon's type, shapes and motion in IBM Plex Sans, with Atom One's colors. */
+/** The Camouflage theme for [mode]: Fluent's type ramp, shapes and motion in Inter, with Atom One's colors. */
 public fun graftTheme(mode: GraftThemeMode, systemDark: Boolean = false): CamoTheme {
     val resolved = mode.resolve(systemDark)
-    val family = if (resolved == GraftThemeMode.LIGHT) CarbonThemeFamily.White else CarbonThemeFamily.G100
     val colors =
         when (resolved) {
             GraftThemeMode.LIGHT -> GraftColors.light
             GraftThemeMode.HIGH_CONTRAST -> GraftColors.highContrast
             else -> GraftColors.dark
         }
-    return carbonTheme(family, fontFamily = GraftFonts.sans).copy(colors = colors)
+    val dark = resolved != GraftThemeMode.LIGHT
+    return fluentTheme(dark = dark, density = FluentDensity.Medium, fontFamily = GraftFonts.sans)
+        .copy(colors = colors, tokenSets = listOf(graftFluentTokens(colors, dark)))
 }
 
 internal fun GraftThemeMode.resolve(systemDark: Boolean): GraftThemeMode = when (this) {
@@ -87,7 +88,7 @@ internal fun graftTokens(mode: GraftThemeMode, density: GraftDensity): GraftToke
             GraftThemeMode.HIGH_CONTRAST -> GraftSyntax.highContrast
             else -> GraftSyntax.dark
         }
-    val dense = TextStyle(fontFamily = GraftFonts.sans, fontSize = 13.sp, lineHeight = 18.sp, letterSpacing = 0.16.sp)
+    val dense = TextStyle(fontFamily = GraftFonts.sans, fontSize = 13.sp, lineHeight = 18.sp)
     return GraftTokens(
         density = density,
         lanes = lanes,
@@ -99,7 +100,7 @@ internal fun graftTokens(mode: GraftThemeMode, density: GraftDensity): GraftToke
 }
 
 /**
- * Graft's look around [content]: Camouflage with the Carbon skin and Graft's theme, Graft's tokens, and the
+ * Graft's look around [content]: Camouflage with the Fluent skin and Graft's theme, Graft's tokens, and the
  * localizer. `:app:desktop` sets it up once per window; screenshot tests set it up per case.
  */
 @Composable
@@ -115,7 +116,7 @@ public fun GraftTheme(
     val tokens = remember(resolved, density) { graftTokens(resolved, density) }
     val appStrings = localizer ?: remember { GraftLocalizer() }
     val strings = rememberSinewLocalizer(appStrings)
-    CamouflageProvider(CarbonSkin, theme) {
+    CamouflageProvider(FluentSkin, theme) {
         CompositionLocalProvider(
             LocalGraftTokens provides tokens,
             LocalGraftLocalizer provides strings,

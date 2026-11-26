@@ -6,11 +6,11 @@ plugins {
 }
 
 dependencies {
-    // The theme and components are drawn by Camouflage's Carbon skin; screens use Camouflage too, through this
+    // The theme and components are drawn by Camouflage's Fluent skin; screens use Camouflage too, through this
     // module's provider.
     api(platform(libs.camouflage.bom))
     api(libs.camouflage.core)
-    api(libs.camouflage.skin.carbon)
+    api(libs.camouflage.skin.fluent)
     api(platform(libs.sinew.bom))
     api(libs.sinew.l10n)
     implementation(projects.module.core.exception)
