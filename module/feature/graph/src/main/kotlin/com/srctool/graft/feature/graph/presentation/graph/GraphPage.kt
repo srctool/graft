@@ -152,8 +152,18 @@ internal fun GraphContent(state: GraphState, onEvent: (GraphEvent) -> Unit, skel
         @OptIn(kotlinx.coroutines.FlowPreview::class)
         snapshotFlow { columns.snapshot() }.debounce(400).collect { onEvent(GraphEvent.ColumnsChanged(it)) }
     }
-    // The graph column is at least as wide as the widest row so far.
-    val lanesWidth = GraphLaneSpacing * minOf(state.widest, MAX_DRAWN_LANES) + 8.dp
+    // The line from the WIP row to HEAD; the layout doesn't know about it, since the WIP row isn't a commit.
+    val wip = remember(state.graph, state.rowCount, state.head, state.stashes, state.wipFiles != null) {
+        val graph = state.graph
+        if (graph == null || state.wipFiles == null) {
+            null
+        } else {
+            wipLine(graph, state.rowCount, state.head, state.stashes.mapTo(HashSet()) { it.baseRow })
+        }
+    }
+    // The graph column is at least as wide as the widest row so far, the WIP line's lane included.
+    val lanes = maxOf(state.widest, wip?.let { it.lane + 1 } ?: 0)
+    val lanesWidth = GraphLaneSpacing * minOf(lanes, MAX_DRAWN_LANES) + 8.dp
     LaunchedEffect(lanesWidth) {
         val now = columns.width("graph")
         if (now < lanesWidth) columns.resizeBy("graph", lanesWidth - now)
@@ -192,7 +202,7 @@ internal fun GraphContent(state: GraphState, onEvent: (GraphEvent) -> Unit, skel
 
                 state.rowCount == 0 && state.wipFiles == null -> Skeleton(state.phase, skeletonDelayMs)
 
-                else -> GraphTable(state, columns, onEvent, tableFocus)
+                else -> GraphTable(state, wip, columns, onEvent, tableFocus)
             }
         }
         StatusLine(state)
@@ -580,6 +590,7 @@ private fun StatusLine(state: GraphState) {
 @Composable
 private fun GraphTable(
     state: GraphState,
+    wip: WipLine?,
     columns: TableColumnsState,
     onEvent: (GraphEvent) -> Unit,
     focus: FocusRequester,
@@ -647,11 +658,11 @@ private fun GraphTable(
                 },
             ) { t ->
                 when (val e = table.entry(t)) {
-                    TableEntry.Wip -> WipRow(state, columns) { onEvent(GraphEvent.Selected(Selection.Wip)) }
+                    TableEntry.Wip -> WipRow(state, wip, columns) { onEvent(GraphEvent.Selected(Selection.Wip)) }
 
                     is TableEntry.Stash -> {
                         val select = { onEvent(GraphEvent.Selected(Selection.Stash(e.placement.entry.id))) }
-                        StashRow(state, graph ?: return@items, e.placement, columns, onSelect = select) {
+                        StashRow(state, graph ?: return@items, e.placement, wip, columns, onSelect = select) {
                             select()
                             onEvent(GraphEvent.OpenSelected)
                         }
@@ -664,6 +675,7 @@ private fun GraphTable(
                             state,
                             graph,
                             e.row,
+                            wip,
                             columns,
                             onSelect = select,
                             onOpen = {

@@ -57,28 +57,31 @@ import com.srctool.graft.feature.graph.domain.api.models.LaidOutGraph
 import com.srctool.graft.feature.graph.domain.api.usecases.GraphMatch
 
 /**
- * A laid-out row as [GraphCanvas] reads it: no copy of its edges, and passing lines asked of the layout. [wipAbove]
- * adds the top half of the line from the WIP row, which the layout doesn't know about, to HEAD's row at the top.
+ * A laid-out row as [GraphCanvas] reads it: no copy of its edges, and passing lines asked of the layout. [wip] adds
+ * the line from the WIP row, which the layout doesn't know about: passing the rows above HEAD, then into its node.
  */
 private class RowShape(
     private val row: GraphRow,
     private val graph: LaidOutGraph,
-    private val wipAbove: Boolean,
+    private val wip: WipLine?,
     /** The lane of stashes made on this commit, whose line comes in from above; -1 when it has none. */
     private val stashLane: Int = -1,
 ) : GraphRowShape {
+    private val wipEnds = wip?.headRow == row.index
+    private val wipPasses = wip != null && row.index < wip.headRow
     override val lane: Int get() = row.lane
     override val color: Int get() = row.color
     override val marker: GraphMarker get() = GraphMarker.COMMIT
-    override val width: Int get() = if (stashLane >= 0) maxOf(row.width, stashLane + 1) else row.width
-    private val extras = (if (wipAbove) 1 else 0) + (if (stashLane >= 0) 1 else 0)
+    override val width: Int
+        get() = maxOf(row.width, stashLane + 1, if (wipEnds || wipPasses) wip!!.lane + 1 else 0)
+    private val extras = (if (wipEnds) 1 else 0) + (if (stashLane >= 0) 1 else 0)
     override val edgeCount: Int get() = row.edgeCount + extras
 
     /** 0 for the WIP line, 1 for the stash line, -1 for the layout's own edges. */
     private fun extra(index: Int): Int {
         val k = index - row.edgeCount
         if (k < 0) return -1
-        return if (wipAbove && k == 0) 0 else 1
+        return if (wipEnds && k == 0) 0 else 1
     }
 
     override fun edgeKind(index: Int): LaneEdgeKind = when {
@@ -88,7 +91,7 @@ private class RowShape(
     }
 
     override fun edgeFrom(index: Int): Int = when (extra(index)) {
-        0 -> row.lane
+        0 -> wip!!.lane
         1 -> stashLane
         else -> row.edge(index).from
     }
@@ -96,12 +99,13 @@ private class RowShape(
     override fun edgeTo(index: Int): Int = if (extra(index) >= 0) row.lane else row.edge(index).to
 
     override fun edgeColor(index: Int): Int = when (extra(index)) {
-        0 -> row.color
+        0 -> wip!!.color
         1 -> STASH_COLOR
         else -> row.edge(index).color
     }
 
-    override fun through(lane: Int): Int = graph.through(row.index, lane)
+    override fun through(lane: Int): Int =
+        if (wipPasses && lane == wip!!.lane) wip.color else graph.through(row.index, lane)
 }
 
 @OptIn(ExperimentalComposeUiApi::class)
@@ -155,6 +159,7 @@ internal fun CommitRow(
     state: GraphState,
     graph: LaidOutGraph,
     index: Int,
+    wip: WipLine?,
     columns: TableColumnsState,
     onSelect: () -> Unit,
     onOpen: () -> Unit,
@@ -175,11 +180,9 @@ internal fun CommitRow(
             if (marked) ", " + graftText("graph.row.marked", "marked to compare") else ""
     val colors = Camouflage.colors
     val tokens = Graft.tokens
-    val wipAbove =
-        index == 0 && state.wipFiles != null && commit.id == state.head && state.stashes.none { it.baseRow == 0 }
     val hasStash = state.stashes.any { it.baseRow == index }
     val stashLane = if (hasStash) row.width else -1
-    val shape = remember(row, graph, wipAbove, stashLane) { RowShape(row, graph, wipAbove, stashLane) }
+    val shape = remember(row, graph, wip, stashLane) { RowShape(row, graph, wip, stashLane) }
     val selected = (state.selection as? Selection.Row)?.index == index
 
     Row(
@@ -247,31 +250,14 @@ internal fun CommitRow(
 
 /** The WIP row at the top (read-only in G1): a ring on HEAD's lane and the changed-file count. */
 @Composable
-internal fun WipRow(state: GraphState, columns: TableColumnsState, onSelect: () -> Unit) {
+internal fun WipRow(state: GraphState, wip: WipLine?, columns: TableColumnsState, onSelect: () -> Unit) {
     val files = state.wipFiles ?: return
-    val graph = state.graph
-    val head = state.head
-    // HEAD's row is near the top; its lane is the WIP row's. A line down to it is drawn only when it's the next row.
-    val headRow = if (graph != null &&
-        head != null
-    ) {
-        (0 until minOf(state.rowCount, 200)).firstOrNull { graph[it].commit.id == head }
-    } else {
-        null
-    }
-    val lane = headRow?.let { graph!![it].lane } ?: 0
-    val color = headRow?.let { graph!![it].color } ?: 0
-    val shape = remember(lane, color, headRow) {
+    // Without HEAD among the first rows there is nothing to join the ring to.
+    val shape = remember(wip) {
         SimpleGraphRow(
-            lane,
-            color,
-            if (headRow ==
-                0
-            ) {
-                listOf(LaneEdge(LaneEdgeKind.BOTTOM, lane, lane, color))
-            } else {
-                emptyList()
-            },
+            wip?.lane ?: 0,
+            wip?.color ?: 0,
+            if (wip == null) emptyList() else listOf(LaneEdge(LaneEdgeKind.BOTTOM, wip.lane, wip.lane, wip.color)),
             marker = GraphMarker.WIP,
         )
     }
@@ -394,6 +380,7 @@ internal fun StashRow(
     state: GraphState,
     graph: LaidOutGraph,
     placement: StashPlacement,
+    wip: WipLine?,
     columns: TableColumnsState,
     onSelect: () -> Unit,
     onOpen: () -> Unit,
@@ -404,7 +391,7 @@ internal fun StashRow(
     val group = state.stashes.filter { it.baseRow == placement.baseRow }
     val first = group.firstOrNull() == placement
     val shape =
-        remember(placement, base, first) {
+        remember(placement, base, first, wip) {
             // What runs past the base commit's top runs past this row too.
             val passing = HashMap<Int, Int>()
             for (l in 0 until base.width) graph.through(base.index, l).takeIf { it >= 0 }?.let { passing[l] = it }
@@ -412,6 +399,7 @@ internal fun StashRow(
                 val e = base.edge(i)
                 if (e.kind == GraphEdge.Kind.TOP) passing[e.from] = e.color
             }
+            if (wip != null && placement.baseRow <= wip.headRow) passing[wip.lane] = wip.color
             val edges = buildList {
                 if (!first) add(LaneEdge(LaneEdgeKind.TOP, lane, lane, STASH_COLOR))
                 add(LaneEdge(LaneEdgeKind.BOTTOM, lane, lane, STASH_COLOR))

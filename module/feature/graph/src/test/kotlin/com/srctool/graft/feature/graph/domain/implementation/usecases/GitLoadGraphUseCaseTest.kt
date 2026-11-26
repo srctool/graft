@@ -11,6 +11,7 @@ import com.srctool.graft.data.git.api.models.LogScope
 import com.srctool.graft.data.git.api.models.ObjectId
 import com.srctool.graft.data.git.api.models.People
 import com.srctool.graft.data.git.api.repositories.CommitRepository
+import com.srctool.graft.feature.graph.domain.api.models.GraphFilter
 import com.srctool.graft.feature.graph.domain.api.models.GraphLoad
 import com.srctool.graft.feature.graph.domain.api.usecases.LoadGraphUseCase.Companion.FIRST_BATCH_ROWS
 import com.srctool.sinew.models.Result
@@ -62,6 +63,21 @@ class GitLoadGraphUseCaseTest {
             assertEquals(expected.edges(), row.edges())
         }
         assertEquals(plain.widest, loaded.graph.widest)
+    }
+
+    @Test
+    fun `first parent only draws no line toward the parents the log leaves out`() = runTest {
+        // What `git log --first-parent` prints: the main line, each merge still naming the branch it merged.
+        val mainLine = LaneLayoutTest.history("M2: M1 B2", "M1: M0 B1", "M0:", "B2:", "B1:").take(3)
+        val graph =
+            useCase(mainLine.asFlow(), StandardTestDispatcher(testScheduler))
+                .load(repo, GraphFilter(firstParent = true))
+                .toList()
+                .last()
+                .graph
+        assertEquals(1, graph.widest)
+        for (row in 0 until graph.size) assertEquals(-1, graph.through(row, 1), "row $row")
+        assertEquals(2, graph[0].commit.parents.size, "the commit is still a merge")
     }
 
     @Test
