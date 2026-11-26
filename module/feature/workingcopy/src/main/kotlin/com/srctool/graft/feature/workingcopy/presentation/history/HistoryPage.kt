@@ -62,6 +62,8 @@ import com.srctool.camouflage.core.button.CamoButton
 import com.srctool.camouflage.core.dialog.CamoDialog
 import com.srctool.camouflage.core.dialog.CamoDialogFrame
 import com.srctool.camouflage.core.provider.Camouflage
+import com.srctool.camouflage.core.segmented.CamoSegmentedControl
+import com.srctool.camouflage.core.segmented.Segment
 import com.srctool.camouflage.core.skeleton.CamoSkeleton
 import com.srctool.camouflage.core.text.CamoText
 import com.srctool.camouflage.core.textfield.CamoTextField
@@ -237,28 +239,20 @@ private fun Header(state: HistoryState, onEvent: (HistoryEvent) -> Unit) {
                 onEvent(HistoryEvent.AllFilesAsked)
             }
         } else {
-            Choice(graftText("history.timeline", "Timeline"), state.view == HistoryView.TIMELINE) {
-                onEvent(HistoryEvent.ViewChosen(HistoryView.TIMELINE))
-            }
-            Choice(graftText("history.deleted", "Deleted files"), state.view == HistoryView.DELETED) {
-                onEvent(HistoryEvent.ViewChosen(HistoryView.DELETED))
-            }
+            CamoSegmentedControl(
+                listOf(
+                    Segment(HistoryView.TIMELINE, graftText("history.timeline", "Timeline")),
+                    Segment(HistoryView.DELETED, graftText("history.deleted", "Deleted files")),
+                ),
+                selected = state.view,
+                onSelectionChange = { onEvent(HistoryEvent.ViewChosen(it)) },
+                modifier = Modifier.height(density.control),
+            )
         }
         Button(graftText("history.snapshotNow", "Snapshot now…"), enabled = state.busy == null) {
             onEvent(HistoryEvent.SnapshotAsked)
         }
     }
-}
-
-/** One of two choices; the chosen one is solid and reads as selected. */
-@Composable
-private fun Choice(text: String, chosen: Boolean, onClick: () -> Unit) {
-    Button(
-        text,
-        if (chosen) Appearance.Outline else Appearance.Ghost,
-        Modifier.semantics { selected = chosen },
-        onClick = onClick,
-    )
 }
 
 @Composable
@@ -277,12 +271,15 @@ private fun SearchBar(state: HistoryState, onEvent: (HistoryEvent) -> Unit) {
             label = label,
             onKeyboardAction = KeyboardActionHandler { onEvent(HistoryEvent.SearchRun) },
         )
-        Choice(graftText("history.paths", "Paths"), state.kind == HistorySearch.PATHS) {
-            onEvent(HistoryEvent.KindChosen(HistorySearch.PATHS))
-        }
-        Choice(graftText("history.text", "Text"), state.kind == HistorySearch.TEXT) {
-            onEvent(HistoryEvent.KindChosen(HistorySearch.TEXT))
-        }
+        CamoSegmentedControl(
+            listOf(
+                Segment(HistorySearch.PATHS, graftText("history.paths", "Paths")),
+                Segment(HistorySearch.TEXT, graftText("history.text", "Text")),
+            ),
+            selected = state.kind,
+            onSelectionChange = { onEvent(HistoryEvent.KindChosen(it)) },
+            modifier = Modifier.height(Graft.tokens.density.control),
+        )
         Button(graftText("history.find", "Search"), enabled = !state.searching) { onEvent(HistoryEvent.SearchRun) }
     }
 }
