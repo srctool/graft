@@ -3,8 +3,6 @@
 
 package com.srctool.graft.feature.workingcopy.presentation.changes
 
-import androidx.compose.foundation.ContextMenuArea
-import androidx.compose.foundation.ContextMenuItem
 import androidx.compose.foundation.background
 import androidx.compose.foundation.focusable
 import androidx.compose.foundation.gestures.detectTapGestures
@@ -65,6 +63,8 @@ import com.srctool.camouflage.core.dialog.CamoDialog
 import com.srctool.camouflage.core.dialog.CamoDialogFrame
 import com.srctool.camouflage.core.icon.CamoIcon
 import com.srctool.camouflage.core.iconbutton.CamoIconButton
+import com.srctool.camouflage.core.menu.CamoContextMenuArea
+import com.srctool.camouflage.core.menu.CamoMenuItem
 import com.srctool.camouflage.core.provider.Camouflage
 import com.srctool.camouflage.core.skeleton.CamoSkeleton
 import com.srctool.camouflage.core.text.CamoText
@@ -240,7 +240,7 @@ private fun Lines(
         itemsIndexed(state.lines, key = { _, line -> line.key }) { index, line ->
             if (line is PanelLine.File) {
                 val label = graftText("history.title", "Local History")
-                ContextMenuArea(items = { listOf(ContextMenuItem(label) { history.show(line.row.path) }) }) {
+                CamoContextMenuArea(listOf(CamoMenuItem(label, onClick = { history.show(line.row.path) }))) {
                     LineRow(line, index == state.cursor, state, index, onEvent, onOpenSubmodule)
                 }
             } else {

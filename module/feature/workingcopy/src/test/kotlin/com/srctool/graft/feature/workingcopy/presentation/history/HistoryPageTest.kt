@@ -20,6 +20,7 @@ import com.github.takahirom.roborazzi.ExperimentalRoborazziApi
 import com.srctool.graft.core.ui.theme.GraftTheme
 import com.srctool.graft.core.ui.theme.GraftThemeMode
 import com.srctool.graft.data.git.api.models.SnapshotHit
+import com.srctool.graft.feature.workingcopy.domain.api.models.HistorySearch
 import com.srctool.graft.feature.workingcopy.domain.api.models.RestoreRecord
 import com.srctool.graft.feature.workingcopy.domain.failure
 import io.github.takahirom.roborazzi.captureRoboImage
@@ -76,6 +77,16 @@ class HistoryPageTest {
                 HistoryEvent.HunkRestored(0),
                 HistoryEvent.TickedRestored,
             ),
+            events,
+        )
+    }
+
+    @Test
+    fun `the two switches report the view and the kind of search`() = test(ready) {
+        onNodeWithText("Deleted files").performClick()
+        onNodeWithText("Text").performClick()
+        assertEquals(
+            listOf(HistoryEvent.ViewChosen(HistoryView.DELETED), HistoryEvent.KindChosen(HistorySearch.TEXT)),
             events,
         )
     }
