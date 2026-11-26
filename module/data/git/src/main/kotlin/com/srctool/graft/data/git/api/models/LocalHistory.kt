@@ -28,6 +28,9 @@ public data class SnapshotResult(
 /** A file as one snapshot has it. [blob] is null when the snapshot no longer has the file (it was deleted). */
 public data class FileVersion(val snapshot: Snapshot, val blob: ObjectId?)
 
+/** A file some snapshot has and the working tree no longer does; [lastSeen] is the newest snapshot with it. */
+public data class DeletedFile(val path: String, val lastSeen: Snapshot)
+
 /** A snapshot a search found, with the paths that matched in it. */
 public data class SnapshotHit(val snapshot: Snapshot, val paths: List<String>)
 

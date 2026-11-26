@@ -17,9 +17,13 @@ import com.srctool.sinew.models.Result
 import com.srctool.sinew.presentation.AppService
 import com.srctool.sinew.presentation.ServiceLifetime
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.channels.BufferOverflow
 import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
@@ -43,6 +47,10 @@ internal class GitRepositorySession(
     private val state = MutableStateFlow(RepoSnapshot(location))
     override val snapshot: StateFlow<RepoSnapshot> = state.asStateFlow()
 
+    private val changes =
+        MutableSharedFlow<Unit>(extraBufferCapacity = 1, onBufferOverflow = BufferOverflow.DROP_OLDEST)
+    override val fileChanges: SharedFlow<Unit> = changes.asSharedFlow()
+
     private val requests = SnapshotPart.entries.associateWith { Channel<Unit>(Channel.CONFLATED) }
 
     /** The folder git runs in: the working tree, or a bare repository's git folder. */
@@ -64,6 +72,8 @@ internal class GitRepositorySession(
     }
 
     private fun onChange(change: RepoChange) {
+        // A ref or an operation moving is not a file changing; a full refresh may hide one, so it counts.
+        if (change == RepoChange.StatusChanged || change is RepoChange.FullRefresh) changes.tryEmit(Unit)
         when (change) {
             // A ref move can change HEAD and its upstream's ahead/behind too.
             RepoChange.RefsChanged -> refresh()

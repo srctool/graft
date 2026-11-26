@@ -4,6 +4,8 @@
 package com.srctool.graft.data.git.api.repositories
 
 import com.srctool.graft.data.git.api.models.ChangedFile
+import com.srctool.graft.data.git.api.models.DeletedFile
+import com.srctool.graft.data.git.api.models.FileDiff
 import com.srctool.graft.data.git.api.models.FileVersion
 import com.srctool.graft.data.git.api.models.ObjectId
 import com.srctool.graft.data.git.api.models.Snapshot
@@ -37,6 +39,20 @@ public interface LocalHistoryRepository {
 
     /** Files [snapshot] has that the working tree no longer has. */
     public suspend fun deletedSince(repository: Path, snapshot: ObjectId): Result<List<String>>
+
+    /** Every file the history has that the working tree no longer has, the most recently seen first. */
+    public suspend fun deletedFiles(repository: Path): Result<List<DeletedFile>>
+
+    /**
+     * How the working file at [path] differs from [snapshot]'s: null when it doesn't. A file git doesn't track is
+     * compared like any other, and so is one that has grown past the snapshot size limit.
+     */
+    public suspend fun diffToNow(
+        repository: Path,
+        snapshot: ObjectId,
+        path: String,
+        contextLines: Int = 3,
+    ): Result<FileDiff?>
 
     /** Snapshots in which a path containing [query] (any case) was added, changed or removed. */
     public suspend fun searchPaths(repository: Path, query: String): Result<List<SnapshotHit>>

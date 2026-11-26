@@ -3,22 +3,69 @@
 
 package com.srctool.graft.feature.workingcopy.domain.api.usecases
 
+import com.srctool.graft.data.git.api.models.ChangedFile
+import com.srctool.graft.data.git.api.models.DeletedFile
+import com.srctool.graft.data.git.api.models.FileVersion
 import com.srctool.graft.data.git.api.models.ObjectId
+import com.srctool.graft.data.git.api.models.Snapshot
+import com.srctool.graft.data.git.api.models.SnapshotHit
 import com.srctool.graft.data.git.api.models.SnapshotResult
+import com.srctool.graft.data.git.api.repositories.FileContents
+import com.srctool.graft.feature.workingcopy.domain.api.models.HistoryDiff
+import com.srctool.graft.feature.workingcopy.domain.api.models.HistorySearch
+import com.srctool.graft.feature.workingcopy.domain.api.models.RestoreOutcome
+import com.srctool.graft.feature.workingcopy.domain.api.models.RestoreRecord
+import com.srctool.graft.feature.workingcopy.domain.api.models.UndoRestoreOutcome
 import com.srctool.graft.feature.workingcopy.domain.api.models.WorkingCopy
 import com.srctool.sinew.models.Result
 
-/** Snapshot now and the restores (Local History). A restore of everything snapshots first, in the data layer. */
+/**
+ * Local History (S11): reading the snapshots, and putting things back. Every restore takes a "before restore" snapshot
+ * first and changes nothing if the current content couldn't be got back from it.
+ */
 internal interface LocalHistoryUseCase {
+    /** The snapshots, newest first. */
+    suspend fun timeline(workingCopy: WorkingCopy): Result<List<Snapshot>>
+
+    /** What [snapshot] changed against the one before it. */
+    suspend fun changes(workingCopy: WorkingCopy, snapshot: ObjectId): Result<List<ChangedFile>>
+
+    /** The snapshots in which [path] changed, newest first. */
+    suspend fun versions(workingCopy: WorkingCopy, path: String): Result<List<FileVersion>>
+
+    suspend fun search(workingCopy: WorkingCopy, query: String, kind: HistorySearch): Result<List<SnapshotHit>>
+
+    /** Files the history has and the working copy doesn't. */
+    suspend fun deleted(workingCopy: WorkingCopy): Result<List<DeletedFile>>
+
+    /** The file as [snapshot] had it against the file now; over [limit] bytes only when [anyway]. */
+    suspend fun diff(
+        workingCopy: WorkingCopy,
+        snapshot: ObjectId,
+        path: String,
+        anyway: Boolean = false,
+        limit: Long = FileContents.DEFAULT_MAX_BYTES,
+    ): Result<HistoryDiff>
+
     /** A labelled snapshot is always made; an unlabelled one only when the tree changed since the last. */
     suspend fun snapshotNow(workingCopy: WorkingCopy, label: String? = null): Result<SnapshotResult>
 
-    suspend fun restoreFile(workingCopy: WorkingCopy, snapshot: ObjectId, path: String): Result<Unit>
+    suspend fun restoreFile(workingCopy: WorkingCopy, snapshot: ObjectId, path: String): Result<RestoreOutcome>
 
-    suspend fun restoreHunks(workingCopy: WorkingCopy, snapshot: ObjectId, path: String, hunks: Set<Int>): Result<Unit>
+    /** [hunks] are positions in the diff [diff] returns. */
+    suspend fun restoreHunks(
+        workingCopy: WorkingCopy,
+        snapshot: ObjectId,
+        path: String,
+        hunks: Set<Int>,
+    ): Result<RestoreOutcome>
 
-    /** Returns the snapshot taken of the current state first, so the restore can be undone. */
-    suspend fun restoreAll(workingCopy: WorkingCopy, snapshot: ObjectId): Result<SnapshotResult>
+    suspend fun restoreAll(workingCopy: WorkingCopy, snapshot: ObjectId): Result<RestoreOutcome>
+
+    suspend fun undo(workingCopy: WorkingCopy, record: RestoreRecord): Result<UndoRestoreOutcome>
+
+    /** Takes [path] out of every snapshot (Threat Model T16); returns how many held it. Can't be undone. */
+    suspend fun purge(workingCopy: WorkingCopy, path: String): Result<Int>
 }
 
 /** Graft operations that can delete or overwrite uncommitted work, and so need a snapshot before them. */

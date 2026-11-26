@@ -21,7 +21,11 @@ import com.srctool.graft.feature.workingcopy.domain.api.models.WorkingCopy
 import com.srctool.graft.feature.workingcopy.presentation.commit.CommitBoxPage
 import com.srctool.graft.feature.workingcopy.presentation.commit.CommitEvent
 import com.srctool.graft.feature.workingcopy.presentation.commit.CommitViewModel
+import com.srctool.graft.feature.workingcopy.presentation.history.HistoryEvent
+import com.srctool.graft.feature.workingcopy.presentation.history.HistoryPage
+import com.srctool.graft.feature.workingcopy.presentation.history.HistoryViewModel
 import com.srctool.graft.presentation.session.RepositorySession
+import com.srctool.graft.presentation.view.CenterView
 import com.srctool.graft.presentation.view.RepositoryViewState
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
@@ -35,9 +39,8 @@ import java.nio.file.Path
  */
 public class WorkingCopyContributions internal constructor(
     public val window: ToolWindow,
-    /** The `CenterView.Contributed` id [center] draws. */
-    public val centerId: String,
-    public val center: @Composable (key: String) -> Unit,
+    /** What each `CenterView.Contributed` id draws, given its key: the working diff and Local History. */
+    public val centers: Map<String, @Composable (key: String) -> Unit>,
 )
 
 /** The id of the Changes tool window; the saved dock layout is keyed by it. */
@@ -71,7 +74,13 @@ public fun rememberWorkingCopyContributions(
             parametersOf(copy, session, lists, { path: String -> viewModel.onEvent(ChangesEvent.StagedShown(path)) })
         }
     val summaryFocus = remember(commit) { FocusRequester() }
-    return remember(viewModel, commit, workTree, title) {
+    val history = koinViewModel<HistoryViewModel>(viewModelStoreOwner = owner) { parametersOf(copy, session, shared) }
+    return remember(viewModel, commit, history, workTree, title) {
+        // Local History for one file, or the whole working copy (an empty key).
+        val showHistory = { path: String? ->
+            shared.center.value =
+                CenterView.Contributed(HistoryViewModel.CENTER, path.orEmpty(), back = CenterView.Graph)
+        }
         WorkingCopyContributions(
             window = ToolWindow(CHANGES_WINDOW, title, GraftIcon.COMMIT, DockSide.RIGHT) {
                 Column(Modifier.fillMaxSize()) {
@@ -79,6 +88,14 @@ public fun rememberWorkingCopyContributions(
                         ChangesPage(
                             viewModel,
                             onOpenSubmodule = { path -> onOpenRepository(workTree.resolve(path)) },
+                            onShowHistory = showHistory,
+                            onSnapshotNow = {
+                                // The dialog and its toast are Local History's, so the screen comes up with it.
+                                val center = shared.center.value
+                                val showing = center is CenterView.Contributed && center.id == HistoryViewModel.CENTER
+                                if (!showing) showHistory(null)
+                                history.onEvent(HistoryEvent.SnapshotAsked)
+                            },
                             onCommitKey = { amend ->
                                 if (amend) commit.onEvent(CommitEvent.AmendToggled(true))
                                 runCatching { summaryFocus.requestFocus() }
@@ -88,8 +105,10 @@ public fun rememberWorkingCopyContributions(
                     CommitBoxPage(commit, summaryFocus)
                 }
             },
-            centerId = ChangesViewModel.DIFF_CENTER,
-            center = { _ -> WorkingDiffPage(viewModel) },
+            centers = mapOf(
+                ChangesViewModel.DIFF_CENTER to { _ -> WorkingDiffPage(viewModel) },
+                HistoryViewModel.CENTER to { key -> HistoryPage(history, key.ifEmpty { null }) },
+            ),
         )
     }
 }

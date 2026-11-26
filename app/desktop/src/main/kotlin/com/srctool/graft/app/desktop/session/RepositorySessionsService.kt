@@ -32,6 +32,8 @@ import java.util.concurrent.ConcurrentHashMap
  */
 internal class RepositorySessionsService(
     private val windows: WindowState,
+    /** Runs beside each open session and is cancelled with it (Local History's automatic snapshots). */
+    private val whileOpen: suspend (RepositorySession) -> Unit = {},
     private val newSession: (RepositoryLocation) -> GitRepositorySession,
 ) : AppService(ServiceLifetime.App),
     RepositorySessions {
@@ -73,6 +75,7 @@ internal class RepositorySessionsService(
             session.init()
             session.listen(sessionScope)
         }
+        sessionScope.launch { whileOpen(session) }
         running[location] = Running(session, job)
     }
 

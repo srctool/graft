@@ -217,6 +217,33 @@ internal class SnapshotPathsCommand(ref: String, filter: String?) : GitCommand<L
     }
 }
 
+/** Every path each snapshot changed, newest first, with git's letter for how (`A`, `M`, `D`, `T`). */
+internal class SnapshotStatusCommand(ref: String) : GitCommand<List<Pair<ObjectId, List<Pair<Char, String>>>>>() {
+    override val function = "LSTA"
+    override val args =
+        listOf("log", "-z", "--root", "--format=%x1e%H", "--name-status", "--no-renames", ref, "--")
+
+    override fun parse(stdout: ByteArray): List<Pair<ObjectId, List<Pair<Char, String>>>> {
+        val out = ArrayList<Pair<ObjectId, MutableList<Pair<Char, String>>>>()
+        var status: Char? = null
+        // After a record's id the NUL-separated tokens alternate: a status letter, then its path.
+        GitText.decode(stdout).split('\u0000').forEach { token ->
+            val letter = status
+            when {
+                letter != null -> {
+                    out.lastOrNull()?.second?.add(letter to token)
+                    status = null
+                }
+
+                token.startsWith(RECORD) -> out += objectId(token.drop(1).trim()) to ArrayList()
+
+                token.isNotBlank() -> status = token.trim().first()
+            }
+        }
+        return out
+    }
+}
+
 /** Paths [from] has that [to] lacks (`--diff-filter=D` when [from] is the older tree). */
 internal class MissingPathsCommand(from: ObjectId, to: ObjectId, filter: String) : GitCommand<List<String>>() {
     override val function = "DTRE"
@@ -238,15 +265,19 @@ internal class RestoreFromCommand(source: ObjectId) : GitCommand<Unit>() {
     override fun parse(stdout: ByteArray) = Unit
 }
 
-/** The diff from [snapshot]'s file to the working file, for taking hunks back. */
-internal class SnapshotDiffCommand(snapshot: ObjectId, path: String, contextLines: Int) : GitCommand<ByteArray>() {
+/**
+ * The diff from [snapshot]'s file to the working file, read through a scratch index holding that file as it is now:
+ * against the user's index a file git doesn't track would read as deleted.
+ */
+internal class SnapshotDiffCommand(snapshot: ObjectId, path: String, contextLines: Int, index: Map<String, String?>) :
+    GitCommand<ByteArray>() {
     override val function = "DIFF"
     override val args =
         listOf(
-            "diff", snapshot.hex, "-p", "--no-color", "--no-ext-diff", "--no-textconv", "--src-prefix=a/",
+            "diff", "--cached", snapshot.hex, "-p", "--no-color", "--no-ext-diff", "--no-textconv", "--src-prefix=a/",
             "--dst-prefix=b/", "--no-renames", "--unified=$contextLines", "--", path,
         )
-    override val environment = mapOf("GIT_LITERAL_PATHSPECS" to "1")
+    override val environment = index + ("GIT_LITERAL_PATHSPECS" to "1")
 
     override fun parse(stdout: ByteArray): ByteArray = stdout
 }

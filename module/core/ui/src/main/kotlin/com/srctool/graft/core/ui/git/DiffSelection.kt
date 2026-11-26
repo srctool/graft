@@ -16,13 +16,22 @@ public enum class DiffCheck { NONE, PARTIAL, ALL }
  * What a [DiffViewer] needs to show hunk and line checkboxes: the lines ticked now ([selected]) and what to tell the
  * owner when the user toggles a hunk or a line. The viewer keeps no selection of its own and runs no git; the Changes
  * panel and Local History's restore hunk own it and decide what a tick means (stage, restore).
+ *
+ * With [lines] false only hunk headers can be ticked (Local History restores whole hunks). [hunkAction] adds a one-click
+ * action to each hunk header.
  */
 @Immutable
 public class DiffSelection(
     public val selected: Set<DiffLineRef>,
     public val onToggleHunk: (hunk: Int) -> Unit,
     public val onToggleLine: (DiffLineRef) -> Unit,
+    public val lines: Boolean = true,
+    public val hunkAction: HunkAction? = null,
 )
+
+/** What a hunk header's own action says and does. */
+@Immutable
+public class HunkAction(public val label: String, public val run: (hunk: Int) -> Unit)
 
 /** The changed (added or removed) lines of hunk [hunk]: the ones that can be ticked. Context lines can't. */
 public fun DiffDocument.changedLines(hunk: Int): List<DiffLineRef> =

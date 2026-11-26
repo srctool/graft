@@ -3,6 +3,8 @@
 
 package com.srctool.graft.feature.workingcopy.presentation.changes
 
+import androidx.compose.foundation.ContextMenuArea
+import androidx.compose.foundation.ContextMenuItem
 import androidx.compose.foundation.background
 import androidx.compose.foundation.focusable
 import androidx.compose.foundation.gestures.detectTapGestures
@@ -83,10 +85,12 @@ internal fun ChangesPage(
     viewModel: ChangesViewModel,
     onOpenSubmodule: (path: String) -> Unit = {},
     onCommitKey: (amend: Boolean) -> Unit = {},
+    onShowHistory: (path: String?) -> Unit = {},
+    onSnapshotNow: () -> Unit = {},
 ) {
     val state by viewModel.state.collectAsState()
     LaunchedEffect(viewModel) { viewModel.onEvent(ChangesEvent.Opened) }
-    ChangesContent(state, viewModel::onEvent, onOpenSubmodule, onCommitKey)
+    ChangesContent(state, viewModel::onEvent, onOpenSubmodule, onCommitKey, HistoryKeys(onShowHistory, onSnapshotNow))
 }
 
 /** The Changes panel without its view model, for screenshot tests. */
@@ -96,10 +100,11 @@ internal fun ChangesContent(
     onEvent: (ChangesEvent) -> Unit,
     onOpenSubmodule: (path: String) -> Unit = {},
     onCommitKey: (amend: Boolean) -> Unit = {},
+    history: HistoryKeys = HistoryKeys(),
 ) {
     val colors = Camouflage.colors
     Column(Modifier.fillMaxSize().background(colors.surface)) {
-        Header(state, onEvent)
+        Header(state, onEvent, history)
         Box(Modifier.weight(1f).fillMaxWidth()) {
             when {
                 state.phase == ChangesState.Phase.Loading -> Skeletons()
@@ -114,7 +119,7 @@ internal fun ChangesContent(
                     retry = false,
                 )
 
-                else -> Lines(state, onEvent, onOpenSubmodule, onCommitKey)
+                else -> Lines(state, onEvent, onOpenSubmodule, onCommitKey, history)
             }
         }
         Footer(state, onEvent)
@@ -123,8 +128,11 @@ internal fun ChangesContent(
     if (state.outputShown) OutputDialog(state.error, onEvent)
 }
 
+/** The ways into Local History from the panel: for a file or everything, and Snapshot now. */
+internal class HistoryKeys(val show: (path: String?) -> Unit = {}, val snapshot: () -> Unit = {})
+
 @Composable
-private fun Header(state: ChangesState, onEvent: (ChangesEvent) -> Unit) {
+private fun Header(state: ChangesState, onEvent: (ChangesEvent) -> Unit, history: HistoryKeys) {
     val colors = Camouflage.colors
     val density = Graft.tokens.density
     val counts = counts(state)
@@ -142,6 +150,9 @@ private fun Header(state: ChangesState, onEvent: (ChangesEvent) -> Unit) {
             overflow = TextOverflow.Ellipsis,
             modifier = Modifier.weight(1f),
         )
+        PanelButton(GraftIcon.RECENTLY_VIEWED, graftText("history.title", "Local History"), enabled = true) {
+            history.show(null)
+        }
         val tree = graftText("changes.tree", "Show as tree")
         val flat = graftText("changes.flat", "Show as list")
         PanelButton(
@@ -188,6 +199,7 @@ private fun Lines(
     onEvent: (ChangesEvent) -> Unit,
     onOpenSubmodule: (String) -> Unit,
     onCommitKey: (Boolean) -> Unit,
+    history: HistoryKeys,
 ) {
     val colors = Camouflage.colors
     val list = rememberLazyListState()
@@ -208,7 +220,7 @@ private fun Lines(
         Modifier
             .fillMaxSize()
             .alpha(if (state.refreshing) DIMMED else 1f)
-            .onPreviewKeyEvent { event -> onListKey(event, state, onEvent, onCommitKey) }
+            .onPreviewKeyEvent { event -> onListKey(event, state, onEvent, onCommitKey, history) }
             .focusable(interactionSource = interaction)
             .semantics { contentDescription = label }
             .drawWithContent {
@@ -226,7 +238,14 @@ private fun Lines(
         state = list,
     ) {
         itemsIndexed(state.lines, key = { _, line -> line.key }) { index, line ->
-            LineRow(line, index == state.cursor, state, index, onEvent, onOpenSubmodule)
+            if (line is PanelLine.File) {
+                val label = graftText("history.title", "Local History")
+                ContextMenuArea(items = { listOf(ContextMenuItem(label) { history.show(line.row.path) }) }) {
+                    LineRow(line, index == state.cursor, state, index, onEvent, onOpenSubmodule)
+                }
+            } else {
+                LineRow(line, index == state.cursor, state, index, onEvent, onOpenSubmodule)
+            }
         }
     }
 }
@@ -236,6 +255,7 @@ private fun onListKey(
     state: ChangesState,
     onEvent: (ChangesEvent) -> Unit,
     onCommitKey: (Boolean) -> Unit,
+    history: HistoryKeys,
 ): Boolean {
     if (event.type != KeyEventType.KeyDown) return false
     val mod = event.isMetaPressed || event.isCtrlPressed
@@ -246,6 +266,15 @@ private fun onListKey(
     }
     val index = state.cursor
     val line = state.lines.getOrNull(index)
+    // Alt+Shift+H: the file's local history; Mod+Alt+Y: snapshot now (Keyboard Shortcuts).
+    if (!mod && event.isAltPressed && event.isShiftPressed && event.key == Key.H) {
+        history.show((line as? PanelLine.File)?.row?.path)
+        return true
+    }
+    if (mod && event.isAltPressed && event.key == Key.Y) {
+        history.snapshot()
+        return true
+    }
     val handled: ChangesEvent =
         when {
             mod && event.isAltPressed && event.key == Key.Z -> ChangesEvent.DiscardAsked(index)

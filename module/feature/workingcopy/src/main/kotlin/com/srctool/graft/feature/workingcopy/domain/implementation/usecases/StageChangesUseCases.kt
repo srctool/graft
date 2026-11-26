@@ -23,7 +23,6 @@ import com.srctool.graft.feature.workingcopy.domain.api.usecases.WorkingDiffUseC
 import com.srctool.sinew.models.Result
 import java.nio.file.Files
 import java.nio.file.Path
-import java.security.MessageDigest
 
 internal class GitStageChangesUseCase(
     private val staging: StagingRepository,
@@ -59,16 +58,6 @@ internal class GitStageChangesUseCase(
             (history.restoreFile(workingCopy.path, snapshot, path) as? Result.Failure)?.let { return it }
         }
         return Result.Success(UndoDiscardOutcome.Restored)
-    }
-
-    private fun fingerprint(file: Path): String? = try {
-        if (!Files.isRegularFile(file)) {
-            null
-        } else {
-            MessageDigest.getInstance("SHA-256").digest(Files.readAllBytes(file)).joinToString("") { "%02x".format(it) }
-        }
-    } catch (_: java.io.IOException) {
-        null
     }
 }
 

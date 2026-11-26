@@ -4,6 +4,7 @@
 package com.srctool.graft.core.ui.git
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.focusable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsFocusedAsState
@@ -79,6 +80,9 @@ public class DiffViewerState {
     internal var starts: List<Int> = emptyList()
     internal var rows: List<DiffRow> = emptyList()
 
+    /** Whether line rows have checkboxes, so the cursor stops on them. */
+    internal var lineTicks: Boolean = true
+
     /**
      * The row the checkbox keys act on (a hunk header or a changed line), as an index into the drawn rows, or -1.
      * Only moves while the viewer has a [DiffSelection]: Up and Down go to the next row that has a checkbox.
@@ -89,7 +93,7 @@ public class DiffViewerState {
     /** Up (-1) or Down (1): moves [cursor] to the next row with a checkbox; stays put at either end. */
     public suspend fun moveCursor(direction: Int) {
         var i = cursor + direction
-        while (i in rows.indices && !rows[i].checkable()) i += direction
+        while (i in rows.indices && !rows[i].checkable(lineTicks)) i += direction
         if (i !in rows.indices) return
         cursor = i
         val visible = list.layoutInfo.visibleItemsInfo
@@ -131,10 +135,10 @@ public class DiffViewerState {
     }
 }
 
-private fun DiffRow.checkable(): Boolean = when (this) {
+private fun DiffRow.checkable(lines: Boolean): Boolean = when (this) {
     is DiffRow.Header -> hunk >= 0
-    is DiffRow.Unified -> ref != null
-    is DiffRow.Split -> leftRef != null || rightRef != null
+    is DiffRow.Unified -> lines && ref != null
+    is DiffRow.Split -> lines && (leftRef != null || rightRef != null)
 }
 
 @Composable
@@ -163,6 +167,7 @@ public fun DiffViewer(
     selection: DiffSelection? = null,
 ) {
     val rows = remember(document, mode) { diffRows(document, mode).also(state::reset) }
+    state.lineTicks = selection?.lines != false
     val spans by produceState(emptySyntax, document, highlighter) {
         value = withContext(Dispatchers.Default) { highlightDocument(document, highlighter) }
     }
@@ -247,8 +252,8 @@ private class DiffLayout(
 private fun toggleRow(row: DiffRow, selection: DiffSelection) {
     when (row) {
         is DiffRow.Header -> if (row.hunk >= 0) selection.onToggleHunk(row.hunk)
-        is DiffRow.Unified -> row.ref?.let(selection.onToggleLine)
-        is DiffRow.Split -> row.refs.forEach(selection.onToggleLine)
+        is DiffRow.Unified -> if (selection.lines) row.ref?.let(selection.onToggleLine)
+        is DiffRow.Split -> if (selection.lines) row.refs.forEach(selection.onToggleLine)
     }
 }
 
@@ -312,39 +317,55 @@ private fun HeaderRow(row: DiffRow.Header, document: DiffDocument, layout: DiffL
     val text = row.text
     val check = if (selection != null && row.hunk >= 0) document.checkOf(row.hunk, selection.selected) else null
     val partial = graftText("ui.diff.partlySelected", "partly selected")
-    Row(
-        Modifier
-            .fillMaxWidth()
-            .background(colors.surfaceContainerLow)
-            .cursorMark(here)
-            .padding(start = if (selection != null) 0.dp else 8.dp, end = 8.dp)
-            .clearAndSetSemantics {
-                heading()
-                contentDescription = text
-                if (check != null && selection != null) {
-                    toggles(
-                        when (check) {
-                            DiffCheck.NONE -> ToggleableState.Off
-                            DiffCheck.PARTIAL -> ToggleableState.Indeterminate
-                            DiffCheck.ALL -> ToggleableState.On
-                        },
-                        text,
-                    ) { selection.onToggleHunk(row.hunk) }
-                    if (check == DiffCheck.PARTIAL) stateDescription = partial
-                }
-            },
-        verticalAlignment = androidx.compose.ui.Alignment.CenterVertically,
-    ) {
-        if (check != null && selection != null) {
-            RowCheckbox(check == DiffCheck.ALL) { selection.onToggleHunk(row.hunk) }
+    val action = selection?.hunkAction?.takeIf { row.hunk >= 0 }
+    Box(Modifier.fillMaxWidth()) {
+        Row(
+            Modifier
+                .fillMaxWidth()
+                .background(colors.surfaceContainerLow)
+                .cursorMark(here)
+                .padding(start = if (selection != null) 0.dp else 8.dp, end = 8.dp)
+                .clearAndSetSemantics {
+                    heading()
+                    contentDescription = text
+                    if (check != null && selection != null) {
+                        toggles(
+                            when (check) {
+                                DiffCheck.NONE -> ToggleableState.Off
+                                DiffCheck.PARTIAL -> ToggleableState.Indeterminate
+                                DiffCheck.ALL -> ToggleableState.On
+                            },
+                            text,
+                        ) { selection.onToggleHunk(row.hunk) }
+                        if (check == DiffCheck.PARTIAL) stateDescription = partial
+                    }
+                },
+            verticalAlignment = androidx.compose.ui.Alignment.CenterVertically,
+        ) {
+            if (check != null && selection != null) {
+                RowCheckbox(check == DiffCheck.ALL) { selection.onToggleHunk(row.hunk) }
+            }
+            BasicText(
+                text,
+                modifier = Modifier.weight(1f).padding(vertical = 2.dp),
+                style = Graft.tokens.code.copy(color = colors.onSurfaceVariant),
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
+            // Keeps the header text clear of the action drawn over the end of the row.
+            if (action != null) Spacer(Modifier.width(112.dp))
         }
-        BasicText(
-            text,
-            modifier = Modifier.weight(1f).padding(vertical = 2.dp),
-            style = Graft.tokens.code.copy(color = colors.onSurfaceVariant),
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis,
-        )
+        if (action != null) {
+            BasicText(
+                action.label,
+                modifier = Modifier
+                    .align(androidx.compose.ui.Alignment.CenterEnd)
+                    .clickable { action.run(row.hunk) }
+                    .padding(horizontal = 8.dp, vertical = 2.dp),
+                style = Graft.tokens.code.copy(color = colors.primary),
+                maxLines = 1,
+            )
+        }
     }
 }
 
@@ -352,7 +373,7 @@ private fun HeaderRow(row: DiffRow.Header, document: DiffDocument, layout: DiffL
 private fun UnifiedRow(row: DiffRow.Unified, layout: DiffLayout, here: Boolean) {
     val line = row.line
     val description = lineDescription(line, line.kind != DiffLineKind.REMOVED)
-    val selection = layout.selection
+    val selection = layout.selection?.takeIf { it.lines }
     val ref = row.ref
     Row(
         Modifier
@@ -407,7 +428,7 @@ private fun RowScope.SplitCell(
         return
     }
     val description = lineDescription(line, newSide)
-    val selection = layout.selection
+    val selection = layout.selection?.takeIf { it.lines }
     Row(
         Modifier
             .weight(1f)

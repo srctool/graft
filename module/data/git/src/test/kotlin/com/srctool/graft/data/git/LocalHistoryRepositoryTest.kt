@@ -8,6 +8,7 @@ import com.srctool.graft.core.git.testing.GitSandboxExtension
 import com.srctool.graft.data.git.api.models.ChangeSelection
 import com.srctool.graft.data.git.api.models.FileSelection
 import com.srctool.graft.data.git.api.models.FileSelection.Scope
+import com.srctool.graft.data.git.api.models.FileStatus
 import com.srctool.graft.data.git.api.models.LocalHistoryLimits
 import com.srctool.graft.data.git.implementation.repositories.GitLocalHistoryRepository
 import com.srctool.sinew.models.Result
@@ -246,6 +247,92 @@ class LocalHistoryRepositoryTest {
         val refused = history.restoreHunks(repo, snapshot.id, "f.txt", setOf(7))
         assertIs<Result.Failure>(refused)
         assertEquals("GIT-R-APLY-PAT", refused.error.code)
+    }
+
+    @Test
+    fun `an untracked file is compared with now and restored by hunk`(sandbox: GitSandbox) = runBlocking {
+        val repo = base(sandbox)
+        val history = history(sandbox)
+        val numbered = (1..20).joinToString("") { "l$it\n" }
+        write(repo, "notes.txt", numbered)
+        val snapshot = history.snapshot(repo).getOrThrow().snapshot
+        assertNull(history.diffToNow(repo, snapshot.id, "notes.txt").getOrThrow())
+        write(repo, "notes.txt", numbered.replace("l2\n", "X2\n").replace("l18\n", "X18\n"))
+        val index = Files.readAllBytes(repo.resolve(".git/index")).toList()
+
+        val diff = history.diffToNow(repo, snapshot.id, "notes.txt").getOrThrow()!!
+        assertEquals(FileStatus.MODIFIED, diff.file.status)
+        assertEquals(2, diff.hunks.size)
+        history.restoreHunks(repo, snapshot.id, "notes.txt", setOf(0)).getOrThrow()
+
+        assertEquals(numbered.replace("l18\n", "X18\n"), Files.readString(repo.resolve("notes.txt")))
+        assertEquals(index, Files.readAllBytes(repo.resolve(".git/index")).toList())
+    }
+
+    @Test
+    fun `comparing with now reads a deleted, a new and a binary file`(sandbox: GitSandbox) = runBlocking {
+        val repo = base(sandbox)
+        val history = history(sandbox)
+        write(repo, "gone.txt", "a\n")
+        Files.write(repo.resolve("blob.bin"), byteArrayOf(0, 1, 2))
+        val snapshot = history.snapshot(repo).getOrThrow().snapshot
+        Files.delete(repo.resolve("gone.txt"))
+        Files.write(repo.resolve("blob.bin"), byteArrayOf(0, 9))
+        write(repo, "new.txt", "b\n")
+
+        assertEquals(FileStatus.DELETED, history.diffToNow(repo, snapshot.id, "gone.txt").getOrThrow()!!.file.status)
+        assertEquals(FileStatus.ADDED, history.diffToNow(repo, snapshot.id, "new.txt").getOrThrow()!!.file.status)
+        assertTrue(history.diffToNow(repo, snapshot.id, "blob.bin").getOrThrow()!!.file.isBinary)
+        assertNull(history.diffToNow(repo, snapshot.id, "never.txt").getOrThrow())
+    }
+
+    @Test
+    fun `a file that grew past the limit is still compared with its real content`(sandbox: GitSandbox) = runBlocking {
+        val repo = base(sandbox)
+        val history = history(sandbox, LocalHistoryLimits(maxFileBytes = 16))
+        write(repo, "log.txt", "short\n")
+        val snapshot = history.snapshot(repo).getOrThrow().snapshot
+        write(repo, "log.txt", "short\nand now far longer than the limit\n")
+
+        val diff = history.diffToNow(repo, snapshot.id, "log.txt").getOrThrow()!!
+        assertEquals(FileStatus.MODIFIED, diff.file.status)
+        assertEquals(1, diff.file.additions)
+    }
+
+    @Test
+    fun `deleted files are listed with the last snapshot that has them`(sandbox: GitSandbox) = runBlocking {
+        val repo = base(sandbox)
+        val history = history(sandbox)
+        write(repo, "early.txt", "e\n")
+        write(repo, "late.txt", "l\n")
+        write(repo, "back.txt", "b\n")
+        clock += 10
+        history.snapshot(repo).getOrThrow()
+        Files.delete(repo.resolve("early.txt"))
+        Files.delete(repo.resolve("back.txt"))
+        clock += 10
+        val s2 = history.snapshot(repo).getOrThrow().snapshot
+        val s1 = history.snapshots(repo).getOrThrow().last()
+        write(repo, "back.txt", "again\n")
+        // Deleted after the last snapshot: that snapshot still has it.
+        Files.delete(repo.resolve("late.txt"))
+
+        val deleted = history.deletedFiles(repo).getOrThrow()
+
+        assertEquals(listOf("late.txt" to s2.id, "early.txt" to s1.id), deleted.map { it.path to it.lastSeen.id })
+    }
+
+    @Test
+    fun `restoring everything never writes over a file the history can't hold`(sandbox: GitSandbox) = runBlocking {
+        val repo = base(sandbox)
+        val history = history(sandbox, LocalHistoryLimits(maxFileBytes = 16))
+        write(repo, "data.txt", "small\n")
+        val snapshot = history.snapshot(repo).getOrThrow().snapshot
+        val grown = "now far longer than the limit allows\n"
+        write(repo, "data.txt", grown)
+
+        assertIs<Result.Failure>(history.restoreAll(repo, snapshot.id))
+        assertEquals(grown, Files.readString(repo.resolve("data.txt")))
     }
 
     @Test
