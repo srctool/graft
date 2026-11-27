@@ -9,6 +9,7 @@ import com.srctool.graft.data.git.api.models.CommitRow
 import com.srctool.graft.data.git.api.models.ObjectId
 import com.srctool.graft.data.git.api.models.Ref
 import com.srctool.graft.data.git.api.models.RefKind
+import com.srctool.graft.feature.graph.domain.api.models.LaidOutGraph
 import java.time.Instant
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
@@ -195,3 +196,32 @@ internal class TableLayout(
         is TableEntry.Commit -> Selection.Row(e.row)
     }
 }
+
+/**
+ * The line from the WIP row down to HEAD's row, [headRow]: drawn in [lane] through every row above it, in HEAD's
+ * [color].
+ */
+internal data class WipLine(val headRow: Int, val lane: Int, val color: Int)
+
+/**
+ * Where the WIP row's line runs, or null when HEAD isn't among the first rows loaded. It stays on HEAD's own lane
+ * (Commit Graph note) while nothing above uses that lane; otherwise it would read as part of another line, so it takes
+ * a lane right of everything above HEAD. A stash on a row sits one lane right of that row ([stashBaseRows]).
+ */
+internal fun wipLine(graph: LaidOutGraph, rowCount: Int, head: ObjectId?, stashBaseRows: Set<Int>): WipLine? {
+    if (head == null) return null
+    val headRow = (0 until minOf(rowCount, HEAD_SEARCH_ROWS)).firstOrNull { graph[it].commit.id == head } ?: return null
+    val lane = graph[headRow].lane
+    val clear =
+        (0 until headRow).all { r ->
+            val row = graph[r]
+            row.lane != lane &&
+                graph.through(r, lane) < 0 &&
+                row.edges().none { it.from == lane || it.to == lane } &&
+                !(r in stashBaseRows && row.width == lane)
+        }
+    val free = { (0..headRow).maxOf { graph[it].width + if (it in stashBaseRows) 1 else 0 } }
+    return WipLine(headRow, if (clear) lane else free(), graph[headRow].color)
+}
+
+private const val HEAD_SEARCH_ROWS = 200

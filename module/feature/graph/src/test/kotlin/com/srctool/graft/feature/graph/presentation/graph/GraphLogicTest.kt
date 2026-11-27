@@ -6,6 +6,7 @@ package com.srctool.graft.feature.graph.presentation.graph
 import com.srctool.graft.core.ui.git.RefLabel
 import com.srctool.graft.core.ui.git.RefLabelKind
 import com.srctool.graft.data.git.api.models.Ref
+import com.srctool.graft.feature.graph.domain.implementation.usecases.LaneLayoutTest
 import java.time.ZoneOffset
 import java.util.Locale
 import kotlin.test.Test
@@ -44,6 +45,38 @@ class GraphLogicTest {
             ),
             labels,
         )
+    }
+
+    private fun wip(vararg history: String, head: String, stashes: Set<Int> = emptySet()): WipLine? {
+        val rows = LaneLayoutTest.history(*history)
+        val id = rows.single { it.subject == head }.id
+        return wipLine(Sample.graph(rows), rows.size, id, stashes)
+    }
+
+    @Test
+    fun `the WIP line runs straight down when HEAD is the first row`() {
+        assertEquals(WipLine(headRow = 0, lane = 0, color = 0), wip("H: R", "R:", head = "H"))
+        assertEquals(0, wip("H: R", "R:", head = "H", stashes = setOf(0))?.lane)
+    }
+
+    @Test
+    fun `the WIP line takes a lane of its own past the commits ahead of HEAD`() {
+        // Drawn on lane 0 it would run through O and read as O's child.
+        assertEquals(WipLine(headRow = 1, lane = 1, color = 0), wip("O: H", "H: R", "R:", head = "H"))
+    }
+
+    @Test
+    fun `the WIP line stays on HEAD's lane while nothing else uses it above`() {
+        assertEquals(1, wip("A: R", "H: R", "R:", head = "H")?.lane)
+        // A stash on the row above sits in that lane, so the line moves right of it.
+        assertEquals(2, wip("A: R", "H: R", "R:", head = "H", stashes = setOf(0))?.lane)
+    }
+
+    @Test
+    fun `there is no WIP line without a HEAD in the rows loaded`() {
+        val rows = LaneLayoutTest.history("H: R", "R:")
+        assertNull(wipLine(Sample.graph(rows), rows.size, null, emptySet()))
+        assertNull(wipLine(Sample.graph(rows), 0, rows.first().id, emptySet()))
     }
 
     @Test

@@ -33,7 +33,7 @@ internal class GitLoadGraphUseCase(
 ) : LoadGraphUseCase {
     override fun load(repository: Path, filter: GraphFilter, limit: Int): Flow<GraphLoad> = flow {
         val log = commits.log(repository, filter.scope, filter.firstParent)
-        val graph = GrowingGraph(newLayout(), log.people)
+        val graph = GrowingGraph(newLayout(), log.people, filter.firstParent)
         var failed = false
         log
             .rows
@@ -58,7 +58,11 @@ internal class GitLoadGraphUseCase(
 }
 
 /** The [LaidOutGraph] a load grows: rows appended in order, pass-through lines answered by the layout. */
-private class GrowingGraph(private val layout: GraphLayout, override val people: People) : LaidOutGraph {
+private class GrowingGraph(
+    private val layout: GraphLayout,
+    override val people: People,
+    private val firstParent: Boolean,
+) : LaidOutGraph {
     private val rows = ArrayList<GraphRow>(1 shl 16)
 
     override val size: Int get() = rows.size
@@ -69,7 +73,8 @@ private class GrowingGraph(private val layout: GraphLayout, override val people:
     override fun through(row: Int, lane: Int): Int = layout.through(row, lane)
 
     fun add(commit: CommitRow) {
-        rows += layout.next(commit)
+        // The row keeps the commit with all its parents: it is still a merge to read about.
+        rows += layout.next(commit, if (firstParent) commit.parents.take(1) else commit.parents)
     }
 }
 

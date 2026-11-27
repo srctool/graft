@@ -613,3 +613,8 @@ ADR-29 (Fluent, Inter, one height per line): added to the notes at the author's 
 - Fluent Task 1: approved by the author (2026-11-26).
 - Shell Task 1: complete (reviewed: approved; merged as PR #186, 2026-11-26)
 - Fluent Task 1 (CI, PR #187): the Ubuntu and spaces-path checks failed only on screenshot comparisons; 145 goldens re-recorded from the Ubuntu job's renders after looking at them.
+- Fluent Task 1: complete (reviewed: approved; merged as PR #187, 2026-11-26)
+- Graph fix: drafted (branch `fix/graph-lanes`) — the three problems above. With "First parent" the layout follows only each commit's first parent (the commit still reads as a merge); a lane that ends on a row is free only from the next row; the WIP ring is joined to HEAD. `./gradlew check` passes on macOS; seen on a throwaway copy of this repository, not run on `qaraa-mobile`.
+- Ruling (graph fix): the Commit Graph note says a merged parent takes "a new free lane"; a lane ending at that node does not count as free until the next row, or the two lines paint over each other. Cost: the graph is one lane wider in places (one case in the `graph-repo` layout golden goes from 4 to 5). Cost if wrong: two lines of layout code and the goldens.
+- Ruling (graph fix): the WIP row stays on HEAD's lane (Commit Graph note) only while nothing above uses that lane; otherwise ring and line take a lane right of everything above HEAD, so the line does not read as part of another branch. HEAD is searched in the first 200 rows, as before. Cost if wrong: one function.
+- Graph fix: approved by the author (2026-11-26).

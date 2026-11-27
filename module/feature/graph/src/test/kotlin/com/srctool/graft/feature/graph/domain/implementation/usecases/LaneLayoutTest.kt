@@ -68,6 +68,17 @@ class LaneLayoutTest {
     }
 
     @Test
+    fun `a lane that ends on a merge row isn't given to the merged branch on that row`() {
+        val rows = layout(history("M1: M2 A", "A: M2", "M2: M3 B", "B: M3", "M3:"))
+        val merge = rows.single { it.commit.subject == "M2" }
+        val arriving = merge.edges().filter { it.kind == Kind.TOP }.map { it.from }.toSet()
+        val leaving = merge.edges().filter { it.kind == Kind.BOTTOM }.map { it.to }.toSet()
+        // Only the node's own lane has a line both coming in and going out.
+        assertEquals(setOf(merge.lane), arriving intersect leaving)
+        golden("merge-after-merge", rows)
+    }
+
+    @Test
     fun `a new branch tip reuses a freed lane`() {
         // B's line ends at A and A is a root, so both lanes are free again; the unrelated tip Z takes lane 0.
         val rows = layout(history("T: A B", "B: A", "A:", "Z: Y", "Y:"))

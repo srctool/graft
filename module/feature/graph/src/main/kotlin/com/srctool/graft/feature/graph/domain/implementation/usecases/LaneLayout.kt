@@ -13,7 +13,9 @@ import com.srctool.graft.feature.graph.domain.api.usecases.GraphLayout
 /**
  * The incremental lane algorithm from the Commit Graph note. `waiting[i]` is the commit lane `i` is waiting for, or
  * null when the lane is free. Lanes never shift sideways: a freed lane is reused by the next line that needs one, which
- * keeps every pass-through line vertical and makes a row depend only on the rows above it.
+ * keeps every pass-through line vertical and makes a row depend only on the rows above it. A lane whose line ends at a
+ * node isn't free until the next row: handed to a merged parent on the same row, the line going out would paint over
+ * the one coming in.
  *
  * Colors follow branches, not lane indexes: a commit's first parent inherits its color, and each new line (a branch
  * tip, or a merged parent nobody was waiting for yet) takes the next color number. The UI maps numbers to its palette.
@@ -42,7 +44,7 @@ internal class LaneLayout : GraphLayout {
     // Reused between rows; each row copies the edges it produced.
     private val edges = LongArrayBuilder()
 
-    override fun next(commit: CommitRow): GraphRow {
+    override fun next(commit: CommitRow, parents: List<ObjectId>): GraphRow {
         val row = rowCount
         edges.clear()
         val id = commit.id
@@ -63,18 +65,17 @@ internal class LaneLayout : GraphLayout {
             color = nextColor++
         }
 
-        // Lines arriving at the node; each ends the lane's pass-through run.
+        // Lines arriving at the node; each ends the lane's pass-through run. Lanes other than the node's still hold
+        // this commit while its parents are placed, so no new line takes one.
         for (i in waiting.indices) {
             if (waiting[i] == id) {
                 edges += GraphEdge.pack(Kind.TOP, i, lane, colors[i])
                 closeRun(i, row)
-                if (i != lane) waiting[i] = null // a second line into this commit ends here
             }
         }
 
         // The first parent continues in the node's lane with its color; other parents join a lane already waiting
         // for them, or open a new line in a free lane.
-        val parents = commit.parents
         if (parents.isEmpty()) {
             set(lane, null, color)
         } else {
@@ -98,6 +99,9 @@ internal class LaneLayout : GraphLayout {
                 edges += GraphEdge.pack(Kind.BOTTOM, lane, target, colors[target])
             }
         }
+
+        // A second line into this commit ends here.
+        for (i in waiting.indices) if (i != lane && waiting[i] == id) waiting[i] = null
 
         val width = maxOf(waiting.size, lane + 1)
         while (waiting.isNotEmpty() && waiting.last() == null) {
